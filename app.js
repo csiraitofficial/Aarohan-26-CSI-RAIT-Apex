@@ -458,27 +458,59 @@ function loadFarmerDashboard() {
                 // Show full details in the success message
                 const herbDisplayName = herbType.charAt(0).toUpperCase() + herbType.slice(1);
                 const totalValue = (parseFloat(price) * parseFloat(quantity)).toLocaleString('en-IN');
-                const successMsg = [
-                    `✅ Batch successfully registered on vaidyachain Blockchain!`,
-                    ``,
-                    `📦 Batch ID   : ${batchId}`,
-                    `👨‍🌾 Farmer     : ${farmerName}`,
-                    `🌿 Herb Type  : ${herbDisplayName}`,
-                    `⚖️  Quantity   : ${quantity} kg`,
-                    `📅 Harvest Date: ${collectionDate}`,
-                    `💰 Price      : ₹${price}/kg`,
-                    `💵 Total Value : ₹${totalValue}`,
-                    `📍 Location   : (${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)})`
-                ].join('\n');
 
+                // Show floating notification
                 if (window.showNotification) {
                     window.showNotification(
                         `Batch ${batchId} registered! ${herbDisplayName} | ${quantity}kg @ ₹${price}/kg | Farmer: ${farmerName}`,
                         'success'
                     );
                 }
-                // Always show full detail alert
-                alert(successMsg);
+
+                // Premium Success Modal
+                const modalHtml = `
+                    <div id="batch-success-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); font-family: 'Inter', sans-serif;">
+                        <div style="background: white; padding: 2.5rem; border-radius: 16px; width: 90%; max-width: 450px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); animation: slideUp 0.3s ease-out;">
+                            <style>
+                                @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                            </style>
+                            <div style="width: 60px; height: 60px; background: #ecfdf5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                <i class="ph ph-check-circle" style="font-size: 2rem; color: #10b981;"></i>
+                            </div>
+                            <h2 style="margin: 0 0 0.5rem; font-size: 1.5rem; color: #111827;">Batch Registered!</h2>
+                            <p style="margin: 0 0 1.5rem; color: #6b7280; font-size: 0.95rem;">Your collection is successfully secured on the blockchain.</p>
+                            
+                            <div style="text-align: left; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 2rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; border-bottom: 1px dashed #cbd5e1; padding-bottom: 0.75rem;">
+                                    <span style="color: #64748b; font-size: 0.85rem;">Batch ID</span>
+                                    <span style="font-family: 'Geist Mono', monospace; font-weight: 700; color: #0f172a;">${batchId}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span style="color: #64748b; font-size: 0.85rem;">Herb</span>
+                                    <span style="font-weight: 600; color: #334155;">${herbDisplayName}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span style="color: #64748b; font-size: 0.85rem;">Quantity</span>
+                                    <span style="font-weight: 600; color: #334155;">${quantity} kg</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span style="color: #64748b; font-size: 0.85rem;">Price</span>
+                                    <span style="font-weight: 600; color: #334155;">₹${price}/kg</span>
+                                </div>
+                                
+                                <div style="margin-top: 1rem; background: #ecfdf5; padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #166534; font-size: 0.85rem; font-weight: 600;">Total Value</span>
+                                    <span style="font-size: 1.25rem; font-weight: 800; color: #15803d; font-family: 'Geist Mono', monospace;">₹${totalValue}</span>
+                                </div>
+                            </div>
+                            
+                            <button onclick="document.getElementById('batch-success-modal').remove()" style="width: 100%; padding: 0.875rem; background: #111827; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                Continue <i class="ph ph-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
 
                 this.reset();
                 updateRecentCollections();
@@ -932,35 +964,65 @@ function loadLabDashboard() {
                 const location = data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A';
                 const farmerInfo = data.farmer || {};
 
+                let labSentBlock = '';
+                if (sendToLabData) {
+                    labSentBlock = `
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #cbd5e1;">
+                            <h5 style="margin: 0 0 0.75rem; color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Manufacturer Request</h5>
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; font-size: 0.85rem;">
+                                <div style="color: #64748b;">Requested By:</div>
+                                <div style="font-weight: 600; color: #334155;">${sendToLabData.data.manufacturer ? sendToLabData.data.manufacturer.name : 'N/A'}</div>
+                                <div style="color: #64748b;">Date Sent:</div>
+                                <div style="font-weight: 600; color: #334155;">${new Date(sendToLabData.data.sentDate).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 batchDetails.innerHTML = `
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div><strong>Batch ID:</strong></div>
-                        <div>${data.batchId}</div>
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: left;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="background: #eff6ff; color: #3b82f6; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="ph ph-package" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Batch Details</p>
+                                    <h4 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-family: 'Geist Mono', monospace;">${data.batchId}</h4>
+                                </div>
+                            </div>
+                            <span style="background: #f7fee7; color: #65a30d; border: 1px solid #d9f99d; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;">Verifiable</span>
+                        </div>
                         
-                        <div><strong>Farmer Name:</strong></div>
-                        <div>${farmerInfo.name || 'N/A'}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 1.5rem; font-size: 0.85rem;">
+                            <div>
+                                <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farmer Name</div>
+                                <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-user"></i> ${farmerInfo.name || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Herb / Crop</div>
+                                <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-leaf" style="color:#10b981;"></i> ${data.herbType}</div>
+                            </div>
+                            <div>
+                                <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Quantity</div>
+                                <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-scales"></i> ${data.quantity} kg</div>
+                            </div>
+                            <div>
+                                <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Harvest Date</div>
+                                <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar"></i> ${data.collectionDate}</div>
+                            </div>
+                            <div style="grid-column: 1 / -1;">
+                                <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farm Location</div>
+                                <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-map-pin" style="color:#ef4444;"></i> ${location}</div>
+                            </div>
+                        </div>
                         
-                        <div><strong>Herb/Crop:</strong></div>
-                        <div>${data.herbType}</div>
-                        
-                        <div><strong>Quantity:</strong></div>
-                        <div>${data.quantity} kg</div>
-                        
-                        <div><strong>Harvest Date:</strong></div>
-                        <div>${data.collectionDate}</div>
-                        
-                        <div><strong>Farm Location:</strong></div>
-                        <div>${location}</div>
-                        
-                        ${sendToLabData ? `
-                        <div><strong>Sent by Manufacturer:</strong></div>
-                        <div>${sendToLabData.data.manufacturer ? sendToLabData.data.manufacturer.name : 'N/A'}</div>
-                        
-                        <div><strong>Sent Date:</strong></div>
-                        <div>${new Date(sendToLabData.data.sentDate).toLocaleString()}</div>
-                        ` : ''}
+                        ${labSentBlock}
                     </div>
                 `;
+                batchInfo.style.background = 'transparent';
+                batchInfo.style.border = 'none';
+                batchInfo.style.padding = '0';
                 batchInfo.style.display = 'block';
                 document.getElementById('verify-btn').disabled = false;
             }
@@ -1423,26 +1485,46 @@ function loadManufacturerDashboard() {
         if (collectionData) {
             const data = collectionData.data;
             batchDetails.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div><strong>Farmer Name:</strong></div>
-                    <div>${data.farmer ? data.farmer.name : 'N/A'}</div>
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: left;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="background: #fef2f2; color: #ef4444; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-flask" style="font-size: 1.5rem;"></i>
+                            </div>
+                            <div>
+                                <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Batch Selected For Testing</p>
+                                <h4 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-family: 'Geist Mono', monospace;">${data.batchId}</h4>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div><strong>Herb/Crop:</strong></div>
-                    <div>${data.herbType}</div>
-                    
-                    <div><strong>Quantity:</strong></div>
-                    <div>${data.quantity} kg</div>
-                    
-                    <div><strong>Harvest Date:</strong></div>
-                    <div>${data.collectionDate}</div>
-                    
-                    <div><strong>Farm Location:</strong></div>
-                    <div>${data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A'}</div>
-                    
-                    <div><strong>Batch ID:</strong></div>
-                    <div>${data.batchId}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 1.5rem; font-size: 0.85rem;">
+                        <div>
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farmer Name</div>
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-user"></i> ${data.farmer ? data.farmer.name : 'N/A'}</div>
+                        </div>
+                        <div>
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Herb / Crop</div>
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-leaf" style="color:#10b981;"></i> ${data.herbType}</div>
+                        </div>
+                        <div>
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Quantity</div>
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-scales"></i> ${data.quantity} kg</div>
+                        </div>
+                        <div>
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Harvest Date</div>
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar"></i> ${data.collectionDate}</div>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farm Location</div>
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-map-pin" style="color:#ef4444;"></i> ${data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A'}</div>
+                        </div>
+                    </div>
                 </div>
             `;
+            batchInfo.style.background = 'transparent';
+            batchInfo.style.border = 'none';
+            batchInfo.style.padding = '0';
             batchInfo.style.display = 'block';
             sendBtn.disabled = false;
         }
@@ -1498,7 +1580,12 @@ function loadManufacturerDashboard() {
         if (!batchId) { alert('Please enter a Batch ID'); return; }
 
         if (!doesBatchExist(batchId)) {
-            statusMessage.innerHTML = '<p style="color: red;">Batch ID not found!</p>';
+            statusMessage.innerHTML = `
+                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="ph ph-magnifying-glass" style="color: #d97706; font-size: 1.25rem;"></i>
+                    <p style="color: #b45309; margin: 0; font-size: 0.85rem; font-weight: 500;">Batch ID not found in blockchain registry.</p>
+                </div>
+            `;
             statusMessage.style.display = 'block';
             return;
         }
@@ -1507,13 +1594,37 @@ function loadManufacturerDashboard() {
         const labTests = batchTransactions.filter(tx => tx.data.type === 'lab-test');
 
         if (labTests.length === 0) {
-            statusMessage.innerHTML = '<p style="color: orange;">This batch has not been tested yet.</p>';
+            statusMessage.innerHTML = `
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <i class="ph ph-hourglass" style="color: #2563eb; font-size: 1.5rem; flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="color: #1e40af; margin: 0 0 0.25rem; font-size: 0.95rem;">Testing Pending</h4>
+                        <p style="color: #1d4ed8; margin: 0; font-size: 0.85rem;">This batch has not been tested yet. Please wait for the lab to certify it.</p>
+                    </div>
+                </div>
+            `;
         } else {
             const latestTest = labTests[labTests.length - 1];
             if (latestTest.data.testResult === 'pass') {
-                statusMessage.innerHTML = '<p style="color: green;">This batch PASSED lab tests and can be used for manufacturing!</p>';
+                statusMessage.innerHTML = `
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <i class="ph ph-check-circle" style="color: #16a34a; font-size: 1.5rem; flex-shrink: 0;"></i>
+                        <div>
+                            <h4 style="color: #166534; margin: 0 0 0.25rem; font-size: 0.95rem;">Approved for Manufacturing</h4>
+                            <p style="color: #15803d; margin: 0; font-size: 0.85rem;">This batch PASSED lab tests and is fully ready to be formulated.</p>
+                        </div>
+                    </div>
+                `;
             } else {
-                statusMessage.innerHTML = '<p style="color: red;">This batch FAILED lab tests.</p>';
+                statusMessage.innerHTML = `
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <i class="ph ph-warning-circle" style="color: #dc2626; font-size: 1.5rem; flex-shrink: 0;"></i>
+                        <div>
+                            <h4 style="color: #991b1b; margin: 0 0 0.25rem; font-size: 0.95rem;">Batch Rejected</h4>
+                            <p style="color: #b91c1c; margin: 0; font-size: 0.85rem;">This batch FAILED lab tests and must be discarded or sent to waste management.</p>
+                        </div>
+                    </div>
+                `;
             }
         }
         statusMessage.style.display = 'block';
@@ -1869,38 +1980,89 @@ function loadBatchHistoryList() {
         const locStr = data.location ? (data.location.address || `${parseFloat(data.location.latitude).toFixed(4)}, ${parseFloat(data.location.longitude).toFixed(4)}`) : 'N/A';
 
         html += `
-            <div class="batch-card batch-card-${statusClass}" style="border-left: 5px solid ${statusClass === 'settled' ? '#10b981' : '#f59e0b'};">
-                <div class="batch-header">
-                    <h4>🌿 ${herbDisplay} &nbsp;<span style="font-size:0.8rem;color:#666;">(${batchId})</span></h4>
-                    ${statusBadge}
-                </div>
-                <div class="batch-details" style="font-size: 0.88rem;">
-                    <p><strong>👨‍🌾 Farmer Name:</strong> ${farmerName}</p>
-                    <p><strong>🪪 Farmer ID:</strong> ${farmerId}</p>
-                    <p><strong>📅 Harvest Date:</strong> ${harvestDate}</p>
-                    <p><strong>⚖️ Quantity:</strong> ${data.quantity} kg</p>
-                    <p><strong>💰 Price per kg:</strong> ${pricePerKg}</p>
-                    <p><strong>💵 Purchase Amount:</strong> ₹${purchaseTx.data.amount.toLocaleString()}</p>
-                    <p><strong>📍 Farm Location:</strong> ${locStr}</p>
-                    <p><strong>🚚 Transit Status:</strong> ${currentLogistics.status}</p>
-                    <p><strong>🔒 Escrow Status:</strong> ${settlementTx ? '✅ Payment Released' : '🔒 Locked in Escrow'}</p>
-                    <p><strong>📋 Transaction ID:</strong> ${purchaseTx.data.txnId}</p>
-                    ${currentLogistics.iot ? `
-                    <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f0fdf4; border-radius: 4px; font-size: 0.8rem; display: flex; gap: 10px;">
-                        <span>🌡️ ${currentLogistics.iot.temp}</span>
-                        <span>💧 ${currentLogistics.iot.humidity}</span>
-                        <span>🛰️ IoT Active</span>
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1.25rem;">
+                <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: ${statusClass === 'settled' ? '#10b981' : (statusClass === 'failed' ? '#ef4444' : '#f59e0b')};"></div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="background: #f8fafc; color: #475569; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="ph ph-package" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; font-size: 1.1rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-leaf" style="color:#10b981;"></i> ${herbDisplay}</h4>
+                            <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-family: 'Geist Mono', monospace;">${batchId}</p>
+                        </div>
                     </div>
-                    ` : ''}
+                    <div>${statusBadge}</div>
                 </div>
-                <div class="batch-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                    ${currentLogistics.status === 'In Transit' ? `<button class="action-btn outline" style="flex: 1;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">Confirm Arrival</button>` : ''}
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 1.5rem; font-size: 0.85rem;">
+                    <div>
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farmer Name</div>
+                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-user"></i> ${farmerName}</div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farmer ID</div>
+                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="ph ph-identification-card"></i> <span title="${farmerId}">${farmerId.length > 10 ? farmerId.substring(0, 10) + '...' : farmerId}</span></div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Harvest Date</div>
+                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar"></i> ${harvestDate}</div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Quantity & Price</div>
+                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-scales"></i> ${data.quantity} kg @ ${pricePerKg}</div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Purchase Amount</div>
+                        <div style="font-weight: 700; color: #059669; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-currency-inr"></i> ₹${purchaseTx.data.amount.toLocaleString()}</div>
+                    </div>
+                    <div>
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Transaction ID</div>
+                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem; font-family: 'Geist Mono', monospace;"><i class="ph ph-hash"></i> ${purchaseTx.data.txnId}</div>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farm Location</div>
+                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-map-pin" style="color:#ef4444;"></i> ${locStr}</div>
+                    </div>
+                    <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0;">
+                        <div>
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Transit Status</div>
+                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-truck"></i> ${currentLogistics.status}</div>
+                        </div>
+                        <div>
+                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Escrow Status</div>
+                            <div style="font-weight: 600; color: ${settlementTx ? '#10b981' : '#f59e0b'}; display: flex; align-items: center; gap: 0.25rem;">
+                                ${settlementTx ? '<i class="ph ph-lock-key-open"></i> Payment Released' : '<i class="ph ph-lock-key"></i> Locked in Escrow'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                ${currentLogistics.iot ? `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; align-items: center;">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase;"><i class="ph ph-cpu"></i> IoT Sensor Data</span>
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #0f172a;"><i class="ph ph-thermometer" style="color:#ef4444;"></i> ${currentLogistics.iot.temp}</span>
+                    <span style="font-weight: 600; font-size: 0.85rem; color: #0f172a;"><i class="ph ph-drop" style="color:#3b82f6;"></i> ${currentLogistics.iot.humidity}</span>
+                </div>
+                ` : ''}
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                    ${currentLogistics.status === 'In Transit' ? `
+                        <button class="action-btn outline" style="flex: 1; justify-content: center; padding: 0.6rem; border-radius: 8px; font-weight: 600;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">
+                            <i class="ph ph-check-circle"></i> Confirm Arrival
+                        </button>
+                    ` : ''}
                     
-                    ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `<button class="action-btn" style="flex: 1;" onclick="quickSendToLab('${batchId}')">Send to Lab</button>` : ''}
+                    ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `
+                        <button class="action-btn" style="flex: 1; justify-content: center; padding: 0.6rem; border-radius: 8px; background: #0f172a; color: white; font-weight: 600; border: none;" onclick="quickSendToLab('${batchId}')">
+                            <i class="ph ph-flask"></i> Send to Lab
+                        </button>
+                    ` : ''}
 
                     ${latestLab && !settlementTx ? `
-                        <button class="action-btn" style="flex: 1; background: ${latestLab.testResult === 'pass' ? 'var(--primary)' : '#dc2626'};" onclick="confirmBatchDelivery('${batchId}')">
-                            ${latestLab.testResult === 'pass' ? 'Accept & Release Funds' : 'Process Refund & Return'}
+                        <button class="action-btn" style="flex: 1; justify-content: center; padding: 0.6rem; border-radius: 8px; background: ${latestLab.testResult === 'pass' ? '#10b981' : '#ef4444'}; color: white; border: none; font-weight: 600;" onclick="confirmBatchDelivery('${batchId}')">
+                            ${latestLab.testResult === 'pass' ? '<i class="ph ph-handshake"></i> Accept & Release Funds' : '<i class="ph ph-arrow-u-up-left"></i> Process Refund & Return'}
                         </button>
                     ` : ''}
                 </div>
