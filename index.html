@@ -1,50 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Krishi - Ayurvedic Herb Traceability</title>
-    
+
     <!-- Favicon -->
     <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
     <!-- Phosphor Icons -->
     <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/core@2.1.5/dist/icons.css" />
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
+
     <!-- html5-qrcode -->
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+
     <!-- i18next -->
     <script src="https://unpkg.com/i18next/dist/umd/i18next.min.js"></script>
-    
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore-compat.js"></script>
-    
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2D6A4F">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Krishi">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="styles.css">
-    
+
     <!-- i18n Logic -->
     <script src="i18n.js"></script>
-    
+
     <!-- QR Server API -->
     <script src="https://api.qrserver.com/v1/qr.js"></script>
 </head>
+
 <body>
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay">
@@ -126,7 +138,7 @@
                 <h2>Welcome to Krishi</h2>
                 <p>Sign in to access your dashboard</p>
             </div>
-            
+
             <div class="modal-tabs">
                 <button class="tab-btn active" onclick="switchLoginTab('google')">Google</button>
                 <button class="tab-btn" onclick="switchLoginTab('email')">Email</button>
@@ -137,18 +149,21 @@
                     <span class="ph ph-google-logo"></span>
                     Sign in with Google
                 </button>
-                <p class="login-note">Your email determines your role (admin@, farmer@, lab@, manufacturer@, consumer@)</p>
+                <p class="login-note">Your email determines your role (admin@, farmer@, lab@, manufacturer@, consumer@)
+                </p>
             </div>
 
             <div id="email-login-section" class="login-section" style="display: none;">
                 <form id="email-login-form">
                     <div class="form-group">
                         <label for="email-input">Email Address</label>
-                        <input type="email" id="email-input" aria-label="Email Address" placeholder="Enter your email" required>
+                        <input type="email" id="email-input" aria-label="Email Address" placeholder="Enter your email"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="password-input">Password</label>
-                        <input type="password" id="password-input" aria-label="Password" placeholder="Enter your password" required>
+                        <input type="password" id="password-input" aria-label="Password"
+                            placeholder="Enter your password" required>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary">Sign In</button>
@@ -172,14 +187,15 @@
                     <div class="logo">🌿</div>
                     <div>
                         <h2>Krishi</h2>
-                        <span style="font-size: 10px; opacity: 0.8; letter-spacing: 0.05em;">Blockchain Traceability</span>
+                        <span style="font-size: 10px; opacity: 0.8; letter-spacing: 0.05em;">Blockchain
+                            Traceability</span>
                     </div>
                 </div>
                 <button id="sidebar-toggle" class="sidebar-toggle">
                     <span class="ph ph-x"></span>
                 </button>
             </div>
-            
+
             <nav class="nav-menu">
                 <ul>
                     <li class="nav-item farmer-only" data-role="farmer,admin">
@@ -287,7 +303,7 @@
                 <button id="mobile-menu-toggle" class="mobile-menu-toggle">
                     <span class="ph ph-list"></span>
                 </button>
-                
+
                 <div class="page-title-container">
                     <div class="page-icon" id="page-icon">📊</div>
                     <div>
@@ -309,7 +325,7 @@
                             <span class="ph ph-chat-circle"></span>
                         </button>
                     </div>
-                    
+
                     <div class="language-indicator" id="language-indicator">
                         <span class="language-flag en"></span>
                         <span id="language-text">English</span>
@@ -326,7 +342,7 @@
                         <h2>🌱 Farmer Dashboard</h2>
                         <p>Tag new herb collections and manage your farm data</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <!-- Herb Collection Form -->
                         <div class="card">
@@ -355,7 +371,8 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="quantity">Quantity (kg)</label>
-                                        <input type="number" id="quantity" placeholder="Enter quantity" step="0.1" required>
+                                        <input type="number" id="quantity" placeholder="Enter quantity" step="0.1"
+                                            required>
                                     </div>
                                     <div class="form-group">
                                         <label for="harvest-date">Harvest Date</label>
@@ -434,7 +451,7 @@
                         <h2>🧪 Testing Lab Dashboard</h2>
                         <p>Quality testing and certification for herb batches</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <!-- Batch Selection -->
                         <div class="card">
@@ -446,7 +463,7 @@
                                 </select>
                             </div>
                             <button id="check-batch-btn" class="btn btn-secondary">Check Batch</button>
-                            
+
                             <div id="batch-info" class="batch-info" style="display: none;">
                                 <h4>Batch Details</h4>
                                 <p><strong>Farmer:</strong> <span id="batch-farmer"></span></p>
@@ -469,7 +486,7 @@
                                     <span class="wavelength-value">540-700nm</span>
                                 </div>
                             </div>
-                            
+
                             <h4>Test Parameters</h4>
                             <form id="lab-test-form">
                                 <div class="form-row">
@@ -558,7 +575,7 @@
                         <h2>🏭 Manufacturer Dashboard</h2>
                         <p>Product creation and supply chain management</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <!-- Available Batches -->
                         <div class="card">
@@ -576,14 +593,16 @@
                                 <div class="form-group">
                                     <label for="approved-batch-id">Approved Batch ID</label>
                                     <input type="text" id="approved-batch-id" placeholder="Enter batch ID">
-                                    <button type="button" id="check-batch-status-btn" class="btn btn-secondary">Check Status</button>
+                                    <button type="button" id="check-batch-status-btn" class="btn btn-secondary">Check
+                                        Status</button>
                                 </div>
                                 <div id="batch-status" class="batch-status" style="display: none;"></div>
-                                
+
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="product-name">Product Name</label>
-                                        <input type="text" id="product-name" placeholder="e.g., Ashwagandha Premium Extract">
+                                        <input type="text" id="product-name"
+                                            placeholder="e.g., Ashwagandha Premium Extract">
                                     </div>
                                     <div class="form-group">
                                         <label for="product-type">Product Type</label>
@@ -611,7 +630,7 @@
                                     <button type="submit" class="btn btn-primary">Create Product</button>
                                 </div>
                             </form>
-                            
+
                             <div id="qr-section" class="qr-section" style="display: none;">
                                 <h4>QR Code for Product</h4>
                                 <div id="qr-code-container">
@@ -656,7 +675,8 @@
                         <div class="card">
                             <h3>📈 Production Analytics</h3>
                             <div class="analytics-tabs">
-                                <button class="tab-btn active" onclick="switchAnalyticsTab('monthly')">Monthly Batches</button>
+                                <button class="tab-btn active" onclick="switchAnalyticsTab('monthly')">Monthly
+                                    Batches</button>
                                 <button class="tab-btn" onclick="switchAnalyticsTab('quality')">Quality Ratio</button>
                             </div>
                             <div class="analytics-chart">
@@ -672,7 +692,7 @@
                         <h2>👤 Consumer Portal</h2>
                         <p>Trace your Ayurvedic products from farm to formula</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <!-- Product Lookup -->
                         <div class="card">
@@ -684,12 +704,13 @@
                                     <button type="submit" class="btn btn-primary">Trace Product</button>
                                 </div>
                             </form>
-                            
+
                             <div class="qr-scanner-section">
                                 <h4>Or Scan QR Code</h4>
                                 <div id="qr-reader" class="qr-reader"></div>
                                 <button id="start-qr-scan-btn" class="btn btn-secondary">Start QR Scanner</button>
-                                <button id="stop-qr-scan-btn" class="btn btn-outline" style="display: none;">Stop Scanner</button>
+                                <button id="stop-qr-scan-btn" class="btn btn-outline" style="display: none;">Stop
+                                    Scanner</button>
                             </div>
                         </div>
 
@@ -699,7 +720,7 @@
                             <div id="supply-chain-timeline" class="timeline">
                                 <!-- Timeline will be populated here -->
                             </div>
-                            
+
                             <div id="verification-badge" class="verification-badge" style="display: none;">
                                 <span class="ph ph-shield-check"></span>
                                 <span>Blockchain Verified</span>
@@ -730,7 +751,7 @@
                         <h2>⚙️ Admin Dashboard</h2>
                         <p>System management and oversight</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <!-- System Overview -->
                         <div class="card">
@@ -804,7 +825,7 @@
                         <h2>🗑️ Waste Management Dashboard</h2>
                         <p>Track and manage failed batches and production waste</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <div class="card">
                             <h3>Register Waste</h3>
@@ -842,7 +863,7 @@
                         <h2>🍃 Sustainability Dashboard</h2>
                         <p>Track environmental impact and carbon footprint</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <div class="card">
                             <h3>Environmental Impact</h3>
@@ -872,7 +893,7 @@
                         <h2>📦 Inventory Dashboard</h2>
                         <p>Monitor raw herbs and finished products</p>
                     </div>
-                    
+
                     <div class="dashboard-grid" id="inventory-grid">
                         <!-- Inventory alerts and stock limits will be loaded here -->
                     </div>
@@ -884,10 +905,11 @@
                         <h2>🛒 Orders Dashboard</h2>
                         <p>Manage incoming consumer and retailer orders</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <div class="card full-width">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                 <h3>Order List</h3>
                                 <select id="order-status-filter" style="width: 200px;">
                                     <option value="All">All Statuses</option>
@@ -924,7 +946,7 @@
                         <h2>🛡️ Insurance Dashboard</h2>
                         <p>Manage crop and transit insurance policies</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <div class="card">
                             <h3>Purchase Insurance</h3>
@@ -942,7 +964,8 @@
                         </div>
                         <div class="card">
                             <h3>Active Policies & Claims</h3>
-                            <button id="file-claim-btn" class="btn btn-danger" style="margin-bottom: 15px;">Auto-File Claim (Failed Batches)</button>
+                            <button id="file-claim-btn" class="btn btn-danger" style="margin-bottom: 15px;">Auto-File
+                                Claim (Failed Batches)</button>
                             <div id="insurance-list" class="list-container">
                                 <!-- Claims/policies injected here -->
                             </div>
@@ -956,14 +979,15 @@
                         <h2>🧬 DNA Banking Dashboard</h2>
                         <p>Verify botanical authenticity using genetic markers</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <div class="card">
                             <h3>Register DNA Profile</h3>
                             <form id="dna-register-form">
                                 <div class="form-group">
                                     <label for="dna-herb-type">Herb Variety</label>
-                                    <input type="text" id="dna-herb-type" placeholder="e.g. Ashwagandha Premium Root" required>
+                                    <input type="text" id="dna-herb-type" placeholder="e.g. Ashwagandha Premium Root"
+                                        required>
                                 </div>
                                 <div class="form-group">
                                     <label for="dna-markers">Genetic Markers sequence snippet</label>
@@ -998,7 +1022,7 @@
                         <h2>⛓️ Blockchain Explorer</h2>
                         <p>View and verify the complete blockchain chain</p>
                     </div>
-                    
+
                     <div class="dashboard-grid">
                         <!-- Blockchain Visualization -->
                         <div class="card full-width">
@@ -1041,7 +1065,8 @@
         <div class="modal-content search-modal-content">
             <div class="modal-header">
                 <h3>Search Krishi Platform</h3>
-                <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" aria-label="Search" placeholder="Search batches, herbs, farmers...">
+                <input type="text" id="search-input" data-i18n-placeholder="search_placeholder" aria-label="Search"
+                    placeholder="Search batches, herbs, farmers...">
             </div>
             <div id="search-results-container" class="search-results-container">
                 <!-- Search results will be populated here -->
@@ -1110,7 +1135,8 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="phone-input">Phone Number</label>
-                    <input type="tel" id="phone-input" aria-label="Phone Number" placeholder="Enter your 10-digit phone number" pattern="[0-9]{10}" maxlength="10">
+                    <input type="tel" id="phone-input" aria-label="Phone Number"
+                        placeholder="Enter your 10-digit phone number" pattern="[0-9]{10}" maxlength="10">
                 </div>
                 <div class="form-group">
                     <label for="otp-input">OTP Code</label>
@@ -1151,11 +1177,13 @@
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn btn-primary" onclick="document.getElementById('batch-id-modal').style.display='none'">
+                    <button class="btn btn-primary"
+                        onclick="document.getElementById('batch-id-modal').style.display='none'">
                         <span class="ph ph-check"></span>
                         Continue
                     </button>
-                    <button class="btn btn-outline" onclick="exportCollectionCSV(document.getElementById('generated-batch-id').textContent)">
+                    <button class="btn btn-outline"
+                        onclick="exportCollectionCSV(document.getElementById('generated-batch-id').textContent)">
                         <span class="ph ph-download"></span>
                         Export Details
                     </button>
@@ -1180,6 +1208,9 @@
     <script src="auth.js"></script>
     <script src="blockchain-simulator.js"></script>
     <script src="smart-contracts-enhanced.js"></script>
+    <script src="demo-seeder.js"></script>
+    <script src="performance-optimizer.js"></script>
+    <script src="demo-setup.js"></script>
     <script src="app.js"></script>
     <script src="i18n.js"></script>
     <script src="notifications.js"></script>
@@ -1190,17 +1221,18 @@
 
     <!-- Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-              console.log('✅ Krishi PWA SW registered successfully', registration.scope);
-            })
-            .catch(error => {
-              console.error('Krishi PWA SW registration failed:', error);
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('✅ Krishi PWA SW registered successfully', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Krishi PWA SW registration failed:', error);
+                    });
             });
-        });
-      }
+        }
     </script>
 </body>
+
 </html>
