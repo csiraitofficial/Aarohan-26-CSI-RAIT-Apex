@@ -9,6 +9,9 @@ let notifications = [];
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🌿 Krishi Application Initialized');
   
+  // Initialize role-based navigation
+  initRoleBasedNavigation();
+  
   // Initialize dashboard event listeners
   initDashboardListeners();
   
@@ -41,11 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize Admin Dashboard
   initAdminDashboard();
+  
+  // Initialize user interface
+  initUserInterface();
 });
 
-// Dashboard Navigation
+// Dashboard Navigation - Enhanced
 function initDashboardListeners() {
-  // Navigation links
+  // Navigation links with role-based visibility
   const navLinks = document.querySelectorAll('.nav-menu a');
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
@@ -55,30 +61,112 @@ function initDashboardListeners() {
     });
   });
   
-  // Mobile menu close
+  // Mobile menu toggle
+  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+  const sidebar = document.getElementById('sidebar');
+  
+  if (mobileMenuToggle && sidebar) {
+    mobileMenuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+      mobileMenuToggle.classList.toggle('active');
+    });
+  }
+  
+  // Sidebar toggle
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+      if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
+    });
+  }
+  
+  // Close sidebar when clicking outside
   document.addEventListener('click', (e) => {
-    const sidebar = document.getElementById('sidebar');
     if (sidebar && sidebar.classList.contains('active') && 
         !e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-toggle')) {
       sidebar.classList.remove('active');
+      if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
     }
   });
+  
+  // Language switcher
+  const languageSwitcher = document.getElementById('language-switcher');
+  const languageIndicator = document.getElementById('language-indicator');
+  
+  if (languageSwitcher) {
+    languageSwitcher.addEventListener('click', () => {
+      const modal = document.getElementById('language-modal');
+      if (modal) modal.style.display = 'flex';
+    });
+  }
+  
+  if (languageIndicator) {
+    languageIndicator.addEventListener('click', () => {
+      const modal = document.getElementById('language-modal');
+      if (modal) modal.style.display = 'flex';
+    });
+  }
+  
+  // Close language modal
+  const languageModal = document.getElementById('language-modal');
+  if (languageModal) {
+    languageModal.addEventListener('click', (e) => {
+      if (e.target === languageModal) {
+        languageModal.style.display = 'none';
+      }
+    });
+  }
 }
 
 function navigateToDashboard(dashboardId) {
-  // Update page title
+  // Update page title and icon
   const pageTitle = document.getElementById('page-title');
-  if (pageTitle) {
-    const dashboardTitles = {
-      'farmer-dashboard': 'Farmer Dashboard',
-      'lab-dashboard': 'Lab Testing Dashboard',
-      'manufacturer-dashboard': 'Manufacturer Dashboard',
-      'consumer-portal': 'Consumer Portal',
-      'admin-dashboard': 'Admin Dashboard',
-      'blockchain-viewer': 'Blockchain Explorer'
-    };
-    pageTitle.textContent = dashboardTitles[dashboardId] || 'Dashboard';
-  }
+  const pageSubtitle = document.getElementById('page-subtitle');
+  const pageIcon = document.getElementById('page-icon');
+  
+  const dashboardConfig = {
+    'farmer-dashboard': {
+      title: 'Farmer Dashboard',
+      subtitle: 'Tag new herb collections and manage your farm data',
+      icon: '🌱'
+    },
+    'lab-dashboard': {
+      title: 'Lab Testing Dashboard',
+      subtitle: 'Quality testing and certification for herb batches',
+      icon: '🧪'
+    },
+    'manufacturer-dashboard': {
+      title: 'Manufacturer Dashboard',
+      subtitle: 'Product creation and supply chain management',
+      icon: '🏭'
+    },
+    'consumer-portal': {
+      title: 'Consumer Portal',
+      subtitle: 'Trace your Ayurvedic products from farm to formula',
+      icon: '👤'
+    },
+    'admin-dashboard': {
+      title: 'Admin Dashboard',
+      subtitle: 'System management and oversight',
+      icon: '⚙️'
+    },
+    'blockchain-viewer': {
+      title: 'Blockchain Explorer',
+      subtitle: 'View and verify the complete blockchain chain',
+      icon: '⛓️'
+    }
+  };
+  
+  const config = dashboardConfig[dashboardId] || {
+    title: 'Dashboard',
+    subtitle: 'Welcome to Krishi Platform',
+    icon: '📊'
+  };
+  
+  if (pageTitle) pageTitle.textContent = config.title;
+  if (pageSubtitle) pageSubtitle.textContent = config.subtitle;
+  if (pageIcon) pageIcon.textContent = config.icon;
   
   // Show appropriate dashboard
   hideAllDashboards();
@@ -93,7 +181,44 @@ function navigateToDashboard(dashboardId) {
     }
   });
   
+  // Update page icon color based on dashboard
+  if (pageIcon) {
+    const dashboardColors = {
+      'farmer-dashboard': 'var(--color-primary)',
+      'lab-dashboard': 'var(--color-info)',
+      'manufacturer-dashboard': 'var(--color-accent)',
+      'consumer-portal': 'var(--color-success)',
+      'admin-dashboard': 'var(--color-blockchain)',
+      'blockchain-viewer': 'var(--color-blockchain)'
+    };
+    
+    const color = dashboardColors[dashboardId] || 'var(--color-primary)';
+    pageIcon.style.background = `linear-gradient(135deg, ${color}, ${color})`;
+  }
+  
   currentDashboard = dashboardId;
+  
+  // Add dashboard-specific initialization
+  switch (dashboardId) {
+    case 'farmer-dashboard':
+      initFarmerDashboard();
+      break;
+    case 'lab-dashboard':
+      initLabDashboard();
+      break;
+    case 'manufacturer-dashboard':
+      initManufacturerDashboard();
+      break;
+    case 'consumer-portal':
+      initConsumerPortal();
+      break;
+    case 'admin-dashboard':
+      initAdminDashboard();
+      break;
+    case 'blockchain-viewer':
+      initBlockchainViewer();
+      break;
+  }
 }
 
 // Search Functionality
@@ -747,10 +872,152 @@ function formatTime(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+// Role-Based Navigation
+function initRoleBasedNavigation() {
+  // This function would be called after user authentication
+  // For now, we'll set up the basic structure
+  const userRole = getCurrentUserRole();
+  updateNavigationForRole(userRole);
+}
+
+function getCurrentUserRole() {
+  // This would get the role from Firebase auth or local storage
+  // For demo purposes, we'll use a default role
+  return localStorage.getItem('userRole') || 'consumer';
+}
+
+function updateNavigationForRole(userRole) {
+  const navItems = document.querySelectorAll('.nav-menu li');
+  
+  navItems.forEach(item => {
+    const roles = item.getAttribute('data-role');
+    if (!roles) return;
+    
+    const isVisible = checkRoleVisibility(roles, userRole);
+    item.style.display = isVisible ? 'block' : 'none';
+  });
+  
+  // Update user interface
+  updateUserInterface(userRole);
+}
+
+function checkRoleVisibility(roles, userRole) {
+  if (roles === 'all') return true;
+  if (roles === 'admin' && userRole === 'admin') return true;
+  if (roles.includes(userRole)) return true;
+  return false;
+}
+
+// User Interface Initialization
+function initUserInterface() {
+  // Update user info in sidebar
+  const userAvatar = document.getElementById('user-avatar');
+  const userName = document.getElementById('user-name');
+  const userRoleBadge = document.getElementById('user-role-badge');
+  
+  if (userAvatar) {
+    userAvatar.textContent = '👤'; // Would be user's actual avatar
+  }
+  
+  if (userName) {
+    userName.textContent = 'User Name'; // Would be actual user name
+  }
+  
+  if (userRoleBadge) {
+    userRoleBadge.textContent = 'Role'; // Would be actual role
+  }
+  
+  // Initialize language indicator
+  updateLanguageIndicator();
+  
+  // Initialize dashboard based on role
+  const userRole = getCurrentUserRole();
+  const defaultDashboard = getDefaultDashboard(userRole);
+  navigateToDashboard(defaultDashboard);
+}
+
+function updateUserInterface(userRole) {
+  const userRoleBadge = document.getElementById('user-role-badge');
+  const userRoleText = document.getElementById('user-role-text');
+  
+  if (userRoleBadge) {
+    userRoleBadge.textContent = userRole.toUpperCase();
+    userRoleBadge.className = `user-role-badge ${userRole}`;
+  }
+  
+  if (userRoleText) {
+    userRoleText.textContent = userRole.toUpperCase();
+  }
+  
+  // Update navigation visibility
+  updateNavigationForRole(userRole);
+}
+
+function getDefaultDashboard(userRole) {
+  const dashboardMap = {
+    'farmer': 'farmer-dashboard',
+    'lab': 'lab-dashboard',
+    'manufacturer': 'manufacturer-dashboard',
+    'consumer': 'consumer-portal',
+    'admin': 'admin-dashboard'
+  };
+  
+  return dashboardMap[userRole] || 'consumer-portal';
+}
+
+// Language Support
+function updateLanguageIndicator() {
+  const languageIndicator = document.getElementById('language-indicator');
+  const languageText = document.getElementById('language-text');
+  const languageFlag = document.querySelector('.language-flag');
+  
+  if (!languageIndicator || !languageText || !languageFlag) return;
+  
+  const currentLang = localStorage.getItem('language') || 'en';
+  
+  const languageConfig = {
+    'en': { text: 'English', flag: 'en' },
+    'hi': { text: 'हिन्दी', flag: 'hi' },
+    'gu': { text: 'ગુજરાતી', flag: 'gu' },
+    'mr': { text: 'मराठी', flag: 'mr' }
+  };
+  
+  const config = languageConfig[currentLang];
+  if (config) {
+    languageText.textContent = config.text;
+    languageFlag.className = `language-flag ${config.flag}`;
+  }
+}
+
+// Toast Notifications
+function showToast(message, type = 'info') {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  
+  toastContainer.appendChild(toast);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.add('fade-out');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 3000);
+}
+
 // Export for global use
 window.krishiApp = {
   navigateToDashboard,
   addNotification,
   showToast,
-  formatTime
+  formatTime,
+  initRoleBasedNavigation,
+  updateNavigationForRole,
+  getCurrentUserRole,
+  updateUserInterface,
+  getDefaultDashboard
 };

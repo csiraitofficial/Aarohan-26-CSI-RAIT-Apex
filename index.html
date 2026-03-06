@@ -165,70 +165,77 @@
         <!-- Sidebar Navigation -->
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
-                <div class="brand">
+                <div class="sidebar-brand">
                     <div class="logo">🌿</div>
-                    <h2>Krishi</h2>
+                    <div>
+                        <h2>Krishi</h2>
+                        <span style="font-size: 10px; opacity: 0.8; letter-spacing: 0.05em;">Blockchain Traceability</span>
+                    </div>
                 </div>
                 <button id="sidebar-toggle" class="sidebar-toggle">
-                    <span class="ph ph-list"></span>
+                    <span class="ph ph-x"></span>
                 </button>
             </div>
             
             <nav class="nav-menu">
                 <ul>
-                    <li data-role="farmer,admin">
+                    <li class="nav-item farmer-only" data-role="farmer,admin">
                         <a href="#farmer-dashboard">
                             <span class="ph ph-plant"></span>
-                            <span>Farmers</span>
+                            <span class="nav-label">Farmers</span>
                         </a>
                     </li>
-                    <li data-role="lab,admin">
+                    <li class="nav-item lab-only" data-role="lab,admin">
                         <a href="#lab-dashboard">
                             <span class="ph ph-flask"></span>
-                            <span>Lab Testing</span>
+                            <span class="nav-label">Lab Testing</span>
                         </a>
                     </li>
-                    <li data-role="manufacturer,admin">
+                    <li class="nav-item manufacturer-only" data-role="manufacturer,admin">
                         <a href="#manufacturer-dashboard">
                             <span class="ph ph-factory"></span>
-                            <span>Manufacturing</span>
+                            <span class="nav-label">Manufacturing</span>
                         </a>
                     </li>
-                    <li data-role="all">
+                    <li class="nav-item consumer-only" data-role="all">
                         <a href="#consumer-portal">
                             <span class="ph ph-user"></span>
-                            <span>Consumer</span>
+                            <span class="nav-label">Consumer</span>
                         </a>
                     </li>
-                    <li data-role="admin">
+                    <li class="nav-item admin-only" data-role="admin">
                         <a href="#admin-dashboard">
                             <span class="ph ph-gear"></span>
-                            <span>Admin</span>
+                            <span class="nav-label">Admin</span>
                         </a>
                     </li>
-                    <li data-role="all">
+                    <li class="nav-item all-roles" data-role="all">
                         <a href="#blockchain-viewer">
                             <span class="ph ph-blockchain"></span>
-                            <span>Blockchain</span>
+                            <span class="nav-label">Blockchain</span>
                         </a>
                     </li>
                 </ul>
             </nav>
 
             <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="avatar" id="user-avatar">👤</div>
-                    <div class="user-details">
-                        <span class="user-name" id="user-name">User Name</span>
-                        <span class="user-role" id="user-role">Role</span>
+                <div class="user-section">
+                    <div class="user-avatar" id="user-avatar">👤</div>
+                    <div class="user-info">
+                        <div class="user-name" id="user-name">User Name</div>
+                        <div class="user-role">
+                            <span class="user-role-badge" id="user-role-badge">Role</span>
+                        </div>
                     </div>
                 </div>
                 <div class="sidebar-actions">
-                    <button id="language-switcher" class="btn-icon" title="Language">
+                    <button id="language-switcher" class="sidebar-action-btn secondary" title="Language">
                         <span class="ph ph-translate"></span>
+                        <span>Language</span>
                     </button>
-                    <button id="logout-btn" class="btn-icon" title="Logout">
+                    <button id="logout-btn" class="sidebar-action-btn" title="Logout">
                         <span class="ph ph-sign-out"></span>
+                        <span>Logout</span>
                     </button>
                 </div>
             </div>
@@ -236,23 +243,39 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Header -->
+            <!-- Enhanced Header -->
             <header class="app-header">
                 <button id="mobile-menu-toggle" class="mobile-menu-toggle">
                     <span class="ph ph-list"></span>
                 </button>
-                <h1 id="page-title">Dashboard</h1>
+                
+                <div class="page-title-container">
+                    <div class="page-icon" id="page-icon">📊</div>
+                    <div>
+                        <h1 id="page-title" class="page-title">Dashboard</h1>
+                        <p id="page-subtitle" class="page-subtitle">Welcome to Krishi Platform</p>
+                    </div>
+                </div>
+
                 <div class="header-actions">
-                    <button id="search-btn" class="btn-icon" title="Search">
-                        <span class="ph ph-magnifying-glass"></span>
-                    </button>
-                    <button id="notifications-btn" class="btn-icon" title="Notifications">
-                        <span class="ph ph-bell"></span>
-                        <span id="notification-badge" class="notification-badge">0</span>
-                    </button>
-                    <button id="chatbot-toggle" class="btn-icon" title="Help">
-                        <span class="ph ph-chat-circle"></span>
-                    </button>
+                    <div class="header-action-group">
+                        <button id="search-btn" class="header-btn" title="Search">
+                            <span class="ph ph-magnifying-glass"></span>
+                        </button>
+                        <button id="notifications-btn" class="header-btn" title="Notifications">
+                            <span class="ph ph-bell"></span>
+                            <span id="notification-badge" class="notification-badge">0</span>
+                        </button>
+                        <button id="chatbot-toggle" class="header-btn" title="Help">
+                            <span class="ph ph-chat-circle"></span>
+                        </button>
+                    </div>
+                    
+                    <div class="language-indicator" id="language-indicator">
+                        <span class="language-flag en"></span>
+                        <span id="language-text">English</span>
+                        <span class="ph ph-caret-down"></span>
+                    </div>
                 </div>
             </header>
 
