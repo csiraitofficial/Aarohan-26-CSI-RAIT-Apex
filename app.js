@@ -151,6 +151,10 @@ function loadFarmerDashboard() {
                         <input type="date" id="collection-date" required>
                     </div>
                     <div class="form-group">
+                        <label for="price">Price (₹ per kg):</label>
+                        <input type="number" id="price" min="1" required placeholder="Enter price in ₹">
+                    </div>
+                    <div class="form-group">
                         <label>Farm Location:</label>
                         <div id="farmer-map" class="map-container" style="height: 250px;">
                             GPS Location will be captured automatically
@@ -228,6 +232,79 @@ function loadFarmerDashboard() {
                     document.getElementById('farmer-map').dataset.lng = lng;
                 }, { timeout: 10000 });
             }
+        }
+    }, 100);
+
+    // Handle form submission — IMPORTANT: Avoid duplicate listeners by
+    // removing any previously assigned handler before attaching a new one.
+    setTimeout(() => {
+        const form = document.getElementById('herb-collection-form');
+        if (form) {
+            // Remove old listener if it exists to prevent duplicate batch creation
+            if (form._farmerSubmitHandler) {
+                form.removeEventListener('submit', form._farmerSubmitHandler);
+            }
+
+            form._farmerSubmitHandler = function (e) {
+                e.preventDefault();
+
+                const farmerName = document.getElementById('farmer-name').value;
+                const herbType = document.getElementById('herb-type').value;
+                const quantity = document.getElementById('quantity').value;
+                const collectionDate = document.getElementById('collection-date').value;
+                const price = document.getElementById('price').value;
+                const lat = document.getElementById('farmer-map').dataset.lat || 23.25;
+                const lng = document.getElementById('farmer-map').dataset.lng || 77.41;
+
+                // Generate a unique batch ID using timestamp + random suffix to avoid collisions
+                const batchId = 'BATCH-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
+
+                const herbData = {
+                    type: 'collection',
+                    batchId: batchId,
+                    farmer: { id: 'FARMER-' + (farmerName.split(' ')[0] || 'DEMO').toUpperCase(), name: farmerName },
+                    herbType: herbType,
+                    quantity: parseFloat(quantity),
+                    price: parseFloat(price),
+                    collectionDate: collectionDate,
+                    location: { latitude: lat, longitude: lng, address: 'Farm Location' },
+                    status: 'collected',
+                    timestamp: new Date().toISOString()
+                };
+
+                addHerbTransaction(herbData);
+                if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+                // Show full details in the success message
+                const herbDisplayName = herbType.charAt(0).toUpperCase() + herbType.slice(1);
+                const totalValue = (parseFloat(price) * parseFloat(quantity)).toLocaleString('en-IN');
+                const successMsg = [
+                    `✅ Batch successfully registered on VaidyaChain Blockchain!`,
+                    ``,
+                    `📦 Batch ID   : ${batchId}`,
+                    `👨‍🌾 Farmer     : ${farmerName}`,
+                    `🌿 Herb Type  : ${herbDisplayName}`,
+                    `⚖️  Quantity   : ${quantity} kg`,
+                    `📅 Harvest Date: ${collectionDate}`,
+                    `💰 Price      : ₹${price}/kg`,
+                    `💵 Total Value : ₹${totalValue}`,
+                    `📍 Location   : (${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)})`
+                ].join('\n');
+
+                if (window.showNotification) {
+                    window.showNotification(
+                        `Batch ${batchId} registered! ${herbDisplayName} | ${quantity}kg @ ₹${price}/kg | Farmer: ${farmerName}`,
+                        'success'
+                    );
+                }
+                // Always show full detail alert
+                alert(successMsg);
+
+                this.reset();
+                updateRecentCollections();
+            };
+
+            form.addEventListener('submit', form._farmerSubmitHandler);
         }
     }, 100);
 
@@ -326,13 +403,31 @@ function updateRecentCollections() {
 
     let html = '';
     collectionTransactions.slice(-5).reverse().forEach(tx => {
+        const d = tx.data;
+        const herbDisplay = d.herbType ? (d.herbType.charAt(0).toUpperCase() + d.herbType.slice(1)) : 'N/A';
+        const farmerName = d.farmer ? d.farmer.name : 'N/A';
+        const farmerId = d.farmer ? d.farmer.id : 'N/A';
+        const price = d.price ? `₹${parseFloat(d.price).toLocaleString('en-IN')}/kg` : 'N/A';
+        const totalValue = (d.price && d.quantity) ? `₹${(parseFloat(d.price) * parseFloat(d.quantity)).toLocaleString('en-IN')}` : 'N/A';
+        const locStr = d.location ? `${parseFloat(d.location.latitude).toFixed(4)}, ${parseFloat(d.location.longitude).toFixed(4)}` : 'N/A';
+        const submittedAt = d.timestamp ? new Date(d.timestamp).toLocaleString() : 'N/A';
+
         html += `
-            <div class="herb-card">
-                <h4>${tx.data.herbType} (Batch: ${tx.data.batchId})</h4>
-                <p><strong>Date:</strong> ${tx.data.collectionDate}</p>
-                <p><strong>Quantity:</strong> ${tx.data.quantity} kg</p>
-                <p><strong>Location:</strong> ${tx.data.location.latitude}, ${tx.data.location.longitude}</p>
-                <p><strong>Status:</strong> ${tx.data.status}</p>
+            <div class="herb-card" style="border-left: 4px solid var(--primary); margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="margin:0;">🌿 ${herbDisplay} &nbsp;<span style="font-size:0.8rem; color:#666;">(${d.batchId})</span></h4>
+                    <span class="status-badge status-success">${d.status || 'collected'}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; font-size: 0.88rem;">
+                    <p style="margin:2px 0;"><strong>👨‍🌾 Farmer:</strong> ${farmerName}</p>
+                    <p style="margin:2px 0;"><strong>🪪 Farmer ID:</strong> ${farmerId}</p>
+                    <p style="margin:2px 0;"><strong>📅 Harvest Date:</strong> ${d.collectionDate || 'N/A'}</p>
+                    <p style="margin:2px 0;"><strong>⚖️ Quantity:</strong> ${d.quantity} kg</p>
+                    <p style="margin:2px 0;"><strong>💰 Price/kg:</strong> ${price}</p>
+                    <p style="margin:2px 0;"><strong>💵 Total Value:</strong> ${totalValue}</p>
+                    <p style="margin:2px 0;"><strong>📍 Location:</strong> ${locStr}</p>
+                    <p style="margin:2px 0;"><strong>🕐 Submitted:</strong> ${submittedAt}</p>
+                </div>
             </div>
         `;
     });
@@ -565,6 +660,29 @@ function loadLabDashboard() {
         if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
 
         alert(`Lab test results recorded! Batch ${batchId} ${passesTests ? 'PASSED' : 'FAILED'}.`);
+
+        // Smart Contract Settlement (Automated)
+        if (passesTests) {
+            const batchHistory = getBatchHistory(batchId);
+            const collectionTx = batchHistory.find(tx => tx.data.type === 'collection');
+            if (collectionTx && collectionTx.data.farmer) {
+                try {
+                    const releaseResult = executeSmartContract('paymentContract', 'releasePayment', {
+                        farmerId: collectionTx.data.farmer.id,
+                        batchId: batchId,
+                        percentage: 100
+                    });
+
+                    if (releaseResult.success) {
+                        if (window.showNotification) {
+                            window.showNotification(`Smart Contract: Payment of ₹${releaseResult.amount.toLocaleString()} released to farmer!`, 'success');
+                        }
+                    }
+                } catch (error) {
+                    console.log('Payment release check:', error.message);
+                }
+            }
+        }
 
         // Show PDF button after verification
         document.getElementById('generate-pdf-btn').style.display = 'block';
@@ -859,10 +977,22 @@ function loadManufacturerDashboard() {
                 </div>
             </div>
             
+            <!-- Marketplace / Buy Batches Section -->
+            <div class="herb-card" id="manufacturer-marketplace">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3>🛒 Herb Marketplace</h3>
+                    <span class="status-badge status-success" id="manufacturer-wallet-display">Wallet: ₹50,000</span>
+                </div>
+                <p class="dashboard-subtitle">Browse and purchase available herb batches from farmers</p>
+                <div id="marketplace-list" class="batch-grid">
+                    <p>Loading available batches...</p>
+                </div>
+            </div>
+
             <!-- Batch History Section -->
             <div class="herb-card">
-                <h3>📦 Available Batch History</h3>
-                <p class="dashboard-subtitle">Batches received from farmers - ready for quality testing</p>
+                <h3>📦 Your Purchased Batches</h3>
+                <p class="dashboard-subtitle">Batches you have purchased - ready for quality testing</p>
                 <div id="batch-history-list"></div>
             </div>
             
@@ -938,6 +1068,9 @@ function loadManufacturerDashboard() {
 
     // Load batch history
     loadBatchHistoryList();
+
+    // Load marketplace
+    loadMarketplaceList();
 
     // Populate send to lab dropdown
     loadBatchesForSendToLab();
@@ -1184,60 +1317,208 @@ function loadSuppliersList() {
 }
 
 
+function loadMarketplaceList() {
+    const container = document.getElementById('marketplace-list');
+    if (!container) return;
+
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    // Find batches that are already purchased
+    const purchasedBatchIds = allTransactions
+        .filter(tx => tx.data.type === 'purchase')
+        .map(tx => tx.data.batchId);
+
+    const availableBatches = collectionTransactions.filter(tx => !purchasedBatchIds.includes(tx.data.batchId));
+
+    if (availableBatches.length === 0) {
+        container.innerHTML = '<p style="color: #666; grid-column: 1/-1; text-align: center; padding: 2rem;">No new batches available in the marketplace.</p>';
+        return;
+    }
+
+    let html = '';
+    availableBatches.reverse().forEach(tx => {
+        const data = tx.data;
+        const totalPrice = (data.price || 0) * (data.quantity || 0);
+
+        html += `
+            <div class="batch-card" style="border-top: 4px solid var(--accent);">
+                <div class="batch-header">
+                    <h4>${data.herbType}</h4>
+                    <span class="status-badge status-info">₹${data.price}/kg</span>
+                </div>
+                <div class="batch-details">
+                    <p><strong>Batch ID:</strong> ${data.batchId}</p>
+                    <p><strong>Farmer:</strong> ${data.farmer ? data.farmer.name : 'N/A'}</p>
+                    <p><strong>Quantity:</strong> ${data.quantity} kg</p>
+                    <p><strong>Total Value:</strong> ₹${totalPrice.toLocaleString()}</p>
+                    <p><strong>Location:</strong> ${data.location ? (data.location.address || 'Farm') : 'Farm'}</p>
+                </div>
+                <div class="batch-actions" style="margin-top: 1rem;">
+                    <button class="action-btn" style="width: 100%; background: var(--accent);" onclick="buyBatch('${data.batchId}', ${totalPrice})">
+                        <i class="ph ph-shopping-cart"></i> Buy & Lock Funds
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+window.buyBatch = function (batchId, amount) {
+    if (!confirm(`Are you sure you want to purchase Batch ${batchId} for ₹${amount.toLocaleString()}? Funds will be locked in the Smart Contract Escrow.`)) {
+        return;
+    }
+
+    const transactions = getBatchHistory(batchId);
+    const collectionData = transactions.find(tx => tx.data.type === 'collection');
+
+    if (!collectionData) {
+        alert('Batch data not found!');
+        return;
+    }
+
+    const txnId = 'TXN-' + Math.floor(100000 + Math.random() * 900000);
+
+    // 1. Record Purchase on Blockchain
+    const purchaseData = {
+        type: 'purchase',
+        batchId: batchId,
+        txnId: txnId,
+        buyer: 'Ayurveda Essentials Pvt. Ltd.',
+        seller: collectionData.data.farmer,
+        amount: amount,
+        status: 'Funds Locked in Escrow 🔒',
+        timestamp: new Date().toISOString()
+    };
+
+    addHerbTransaction(purchaseData);
+
+    // 2. Deposit Funds into Smart Contract (Escrow)
+    try {
+        executeSmartContract('paymentContract', 'deposit', {
+            farmerId: collectionData.data.farmer.id,
+            amount: amount,
+            productId: batchId
+        });
+
+        // 3. Log Transit Initiation with IoT Tracking
+        const transitData = {
+            type: 'logistics',
+            batchId: batchId,
+            status: 'In Transit',
+            location: 'Pickup from Farm',
+            iot: {
+                temp: (20 + Math.random() * 5).toFixed(1) + '°C',
+                humidity: (60 + Math.random() * 10).toFixed(1) + '%',
+                vibration: 'Normal'
+            },
+            timestamp: new Date().toISOString()
+        };
+        addHerbTransaction(transitData);
+
+        if (window.showNotification) {
+            window.showNotification(`Purchase successful! TXN: ${txnId}. Funds locked in Escrow.`, 'success');
+        } else {
+            alert(`Purchase successful!\nTransaction ID: ${txnId}\nStatus: Funds Locked in Escrow 🔒\nLogistics: In Transit`);
+        }
+
+        // Refresh UI
+        loadMarketplaceList();
+        loadBatchHistoryList();
+        loadBatchesForSendToLab();
+
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+    } catch (error) {
+        alert('Payment Escrow Failed: ' + error.message);
+    }
+};
+
 // Load batch history list for manufacturer
 function loadBatchHistoryList() {
     const container = document.getElementById('batch-history-list');
     if (!container) return;
 
     const allTransactions = getAllHerbTransactions();
-    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
 
-    if (collectionTransactions.length === 0) {
-        container.innerHTML = '<p style="color: #666;">No batches received from farmers yet.</p>';
+    // Filter for batches purchased by this manufacturer
+    const purchasedTransactions = allTransactions.filter(tx => tx.data.type === 'purchase');
+    const purchasedBatchIds = purchasedTransactions.map(tx => tx.data.batchId);
+
+    if (purchasedBatchIds.length === 0) {
+        container.innerHTML = '<p style="color: #666; grid-column: 1/-1; text-align: center; padding: 2rem;">You haven\'t purchased any batches yet. Visit the Marketplace to buy herbs.</p>';
         return;
     }
 
     let html = '<div class="batch-grid">';
-    collectionTransactions.reverse().forEach(tx => {
-        const data = tx.data;
-        const location = data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A';
+    purchasedBatchIds.reverse().forEach(batchId => {
+        const batchHistory = getBatchHistory(batchId);
+        const collectionTx = batchHistory.find(tx => tx.data.type === 'collection');
+        const purchaseTx = batchHistory.find(tx => tx.data.type === 'purchase');
+        const logisticsTx = batchHistory.filter(tx => tx.data.type === 'logistics');
+        const labTx = batchHistory.filter(tx => tx.data.type === 'lab-test');
+        const settlementTx = batchHistory.find(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'PaymentReleased');
 
-        // Check if batch has been tested
-        const batchHistory = getBatchHistory(data.batchId);
-        const labTests = batchHistory.filter(t => t.data.type === 'lab-test');
-        const hasTest = labTests.length > 0;
-        const latestTest = hasTest ? labTests[labTests.length - 1] : null;
+        const data = collectionTx.data;
+        const currentLogistics = logisticsTx.length > 0 ? logisticsTx[logisticsTx.length - 1].data : { status: 'Awaiting Pickup' };
+        const latestLab = labTx.length > 0 ? labTx[labTx.length - 1].data : null;
 
-        let statusBadge = '';
-        let statusClass = 'pending';
+        let statusBadge = '<span class="status-badge status-info">Funds Escrowed 🔒</span>';
+        let statusClass = 'escrow';
 
-        if (hasTest) {
-            if (latestTest.data.testResult === 'pass') {
-                statusBadge = '<span class="status-badge status-success">✓ Lab Approved</span>';
-                statusClass = 'approved';
+        if (settlementTx) {
+            statusBadge = '<span class="status-badge status-success">Payment Released 🔓</span>';
+            statusClass = 'settled';
+        } else if (latestLab) {
+            if (latestLab.testResult === 'pass') {
+                statusBadge = '<span class="status-badge status-success">Quality Passed ✅</span>';
+                statusClass = 'passed';
             } else {
-                statusBadge = '<span class="status-badge status-danger">✗ Lab Failed</span>';
+                statusBadge = '<span class="status-badge status-danger">Quality Failed ❌</span>';
                 statusClass = 'failed';
             }
-        } else {
-            statusBadge = '<span class="status-badge status-warning">⏳ Pending Test</span>';
+        } else if (currentLogistics.status === 'In Transit') {
+            statusBadge = '<span class="status-badge status-warning">In Transit 🚚</span>';
+            statusClass = 'transit';
         }
 
+        // Gather all farmer details for the manufacturer view
+        const farmerName = data.farmer ? data.farmer.name : 'N/A';
+        const farmerId = data.farmer ? data.farmer.id : 'N/A';
+        const herbDisplay = data.herbType ? (data.herbType.charAt(0).toUpperCase() + data.herbType.slice(1)) : 'N/A';
+        const pricePerKg = data.price ? `₹${parseFloat(data.price).toLocaleString('en-IN')}/kg` : 'N/A';
+        const harvestDate = data.collectionDate || 'N/A';
+        const locStr = data.location ? (data.location.address || `${parseFloat(data.location.latitude).toFixed(4)}, ${parseFloat(data.location.longitude).toFixed(4)}`) : 'N/A';
+
         html += `
-            <div class="batch-card batch-card-${statusClass}">
+            <div class="batch-card batch-card-${statusClass}" style="border-left: 5px solid ${statusClass === 'settled' ? '#10b981' : '#f59e0b'};">
                 <div class="batch-header">
-                    <h4>${data.herbType}</h4>
+                    <h4>🌿 ${herbDisplay} &nbsp;<span style="font-size:0.8rem;color:#666;">(${batchId})</span></h4>
                     ${statusBadge}
                 </div>
-                <div class="batch-details">
-                    <p><strong>Batch ID:</strong> ${data.batchId}</p>
-                    <p><strong>Farmer:</strong> ${data.farmer ? data.farmer.name : 'N/A'}</p>
-                    <p><strong>Quantity:</strong> ${data.quantity} kg</p>
-                    <p><strong>Harvest Date:</strong> ${data.collectionDate}</p>
-                    <p><strong>Location:</strong> ${location}</p>
+                <div class="batch-details" style="font-size: 0.88rem;">
+                    <p><strong>👨‍🌾 Farmer Name:</strong> ${farmerName}</p>
+                    <p><strong>🪪 Farmer ID:</strong> ${farmerId}</p>
+                    <p><strong>📅 Harvest Date:</strong> ${harvestDate}</p>
+                    <p><strong>⚖️ Quantity:</strong> ${data.quantity} kg</p>
+                    <p><strong>💰 Price per kg:</strong> ${pricePerKg}</p>
+                    <p><strong>💵 Purchase Amount:</strong> ₹${purchaseTx.data.amount.toLocaleString()}</p>
+                    <p><strong>📍 Farm Location:</strong> ${locStr}</p>
+                    <p><strong>🚚 Transit Status:</strong> ${currentLogistics.status}</p>
+                    <p><strong>🔒 Escrow Status:</strong> ${settlementTx ? '✅ Payment Released' : '🔒 Locked in Escrow'}</p>
+                    <p><strong>📋 Transaction ID:</strong> ${purchaseTx.data.txnId}</p>
+                    ${currentLogistics.iot ? `
+                    <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f0fdf4; border-radius: 4px; font-size: 0.8rem; display: flex; gap: 10px;">
+                        <span>🌡️ ${currentLogistics.iot.temp}</span>
+                        <span>💧 ${currentLogistics.iot.humidity}</span>
+                        <span>🛰️ IoT Active</span>
+                    </div>
+                    ` : ''}
                 </div>
-                <div class="batch-actions">
-                    ${!hasTest ? `<button class="action-btn" onclick="quickSendToLab('${data.batchId}')">🧪 Send to Lab</button>` : ''}
+                <div class="batch-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    ${currentLogistics.status === 'In Transit' ? `<button class="action-btn outline" style="flex: 1;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">Confirm Delivery</button>` : ''}
+                    ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `<button class="action-btn" style="flex: 1;" onclick="quickSendToLab('${batchId}')">Test Quality</button>` : ''}
                 </div>
             </div>
         `;
@@ -1246,6 +1527,23 @@ function loadBatchHistoryList() {
 
     container.innerHTML = html;
 }
+
+window.updateLogistics = function (batchId, status) {
+    const transitData = {
+        type: 'logistics',
+        batchId: batchId,
+        status: status,
+        location: 'Manufacturer Facility',
+        timestamp: new Date().toISOString()
+    };
+    addHerbTransaction(transitData);
+    if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+    if (window.showNotification) {
+        window.showNotification(`Logistics status updated: ${status}`, 'info');
+    }
+    loadBatchHistoryList();
+};
 
 // Quick send to lab function
 window.quickSendToLab = function (batchId) {
