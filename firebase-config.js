@@ -1,13 +1,13 @@
-// Firebase Configuration Template
-// Replace the placeholder values with your actual Firebase project configuration
+// Firebase Configuration
+// Generated for Krishi Herb Traceability project
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyCmYYYyjTpWQ3jp8t_AjMsYb4zEggkM11M",
   authDomain: "krishi-herb-traceability.firebaseapp.com",
   projectId: "krishi-herb-traceability",
-  storageBucket: "krishi-herb-traceability.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  storageBucket: "krishi-herb-traceability.firebasestorage.app",
+  messagingSenderId: "215810749439",
+  appId: "1:215810749439:web:d929cc30bc1400856badca"
 };
 
 // Initialize Firebase
