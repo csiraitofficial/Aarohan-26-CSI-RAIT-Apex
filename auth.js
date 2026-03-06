@@ -302,9 +302,36 @@ function showLoginModal() {
                     
                     <!-- Login Form -->
                     <div id="login-form" class="auth-form active">
-                        <!-- Google Sign In Button -->
-                        <button type="button" id="google-signin-btn" class="google-signin-btn" onclick="handleGoogleSignIn()">
-                            <svg class="google-icon" viewBox="0 0 24 24">
+                        <!-- Email/Password Fields -->
+                        <div class="form-group" style="margin-bottom: 0.6rem;">
+                            <label for="login-email" style="font-size: 0.8rem; font-weight: 600; color: var(--foreground); display:block; margin-bottom:0.25rem;">Email Address</label>
+                            <input type="email" id="login-email" placeholder="your@email.com"
+                                   style="width:100%; padding:0.45rem 0.75rem; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; outline:none; transition:border-color 0.2s; box-sizing:border-box;"
+                                   onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label for="login-password" style="font-size: 0.8rem; font-weight: 600; color: var(--foreground); display:block; margin-bottom:0.25rem;">Password</label>
+                            <div style="position:relative;">
+                                <input type="password" id="login-password" placeholder="Enter your password"
+                                       style="width:100%; padding:0.45rem 2.2rem 0.45rem 0.75rem; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; outline:none; transition:border-color 0.2s; box-sizing:border-box;"
+                                       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"
+                                       onkeydown="if(event.key==='Enter') handleEmailSignIn()">
+                                <button type="button" onclick="const i=document.getElementById('login-password'); i.type=i.type==='password'?'text':'password'; this.innerHTML=i.type==='password'?'<i class=\'ph ph-eye\'></i>':'<i class=\'ph ph-eye-slash\'></i>';"
+                                        style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--muted-foreground); padding:0; font-size:0.95rem; line-height:1;">
+                                    <i class="ph ph-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" id="email-signin-btn" class="primary-btn" onclick="handleEmailSignIn()" style="width:100%; padding:0.5rem; font-size:0.875rem; font-weight:600; margin-bottom:0.75rem;">
+                            <i class="ph ph-sign-in" style="margin-right:0.3rem;"></i> Sign In
+                        </button>
+                        <div style="display:flex; align-items:center; gap:0.6rem; margin:0.5rem 0 0.75rem;">
+                            <span style="flex:1; height:1px; background:var(--border);"></span>
+                            <span style="font-size:0.75rem; color:var(--muted-foreground); white-space:nowrap;">or continue with</span>
+                            <span style="flex:1; height:1px; background:var(--border);"></span>
+                        </div>
+                        <button type="button" id="google-signin-btn" class="google-signin-btn" onclick="handleGoogleSignIn()" style="padding:0.45rem 1rem; font-size:0.85rem;">
+                            <svg class="google-icon" viewBox="0 0 24 24" style="width:16px;height:16px;">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -312,37 +339,43 @@ function showLoginModal() {
                             </svg>
                             <span>Continue with Google</span>
                         </button>
-                        
-                        <div class="login-divider">
-                            <span>Secure authentication powered by Firebase</span>
-                        </div>
                     </div>
                     
                     <!-- Register Form -->
                     <div id="register-form" class="auth-form" style="display: none;">
-                        <div class="form-group">
-                            <label for="register-name">Full Name</label>
-                            <input type="text" id="register-name" placeholder="Enter your full name">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem 0.75rem; margin-bottom:0.5rem;">
+                            <div style="grid-column:1/-1;">
+                                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.2rem;">Full Name</label>
+                                <input type="text" id="register-name" placeholder="Your full name"
+                                       style="width:100%; padding:0.45rem 0.75rem; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; outline:none; box-sizing:border-box;"
+                                       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.2rem;">Email Address</label>
+                                <input type="email" id="register-email" placeholder="your@email.com"
+                                       style="width:100%; padding:0.45rem 0.75rem; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; outline:none; box-sizing:border-box;"
+                                       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.2rem;">Password</label>
+                                <input type="password" id="register-password" placeholder="Min. 6 characters"
+                                       style="width:100%; padding:0.45rem 0.75rem; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; outline:none; box-sizing:border-box;"
+                                       onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:600; display:block; margin-bottom:0.2rem;">I am a</label>
+                                <select id="register-role"
+                                        style="width:100%; padding:0.45rem 0.75rem; border:1.5px solid var(--border); border-radius:var(--radius); font-size:0.85rem; outline:none; box-sizing:border-box; background:white;"
+                                        onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+                                    <option value="consumer">Consumer</option>
+                                    <option value="farmer">Farmer</option>
+                                    <option value="manufacturer">Manufacturer</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="register-email">Email Address</label>
-                            <input type="email" id="register-email" placeholder="Enter your email">
-                        </div>
-                        <div class="form-group">
-                            <label for="register-password">Password</label>
-                            <input type="password" id="register-password" placeholder="Create a password">
-                        </div>
-                        <div class="form-group">
-                            <label for="register-role">I am a:</label>
-                            <select id="register-role">
-                                <option value="consumer">Consumer</option>
-                                <option value="farmer">Farmer</option>
-                                <option value="manufacturer">Manufacturer</option>
-                                <option value="admin">Admin</option>
-                            </select>
-                        </div>
-                        <button type="button" class="primary-btn" onclick="handleRegister()" style="width: 100%; margin-top: 1rem;">
-                            Create Account
+                        <button type="button" class="primary-btn" onclick="handleRegister()" style="width:100%; padding:0.5rem; font-size:0.875rem; font-weight:600; margin-top:0.5rem;">
+                            <i class="ph ph-user-plus" style="margin-right:0.3rem;"></i> Create Account
                         </button>
                     </div>
                 </div>
@@ -395,6 +428,98 @@ function selectLoginRole(role) {
             btn.classList.add('selected');
         }
     });
+}
+
+// Handle Email/Password Sign-In
+async function handleEmailSignIn() {
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    const signInBtn = document.getElementById('email-signin-btn');
+
+    if (!emailInput || !passwordInput) return;
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+        if (window.showNotification) window.showNotification('Please enter both email and password.', 'error');
+        else alert('Please enter both email and password.');
+        return;
+    }
+
+    if (signInBtn) {
+        signInBtn.disabled = true;
+        signInBtn.innerHTML = '<div class="loading-spinner" style="width:16px;height:16px;display:inline-block;margin-right:0.5rem;"></div> Signing in…';
+    }
+
+    try {
+        const result = await firebase.auth().signInWithEmailAndPassword(email, password);
+        const user = result.user;
+
+        console.log('Email Sign-In successful for:', user.email);
+
+        // Get role from Firestore (source of truth)
+        let userRole = await getUserRoleFromFirestore(user.uid);
+
+        if (!userRole) {
+            // Fallback: check localStorage
+            const stored = localStorage.getItem('vaidyachain_user');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                if (parsed.email === user.email && parsed.role) {
+                    userRole = parsed.role;
+                    await saveUserRoleToFirestore(user.uid, user.email, user.displayName, userRole);
+                }
+            }
+        }
+
+        if (!userRole) {
+            // Final fallback: derive from email pattern
+            userRole = getUserRole(user.email);
+            await saveUserRoleToFirestore(user.uid, user.email, user.displayName, userRole);
+        }
+
+        const userData = {
+            email: user.email,
+            displayName: user.displayName || email.split('@')[0],
+            photoURL: user.photoURL,
+            uid: user.uid,
+            role: userRole
+        };
+        localStorage.setItem('vaidyachain_user', JSON.stringify(userData));
+
+        currentUser = user;
+        currentUserRole = userRole;
+
+        closeLoginModal();
+        updateUIForLoggedInUser(user, userRole);
+        applyRoleBasedSidebar(userRole);
+        showAppDashboard();
+
+        if (window.showNotification) {
+            window.showNotification(`Welcome back, ${user.displayName || user.email}!`, 'success');
+        }
+
+    } catch (error) {
+        console.error('Email Sign-In Error:', error);
+
+        let msg = 'Sign-in failed. Please try again.';
+        if (error.code === 'auth/user-not-found') msg = 'No account found with this email. Please register first.';
+        else if (error.code === 'auth/wrong-password') msg = 'Incorrect password. Please try again.';
+        else if (error.code === 'auth/invalid-email') msg = 'Please enter a valid email address.';
+        else if (error.code === 'auth/invalid-credential') msg = 'Invalid email or password. Please check and try again.';
+        else if (error.code === 'auth/too-many-requests') msg = 'Too many failed attempts. Please try again later or reset your password.';
+        else if (error.code === 'auth/network-request-failed') msg = 'Network error. Please check your connection.';
+
+        if (window.showNotification) window.showNotification(msg, 'error');
+        else alert(msg);
+
+    } finally {
+        if (signInBtn) {
+            signInBtn.disabled = false;
+            signInBtn.innerHTML = '<i class="ph ph-sign-in" style="margin-right:0.4rem;"></i> Sign In';
+        }
+    }
 }
 
 // Handle Google Sign-In
@@ -808,6 +933,7 @@ window.showLoginModalWithRole = showLoginModalWithRole;
 window.closeLoginModal = closeLoginModal;
 window.handleLogout = handleLogout;
 window.handleGoogleSignIn = handleGoogleSignIn;
+window.handleEmailSignIn = handleEmailSignIn;
 window.selectLoginRole = selectLoginRole;
 window.getCurrentUserRole = () => currentUserRole;
 window.getCurrentUser = () => currentUser;
