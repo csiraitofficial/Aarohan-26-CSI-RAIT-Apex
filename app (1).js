@@ -245,6 +245,133 @@ function refundLockedFunds(batchId) {
     if (window.showNotification) window.showNotification(`Lab check failed! ₹${amount.toLocaleString()} refunded to your wallet.`, 'warning');
 }
 
+// ── WALLET & ESCROW SYSTEM ───────────────────────────────────
+
+/**
+ * Gets the current wallet balance for a user
+ * @param {string} userId - User UID
+ * @param {string} role - User role (farmer, manufacturer)
+ * @returns {number} Current balance
+ */
+function getWalletBalance(userId, role) {
+    if (!userId) return 0;
+    const key = `vaidyachain_wallet_${userId}`;
+    const stored = localStorage.getItem(key);
+
+    if (stored === null) {
+        // Initial defaults
+        const initial = (role === 'manufacturer') ? 50000 : 0;
+        localStorage.setItem(key, initial.toString());
+        return initial;
+    }
+    return parseFloat(stored);
+}
+
+/**
+ * Updates a user's wallet balance
+ * @param {string} userId - User UID
+ * @param {number} amount - Amount to add (can be negative)
+ */
+function updateWalletBalance(userId, amount) {
+    if (!userId) return;
+    const key = `vaidyachain_wallet_${userId}`;
+    const current = parseFloat(localStorage.getItem(key) || '0');
+    const newBalance = current + amount;
+    localStorage.setItem(key, newBalance.toString());
+
+    // Auto-refresh visibility
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPage = urlParams.get('dashboard');
+    if (currentPage === 'profile-settings') loadProfileSettings();
+    if (currentPage === 'farmer') loadFarmerDashboard();
+    if (currentPage === 'manufacturer') loadManufacturerDashboard();
+}
+
+/**
+ * Shows a simulated top-up modal
+ */
+window.showTopUpModal = function () {
+    const amount = prompt("Enter amount to add to your VaidyaChain Wallet (₹):", "5000");
+    if (amount === null) return;
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        alert("Please enter a valid amount.");
+        return;
+    }
+
+    const user = getCurrentUser();
+    const role = getCurrentUserRole();
+    const userId = (role === 'manufacturer') ? 'MANU-001' : (user ? user.uid : 'FARMER-DEMO');
+
+    updateWalletBalance(userId, parsedAmount);
+
+    if (window.showNotification) {
+        window.showNotification(`Successfully added ₹${parsedAmount.toLocaleString()} to your wallet!`, 'success');
+    } else {
+        alert(`Successfully added ₹${parsedAmount.toLocaleString()} to your wallet!`);
+    }
+};
+
+/**
+ * Releases escrowed payment to a farmer after successful delivery and lab test
+ */
+function releasePaymentToFarmer(batchId) {
+    const transactions = getBatchHistory(batchId);
+    const purchaseTx = transactions.find(tx => tx.data.type === 'purchase');
+    const collectionTx = transactions.find(tx => tx.data.type === 'collection');
+
+    if (!purchaseTx || !collectionTx) return;
+    if (transactions.some(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'PaymentReleased')) return;
+
+    const amount = purchaseTx.data.amount;
+    const farmer = collectionTx.data.farmer;
+
+    if (farmer && farmer.id) {
+        updateWalletBalance(farmer.id, amount);
+        const newBal = getWalletBalance(farmer.id, 'farmer');
+
+        // Record releasing event on blockchain
+        const releaseEvent = {
+            type: 'smart-contract-event',
+            event: 'PaymentReleased',
+            batchId: batchId,
+            to: farmer.name,
+            amount: amount,
+            timestamp: new Date().toISOString()
+        };
+        addHerbTransaction(releaseEvent);
+        if (window.showNotification) window.showNotification(`LIVE: Payment of ₹${amount.toLocaleString()} received! New Balance: ₹${newBal.toLocaleString()}`, 'success');
+    }
+}
+
+/**
+ * Refunds escrowed funds back to the manufacturer if lab test fails
+ */
+function refundLockedFunds(batchId) {
+    const transactions = getBatchHistory(batchId);
+    const purchaseTx = transactions.find(tx => tx.data.type === 'purchase');
+
+    if (!purchaseTx) return;
+    if (transactions.some(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'Refunded')) return;
+
+    const amount = purchaseTx.data.amount;
+    const manufacturerId = 'MANU-001'; // Default for demo
+
+    updateWalletBalance(manufacturerId, amount);
+
+    const refundEvent = {
+        type: 'smart-contract-event',
+        event: 'Refunded',
+        batchId: batchId,
+        reason: 'Lab Test Failure',
+        amount: amount,
+        timestamp: new Date().toISOString()
+    };
+    addHerbTransaction(refundEvent);
+    if (window.showNotification) window.showNotification(`Lab check failed! ₹${amount.toLocaleString()} refunded to your wallet.`, 'warning');
+}
+
 // Farmer Dashboard
 function loadFarmerDashboard() {
     const container = document.getElementById('dashboard-container');
@@ -355,9 +482,51 @@ function loadFarmerDashboard() {
                     <div id="market-data-footer" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--muted-foreground); display: flex; justify-content: space-between; align-items: center;">
                         <span>Data Source: data.gov.in API</span>
                         <span id="last-updated-time">Last updated: Just now</span>
+            <!-- Price Discovery & Market Insight Section -->
+            <div class="dashboard-row" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 2rem; margin-bottom: 2rem;">
+                <div class="herb-card" style="background: linear-gradient(to bottom right, #ffffff, #f9fafb); border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-chart-line-up" style="color: #10b981;"></i>
+                                Live Market Insights
+                            </h3>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted-foreground);">Real-time commodity prices from data.gov.in</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <label for="market-herb-select" style="font-size: 0.8rem; font-weight: 600; color: var(--muted-foreground);">COMMODITY:</label>
+                            <select id="market-herb-select" style="padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; background: white; cursor: pointer; outline: none;" onchange="loadFarmerMarketData(this.value)">
+                                <option value="Ashwagandha">Ashwagandha (Root)</option>
+                                <option value="Turmeric">Turmeric (Haldi)</option>
+                                <option value="Garlic">Garlic (Lehsun)</option>
+                                <option value="Ginger(Fresh)">Ginger (Fresh Adrak)</option>
+                                <option value="Cumin(Jeera)">Cumin (Jeera)</option>
+                                <option value="Coriander(Seed)">Coriander (Dhaniya Seed)</option>
+                                <option value="Ajwan">Ajwan (Ajwain)</option>
+                                <option value="Fennel(Saunf)">Fennel (Saunf)</option>
+                                <option value="Fenugreek(Seed)">Fenugreek (Methi Seed)</option>
+                            </select>
+                            <button class="action-btn" style="padding: 0.4rem; min-width: auto; height: 32px; width: 32px; border-radius: 8px;" onclick="loadFarmerMarketData(document.getElementById('market-herb-select').value)" title="Refresh Data">
+                                <i class="ph ph-arrows-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="price-content" class="market-data-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                        <!-- Live data will be injected here -->
+                        <div class="skeleton-container" style="grid-column: 1 / -1;">
+                            <div class="skeleton-text"></div>
+                            <div class="skeleton-text" style="width: 60%"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="market-data-footer" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--muted-foreground); display: flex; justify-content: space-between; align-items: center;">
+                        <span>Data Source: data.gov.in API</span>
+                        <span id="last-updated-time">Last updated: Just now</span>
                     </div>
                 </div>
             </div>
+
 
             
             <div class="herb-card">
@@ -372,6 +541,13 @@ function loadFarmerDashboard() {
                         <i class="ph ph-chat-centered-dots"></i> <span data-i18n="smsVerification">SMS Verification</span>
                     </button>
                 </div>
+            </div>
+
+            <!-- Returned Products Section -->
+            <div class="herb-card" id="returned-products-section" style="margin-top: 1.5rem; border: 1px solid #fca5a5; background: #fff1f2; display: none;">
+                <h3 style="color: #be123c;"><i class="ph ph-warning-circle"></i> Returned Products (Quality Rejection)</h3>
+                <p style="font-size: 0.85rem; color: #9f1239; margin-bottom: 1rem;">The following batches failed quality testing and have been returned to you. Funds have been refunded to the manufacturer.</p>
+                <div id="returned-products-list" class="batch-grid"></div>
             </div>
 
             <!-- Returned Products Section -->
@@ -437,13 +613,18 @@ function loadFarmerDashboard() {
 
                 const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
                 const farmerId = user ? user.uid : 'FARMER-DEMO';
+                const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+                const farmerId = user ? user.uid : 'FARMER-DEMO';
                 const batchId = 'BATCH-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
 
                 const herbData = {
                     type: 'collection',
                     batchId: batchId,
                     farmer: { id: farmerId, name: farmerName },
+                    farmer: { id: farmerId, name: farmerName },
                     herbType: herbType,
+                    quantity: parseFloat(quantity) || 0,
+                    price: parseFloat(price) || 0,
                     quantity: parseFloat(quantity) || 0,
                     price: parseFloat(price) || 0,
                     collectionDate: collectionDate,
@@ -699,9 +880,210 @@ async function loadFarmerMarketData(commodity = 'Ashwagandha') {
                             <span style="display: block; font-size: 0.65rem; color: #15803d; font-weight: 600;">VARIETY</span>
                             <span style="font-size: 0.8rem; font-weight: 600; color: #166534;">${rec.Variety}</span>
                         </div>
+
+    loadReturnedProducts();
+
+    // Load Weather and Price Data
+    loadFarmerMarketData('Ashwagandha');
+}
+
+function loadReturnedProducts() {
+    const container = document.getElementById('returned-products-list');
+    const section = document.getElementById('returned-products-section');
+    if (!container || !section) return;
+
+    const allTransactions = getAllHerbTransactions();
+    const refunds = allTransactions.filter(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'Refunded');
+
+    if (refunds.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    container.innerHTML = refunds.map(refund => {
+        const batchId = refund.data.batchId;
+        const batchHistory = getBatchHistory(batchId);
+        const collection = batchHistory.find(tx => tx.data.type === 'collection');
+        const labTest = batchHistory.find(tx => tx.data.type === 'lab-test');
+
+        return `
+            <div class="batch-card" style="border-left: 4px solid #be123c; background: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="margin: 0;">Batch ID: ${batchId}</h4>
+                    <span class="status-badge status-danger" style="background: #be123c; color: white;">RETURNED</span>
+                </div>
+                <div class="batch-details" style="font-size: 0.85rem;">
+                    <p><strong>Herb Type:</strong> ${collection ? collection.data.herbType : 'N/A'}</p>
+                    <p><strong>Quantity:</strong> ${collection ? collection.data.quantity : 0} kg</p>
+                    <p><strong>Return Reason:</strong> <span style="color: #be123c; font-weight: 600;">${refund.data.reason}</span></p>
+                    ${labTest ? `
+                        <div style="margin-top: 0.5rem; padding: 0.8rem; background: #fff1f2; border-radius: var(--radius); border: 1px dashed #fecaca; font-size: 0.75rem;">
+                            <strong style="color: #9f1239;">Lab Report Findings:</strong><br>
+                            - Moisture: ${labTest.data.moisture}%<br>
+                            - Pesticides: ${labTest.data.pesticides}<br>
+                            - Notes: ${labTest.data.notes || 'None'}
+                        </div>
+                    ` : ''}
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="action-btn outline" style="width: 100%; border-color: #fca5a5; color: #be123c;" onclick="showDashboard('waste-management')">
+                        <i class="ph ph-recycle"></i> Divert to Waste Management
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Fallback data in case of API failure (CORS/Rate Limit)
+function getFallbackMarketData(commodity) {
+    const markets = [
+        { state: 'Madhya Pradesh', district: 'Neemuch', market: 'Neemuch' },
+        { state: 'Rajasthan', district: 'Chittorgarh', market: 'Chittorgarh' },
+        { state: 'Gujarat', district: 'Unjha', market: 'Unjha' },
+        { state: 'Maharashtra', district: 'Sangli', market: 'Sangli' },
+        { state: 'Kerala', district: 'Idukki', market: 'Adimaly' }
+    ];
+
+    const basePrices = {
+        'Ashwagandha': 22000,
+        'Turmeric': 8500,
+        'Garlic': 12000,
+        'Ginger(Fresh)': 6500,
+        'Cumin(Jeera)': 32000,
+        'Coriander(Seed)': 7200,
+        'Ajwan': 14000,
+        'Fennel(Saunf)': 11000,
+        'Fenugreek(Seed)': 5800
+    };
+
+    const base = basePrices[commodity] || 10000;
+    const now = new Date();
+    const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+
+    return [1, 2, 3, 4, 5].map(i => {
+        const variation = (Math.random() * 0.2) - 0.1; // +/- 10%
+        const min = Math.floor(base * (1 + variation - 0.05));
+        const max = Math.floor(base * (1 + variation + 0.05));
+        const modal = Math.floor((min + max) / 2);
+        const location = markets[i - 1];
+
+        return {
+            State: location.state,
+            District: location.district,
+            Market: location.market,
+            Commodity: commodity,
+            Variety: 'FAQ',
+            Arrival_Date: dateStr,
+            Min_Price: min.toString(),
+            Max_Price: max.toString(),
+            Modal_Price: modal.toString()
+        };
+    });
+}
+
+// Live Farmer Market Data from data.gov.in
+async function loadFarmerMarketData(commodity = 'Ashwagandha') {
+    const priceContainer = document.getElementById('price-content');
+    const lastUpdatedEl = document.getElementById('last-updated-time');
+
+    if (!priceContainer) return;
+
+    // Show skeletons
+    priceContainer.innerHTML = `
+        <div class="skeleton-container" style="grid-column: 1 / -1;">
+            <div class="skeleton-text"></div>
+            <div class="skeleton-text" style="width: 80%"></div>
+            <div class="skeleton-text" style="width: 60%"></div>
+        </div>
+    `;
+
+    const apiKey = '579b464db66ec23bdd000001cdd3946e44ce4aad7209ff7b23ac571b';
+    const resourceId = '35985678-0d79-46b4-9ed6-6f13308a1d24';
+    const limit = 50;
+
+    // Using a CORS proxy to bypass browser restrictions
+    const apiUrl = `https://api.data.gov.in/resource/${resourceId}?api-key=${apiKey}&format=json&filters[Commodity]=${commodity}&limit=${limit}`;
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+
+    let records = [];
+    let isLive = false;
+
+    try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        if (data && data.records && data.records.length > 0) {
+            records = data.records.slice(0, 15);
+            isLive = true;
+        } else {
+            throw new Error('No records found');
+        }
+    } catch (error) {
+        console.warn('API Error or Rate Limit hit, using historical/simulated fallback:', error);
+        records = getFallbackMarketData(commodity);
+        isLive = false;
+    }
+
+    if (!records || records.length === 0) {
+        priceContainer.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--muted-foreground);">
+                <i class="ph ph-info" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                <p>No market data found for <strong>${commodity}</strong>.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    records.forEach(rec => {
+        const minPrice = parseFloat(rec.Min_Price);
+        const maxPrice = parseFloat(rec.Max_Price);
+        const modalPrice = parseFloat(rec.Modal_Price);
+        const date = rec.Arrival_Date;
+
+        html += `
+            <div class="market-record-card" style="background: white; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; transition: var(--transition); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <span style="font-size: 0.65rem; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.05em; background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">${rec.Market}</span>
+                        <h4 style="margin: 0.25rem 0 0 0; font-size: 0.95rem; font-weight: 700;">${rec.District}, ${rec.State}</h4>
+                    </div>
+                    <span style="font-size: 0.7rem; color: var(--muted-foreground); font-weight: 500;">${date}</span>
+                </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.25rem;">
+                        <div style="background: #f8fafc; padding: 0.5rem; border-radius: 8px;">
+                            <span style="display: block; font-size: 0.65rem; color: var(--muted-foreground); font-weight: 600; text-transform: uppercase;">Min Price</span>
+                            <span style="font-size: 1rem; font-weight: 700; font-family: 'Geist Mono', monospace;">₹${isNaN(minPrice) ? 'N/A' : minPrice.toLocaleString()} <span style="font-size: 0.7rem; font-weight: 500; color: var(--muted-foreground)">/q</span></span>
+                        </div>
+                        <div style="background: #f8fafc; padding: 0.5rem; border-radius: 8px;">
+                            <span style="display: block; font-size: 0.65rem; color: var(--muted-foreground); font-weight: 600; text-transform: uppercase;">Max Price</span>
+                            <span style="font-size: 1rem; font-weight: 700; font-family: 'Geist Mono', monospace;">₹${isNaN(maxPrice) ? 'N/A' : maxPrice.toLocaleString()} <span style="font-size: 0.7rem; font-weight: 500; color: var(--muted-foreground)">/q</span></span>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 0.65rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="display: block; font-size: 0.65rem; color: #15803d; font-weight: 600; text-transform: uppercase;">Modal Price (Avg)</span>
+                            <span style="font-size: 1.15rem; font-weight: 800; color: #166534; font-family: 'Geist Mono', monospace;">₹${isNaN(modalPrice) ? 'N/A' : modalPrice.toLocaleString()}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="display: block; font-size: 0.65rem; color: #15803d; font-weight: 600;">VARIETY</span>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: #166534;">${rec.Variety}</span>
+                        </div>
                     </div>
                 </div>
             `;
+    });
+
+    priceContainer.innerHTML = html;
+    if (lastUpdatedEl) {
+        const now = new Date();
+        lastUpdatedEl.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+    }
     });
 
     priceContainer.innerHTML = html;
@@ -1015,6 +1397,14 @@ function loadLabDashboard() {
                 window.showNotification(`Quality check failed. Funds refunded to manufacturer. Batch returned to farmer.`, 'warning');
             }
         }
+        // Escrow Handling
+        if (!passesTests) {
+            // Automatically refund and return product if lab fails
+            refundLockedFunds(batchId);
+            if (window.showNotification) {
+                window.showNotification(`Quality check failed. Funds refunded to manufacturer. Batch returned to farmer.`, 'warning');
+            }
+        }
         // Show PDF button after verification
         document.getElementById('generate-pdf-btn').style.display = 'block';
         document.getElementById('generate-pdf-btn').onclick = () => generateTestCertificate(testData);
@@ -1023,6 +1413,7 @@ function loadLabDashboard() {
         document.getElementById('batch-info').style.display = 'none';
         document.getElementById('verify-btn').disabled = true;
         loadBatchesReceivedFromManufacturer();
+        loadLabBatchDropdown();
         loadLabBatchDropdown();
     });
 
@@ -1312,6 +1703,7 @@ function loadManufacturerDashboard() {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h3>🛒 Herb Marketplace</h3>
                 </div>
+                <p class="dashboard-subtitle">Browse and purchase available herb batches from farmers (Escrow protection enabled)</p>
                 <p class="dashboard-subtitle">Browse and purchase available herb batches from farmers (Escrow protection enabled)</p>
                 <div id="marketplace-list" class="batch-grid">
                     <p>Loading available batches...</p>
@@ -1701,8 +2093,20 @@ window.buyBatch = function (batchId, amount) {
 
     if (currentBalance < amount) {
         alert(`Insufficient funds! Your balance (₹${currentBalance.toLocaleString()}) is less than the batch price (₹${amount.toLocaleString()}). Please top up your wallet.`);
+    const manufacturerId = 'MANU-001';
+    const currentBalance = getWalletBalance(manufacturerId, 'manufacturer');
+
+    if (currentBalance < amount) {
+        alert(`Insufficient funds! Your balance (₹${currentBalance.toLocaleString()}) is less than the batch price (₹${amount.toLocaleString()}). Please top up your wallet.`);
         return;
     }
+
+    if (!confirm(`Are you sure you want to purchase Batch ${batchId} for ₹${amount.toLocaleString()}? Funds will be deducted and locked in the Smart Contract Escrow until delivery and quality verification.`)) {
+        return;
+    }
+
+    // Deduct from manufacturer wallet immediately (lock in escrow)
+    updateWalletBalance(manufacturerId, -amount);
 
     if (!confirm(`Are you sure you want to purchase Batch ${batchId} for ₹${amount.toLocaleString()}? Funds will be deducted and locked in the Smart Contract Escrow until delivery and quality verification.`)) {
         return;
@@ -1744,6 +2148,7 @@ window.buyBatch = function (batchId, amount) {
         });
 
         // 3. Log Transit Initiation
+        // 3. Log Transit Initiation
         const transitData = {
             type: 'logistics',
             batchId: batchId,
@@ -1761,16 +2166,60 @@ window.buyBatch = function (batchId, amount) {
         if (window.showNotification) {
             const newBal = getWalletBalance(manufacturerId, 'manufacturer');
             window.showNotification(`Order placed! ₹${amount.toLocaleString()} locked in Escrow. Current Balance: ₹${newBal.toLocaleString()}`, 'success');
+            const newBal = getWalletBalance(manufacturerId, 'manufacturer');
+            window.showNotification(`Order placed! ₹${amount.toLocaleString()} locked in Escrow. Current Balance: ₹${newBal.toLocaleString()}`, 'success');
         }
 
         // Refresh UI
+        loadManufacturerDashboard(); // Re-render to update wallet and list
         loadManufacturerDashboard(); // Re-render to update wallet and list
         if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
     } catch (error) {
         // Rollback wallet if contract fails
         updateWalletBalance(manufacturerId, amount);
+        // Rollback wallet if contract fails
+        updateWalletBalance(manufacturerId, amount);
         alert('Payment Escrow Failed: ' + error.message);
     }
+};
+
+window.confirmBatchDelivery = function (batchId) {
+    const transactions = getBatchHistory(batchId);
+    const latestLab = transactions.reverse().find(tx => tx.data.type === 'lab-test');
+
+    if (!latestLab) {
+        alert('Cannot confirm delivery yet. Batch must be quality-tested by a lab first.');
+        return;
+    }
+
+    if (latestLab.data.testResult !== 'pass') {
+        alert('Lab test FAILED for this batch. Initiating refund to manufacturer and return to farmer.');
+        refundLockedFunds(batchId);
+        loadBatchHistoryList();
+        return;
+    }
+
+    if (!confirm('Confirm delivery and release funds to the farmer? This action is irreversible.')) {
+        return;
+    }
+
+    // 1. Update Logistics
+    const deliveryTx = {
+        type: 'logistics',
+        batchId: batchId,
+        status: 'Delivered & Accepted',
+        location: 'Manufacturer Warehouse',
+        timestamp: new Date().toISOString()
+    };
+    addHerbTransaction(deliveryTx);
+
+    // 2. Release Escrow
+    releasePaymentToFarmer(batchId);
+
+    if (window.showNotification) window.showNotification(`Batch ${batchId} accepted. Funds released!`, 'success');
+
+    loadBatchHistoryList();
+    if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
 };
 
 window.confirmBatchDelivery = function (batchId) {
@@ -1894,6 +2343,15 @@ function loadBatchHistoryList() {
                     ` : ''}
                 </div>
                 <div class="batch-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    ${currentLogistics.status === 'In Transit' ? `<button class="action-btn outline" style="flex: 1;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">Confirm Arrival</button>` : ''}
+                    
+                    ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `<button class="action-btn" style="flex: 1;" onclick="quickSendToLab('${batchId}')">Send to Lab</button>` : ''}
+
+                    ${latestLab && !settlementTx ? `
+                        <button class="action-btn" style="flex: 1; background: ${latestLab.testResult === 'pass' ? 'var(--primary)' : '#dc2626'};" onclick="confirmBatchDelivery('${batchId}')">
+                            ${latestLab.testResult === 'pass' ? 'Accept & Release Funds' : 'Process Refund & Return'}
+                        </button>
+                    ` : ''}
                     ${currentLogistics.status === 'In Transit' ? `<button class="action-btn outline" style="flex: 1;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">Confirm Arrival</button>` : ''}
                     
                     ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `<button class="action-btn" style="flex: 1;" onclick="quickSendToLab('${batchId}')">Send to Lab</button>` : ''}
@@ -3734,6 +4192,7 @@ function loadProfileSettings() {
     container.innerHTML = `
         <div class="dashboard">
             <h2>Profile Settings</h2>
+            
             
             <div class="herb-card profile-settings-card">
                 <div class="profile-header-large">
