@@ -388,11 +388,41 @@ function t(key) {
 }
 
 // Set language
-function setLanguage(lang) {
-    if (translations[lang]) {
+function setLanguage(lang, skipReload = false) {
+    if (translations[lang] || lang === 'en') {
+        const previousLanguage = currentLanguage;
         currentLanguage = lang;
         localStorage.setItem('vaidyachain_language', lang);
-        updatePageTranslations();
+
+        // Native partial translation fallback
+        try {
+            updatePageTranslations();
+        } catch (e) { }
+
+        // Trigger Google Translate Engine using persistent cookies
+        const domain = window.location.hostname;
+        const cookieDomain = domain ? `; domain=${domain}` : '';
+
+        // Clear all possible old Google Translate cookies first
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+        if (domain) document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;${cookieDomain}`;
+
+        // Set new Google Translate active language cookie
+        if (lang === 'en') {
+            document.cookie = `googtrans=/en/en; path=/;`;
+            if (domain) document.cookie = `googtrans=/en/en; path=/;${cookieDomain}`;
+        } else {
+            document.cookie = `googtrans=/en/${lang}; path=/;`;
+            if (domain) document.cookie = `googtrans=/en/${lang}; path=/;${cookieDomain}`;
+        }
+
+        // Extremely aggressive trigger for the whole project to update!
+        // If this was manually triggered by user button click, force reload the page.
+        // Because VaidyaChain uses ?dashboard= param, state is preserved!
+        if (!skipReload && previousLanguage !== lang) {
+            window.location.reload();
+        }
+
         return true;
     }
     return false;

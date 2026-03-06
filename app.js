@@ -252,7 +252,7 @@ function loadFarmerDashboard() {
         <div class="dashboard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: white; padding: 1.25rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
                 <div>
-                   <h2 style="margin: 0;">Farmer Dashboard</h2>
+                   <h2 style="margin: 0;" data-i18n="farmerDashboard">Farmer Dashboard</h2>
                    <p style="margin: 0; font-size: 0.85rem; color: var(--muted-foreground);"></p>
                 </div>
                 <div style="text-align: right;">
@@ -268,7 +268,7 @@ function loadFarmerDashboard() {
 
 
             <div class="herb-card">
-                <h3>Tag New Herb Collection</h3>
+                <h3 data-i18n="tagNewHerb">Tag New Herb Collection</h3>
                 <form id="herb-collection-form">
                     <div class="form-group">
                         <label for="farmer-name">Farmer Name:</label>
@@ -276,7 +276,7 @@ function loadFarmerDashboard() {
                         <small style="color: var(--muted-foreground)"></small>
                     </div>
                     <div class="form-group">
-                        <label for="herb-type">Herb Type:</label>
+                        <label for="herb-type" data-i18n="herbType">Herb Type:</label>
                         <select id="herb-type" required>
                             <option value="" data-i18n="herbType">Select Herb</option>
                             <option value="ashwagandha" data-i18n="herbAshwagandha">Ashwagandha</option>
@@ -290,7 +290,7 @@ function loadFarmerDashboard() {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="quantity">Quantity (kg):</label>
+                        <label for="quantity" data-i18n="quantity">Quantity (kg):</label>
                         <input type="number" id="quantity" min="1" required>
                     </div>
                     <div class="form-group">
@@ -525,8 +525,8 @@ function loadFarmerDashboard() {
     loadFarmerMarketData();
 
     // Trigger i18n update for the dynamic content
-    if (window.i18next && typeof updateTranslations === 'function') {
-        updateTranslations();
+    if (typeof window.updatePageTranslations === 'function') {
+        window.updatePageTranslations();
     }
 
     // Auto-populate farmer name

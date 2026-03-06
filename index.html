@@ -373,6 +373,33 @@
     <!-- Notification Toast Container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Google Translate Script (Hidden) -->
+    <div id="google_translate_element" style="display:none;"></div>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({ pageLanguage: 'en', includedLanguages: 'en,hi,gu', layout: google.translate.TranslateElement.InlineLayout.SIMPLE, autoDisplay: false }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript"
+        src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <style>
+        body {
+            top: 0px !important;
+        }
+
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+
+        .skiptranslate {
+            display: none !important;
+        }
+
+        #google_translate_element {
+            display: none !important;
+        }
+    </style>
+
     <!-- Firebase SDK Setup -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -395,7 +422,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize language from localStorage
             const savedLang = localStorage.getItem('vaidyachain_language') || 'en';
-            setLanguage(savedLang);
+            setLanguage(savedLang, true);
             updateLanguageUI(savedLang);
 
             // Language selector event listeners
@@ -403,7 +430,7 @@
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
                     const lang = this.getAttribute('data-lang');
-                    setLanguage(lang);
+                    setLanguage(lang, false);
                     updateLanguageUI(lang);
                 });
             });
