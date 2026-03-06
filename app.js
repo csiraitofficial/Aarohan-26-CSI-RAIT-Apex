@@ -505,14 +505,11 @@ function initBlockchainViewer() {
   // Initialize blockchain visualization
   const blockchainVisualization = document.getElementById('blockchain-visualization');
   if (blockchainVisualization) {
-    // This would render the blockchain chain visualization
-    blockchainVisualization.innerHTML = `
-      <div class="blockchain-info">
-        <p>Blockchain visualization will be displayed here.</p>
-        <p>Current chain length: <span id="chain-length-display">0</span></p>
-      </div>
-    `;
+    renderBlockchainChain();
   }
+  
+  // Initialize blockchain stats
+  updateBlockchainStats();
   
   // Search form
   const searchForm = document.getElementById('blockchain-search-form');
@@ -523,31 +520,244 @@ function initBlockchainViewer() {
       searchBlockchainByBatch(batchId);
     });
   }
+  
+  // Auto-refresh blockchain every 5 seconds
+  setInterval(() => {
+    renderBlockchainChain();
+    updateBlockchainStats();
+  }, 5000);
+}
+
+// Render blockchain chain visualization
+async function renderBlockchainChain() {
+  const blockchainVisualization = document.getElementById('blockchain-visualization');
+  if (!blockchainVisualization) return;
+  
+  try {
+    const chain = await blockchain.getChain();
+    
+    if (chain.length === 0) {
+      blockchainVisualization.innerHTML = `
+        <div class="blockchain-info">
+          <h4>⛓️ Blockchain Chain</h4>
+          <p>No blocks in the chain yet. Start by tagging a herb collection!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    blockchainVisualization.innerHTML = chain.map((block, index) => {
+      const blockType = block.data.type || 'unknown';
+      const blockIcon = getBlockIcon(blockType);
+      const blockClass = getBlockClass(blockType);
+      const timestamp = new Date(block.timestamp).toLocaleString();
+      
+      return `
+        <div class="blockchain-block ${blockClass} ${index === 0 ? 'genesis' : ''}">
+          <div class="block-icon">${blockIcon}</div>
+          <div class="block-content">
+            <div class="block-header">
+              <span class="block-type">${blockType.replace('-', ' ')}</span>
+              <span class="block-timestamp">${timestamp}</span>
+            </div>
+            <div class="block-data">
+              ${renderBlockData(block.data)}
+            </div>
+            <div class="block-hash">
+              Hash: ${block.hash.substring(0, 40)}...
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    // Add pulsing animation to the latest block
+    const blocks = blockchainVisualization.querySelectorAll('.blockchain-block');
+    if (blocks.length > 0) {
+      blocks[blocks.length - 1].classList.add('pulsing');
+    }
+    
+  } catch (error) {
+    console.error('Error rendering blockchain:', error);
+    blockchainVisualization.innerHTML = `
+      <div class="blockchain-info">
+        <h4>❌ Error Loading Blockchain</h4>
+        <p>Unable to load blockchain data. Please try again.</p>
+      </div>
+    `;
+  }
+}
+
+// Get block icon based on type
+function getBlockIcon(type) {
+  const icons = {
+    'genesis': '🌱',
+    'collection': '🌱',
+    'send-to-lab': '🧪',
+    'lab-test': '🧪',
+    'manufacturing': '🏭',
+    'smart-contract-event': '⚡',
+    'insurance-claim': '💰',
+    'dna-registration': '🧬'
+  };
+  return icons[type] || '📦';
+}
+
+// Get block CSS class based on type
+function getBlockClass(type) {
+  const classes = {
+    'genesis': 'genesis',
+    'collection': 'collection',
+    'send-to-lab': 'lab-test',
+    'lab-test': 'lab-test',
+    'manufacturing': 'manufacturing',
+    'smart-contract-event': 'smart-contract',
+    'insurance-claim': 'insurance',
+    'dna-registration': 'dna'
+  };
+  return classes[type] || '';
+}
+
+// Render block data in a structured format
+function renderBlockData(data) {
+  const fields = [];
+  
+  // Common fields
+  if (data.batchId) fields.push(`<div class="block-field"><strong>Batch ID:</strong> ${data.batchId}</div>`);
+  if (data.farmerId) fields.push(`<div class="block-field"><strong>Farmer:</strong> ${data.farmerId}</div>`);
+  if (data.herbType) fields.push(`<div class="block-field"><strong>Herb:</strong> ${data.herbType}</div>`);
+  if (data.quantity) fields.push(`<div class="block-field"><strong>Quantity:</strong> ${data.quantity}</div>`);
+  
+  // Lab test specific
+  if (data.testResult) fields.push(`<div class="block-field"><strong>Result:</strong> ${data.testResult}</div>`);
+  if (data.parameters) {
+    const params = data.parameters;
+    if (params.moisture) fields.push(`<div class="block-field"><strong>Moisture:</strong> ${params.moisture}%</div>`);
+    if (params.activeMarkers) fields.push(`<div class="block-field"><strong>Active Markers:</strong> ${params.activeMarkers}%</div>`);
+    if (params.pesticides) fields.push(`<div class="block-field"><strong>Pesticides:</strong> ${params.pesticides}</div>`);
+  }
+  
+  // Manufacturing specific
+  if (data.productId) fields.push(`<div class="block-field"><strong>Product ID:</strong> ${data.productId}</div>`);
+  if (data.productName) fields.push(`<div class="block-field"><strong>Product:</strong> ${data.productName}</div>`);
+  
+  // Smart contract specific
+  if (data.contract) fields.push(`<div class="block-field"><strong>Contract:</strong> ${data.contract}</div>`);
+  if (data.type) fields.push(`<div class="block-field"><strong>Event:</strong> ${data.type}</div>`);
+  
+  return fields.join('');
+}
+
+// Update blockchain statistics
+async function updateBlockchainStats() {
+  try {
+    const chainLength = await blockchain.getChainLength();
+    const chain = await blockchain.getChain();
+    
+    // Update stats in the admin dashboard
+    const totalBlocksElement = document.getElementById('total-blocks');
+    const chainLengthElement = document.getElementById('chain-length');
+    const lastBlockHashElement = document.getElementById('last-block-hash');
+    
+    if (totalBlocksElement) totalBlocksElement.textContent = chainLength;
+    if (chainLengthElement) chainLengthElement.textContent = chainLength;
+    
+    if (lastBlockHashElement && chain.length > 0) {
+      lastBlockHashElement.textContent = chain[chain.length - 1].hash.substring(0, 12) + '...';
+    }
+    
+    // Update blockchain info in viewer
+    const blockchainInfo = document.querySelector('.blockchain-info');
+    if (blockchainInfo) {
+      blockchainInfo.innerHTML = `
+        <h4>⛓️ Blockchain Chain</h4>
+        <p>Current chain length: <strong>${chainLength}</strong> blocks</p>
+        <p>Latest block: <strong>${chain.length > 0 ? chain[chain.length - 1].data.type : 'None'}</strong></p>
+      `;
+    }
+    
+  } catch (error) {
+    console.error('Error updating blockchain stats:', error);
+  }
 }
 
 async function searchBlockchainByBatch(batchId) {
   if (!batchId) return;
   
-  const results = await blockchain.getBlocksByBatchId(batchId);
-  const searchResults = document.getElementById('search-results');
-  
-  if (results.length === 0) {
-    searchResults.innerHTML = '<p>No blocks found for this batch ID.</p>';
-    return;
-  }
-  
-  searchResults.innerHTML = `
-    <h4>Found ${results.length} blocks for batch: ${batchId}</h4>
-    <div class="blockchain-results">
-      ${results.map(block => `
+  try {
+    const results = await blockchain.getBlocksByBatchId(batchId);
+    const searchResults = document.getElementById('search-results');
+    
+    if (results.length === 0) {
+      searchResults.innerHTML = `
         <div class="block-result">
-          <strong>Type:</strong> ${block.data.type}<br>
-          <strong>Hash:</strong> ${block.hash.substring(0, 20)}...<br>
-          <strong>Timestamp:</strong> ${new Date(block.timestamp).toLocaleString()}
+          <h4>🔍 Search Results</h4>
+          <p>No blocks found for batch ID: <strong>${batchId}</strong></p>
         </div>
-      `).join('')}
-    </div>
-  `;
+      `;
+      return;
+    }
+    
+    searchResults.innerHTML = `
+      <div class="block-result">
+        <h4>Found ${results.length} blocks for batch: ${batchId}</h4>
+        ${results.map(block => `
+          <div style="margin-top: ${results.length > 1 ? '10px' : '0'}; padding-top: ${results.length > 1 ? '10px' : '0'}; border-top: ${results.length > 1 ? '1px solid var(--color-border)' : 'none'};">
+            <strong>Type:</strong> <span style="text-transform: capitalize;">${block.data.type.replace('-', ' ')}</span><br>
+            <strong>Hash:</strong> ${block.hash.substring(0, 20)}...<br>
+            <strong>Timestamp:</strong> ${new Date(block.timestamp).toLocaleString()}
+          </div>
+        `).join('')}
+      </div>
+    `;
+    
+    // Add notification for successful search
+    addNotification(`Found ${results.length} blocks for batch ${batchId}`, 'info');
+    
+  } catch (error) {
+    console.error('Error searching blockchain:', error);
+    const searchResults = document.getElementById('search-results');
+    searchResults.innerHTML = `
+      <div class="block-result">
+        <h4>❌ Search Error</h4>
+        <p>Unable to search blockchain. Please try again.</p>
+      </div>
+    `;
+  }
+}
+
+// Enhanced blockchain block creation with smart contract integration
+async function createBlockchainBlock(type, data) {
+  try {
+    // Create the block
+    const block = await blockchain.addBlock(type, data);
+    
+    // Execute smart contracts based on block type
+    if (type === BLOCK_TYPES.LAB_TEST) {
+      const contractResult = await SmartContracts.ContractTriggers.onLabTest(data.batchData, data.testResult);
+      if (contractResult.success) {
+        addNotification(`Smart contract executed: ${contractResult.qualityResult.result}`, 
+                       contractResult.qualityResult.result === 'PASS' ? 'success' : 'warning');
+      }
+    } else if (type === BLOCK_TYPES.COLLECTION) {
+      await SmartContracts.ContractTriggers.onCollection(data);
+      addNotification('Herb collection recorded on blockchain', 'success');
+    } else if (type === BLOCK_TYPES.MANUFACTURING) {
+      await SmartContracts.ContractTriggers.onManufacturing(data);
+      addNotification('Product manufacturing recorded on blockchain', 'success');
+    }
+    
+    // Update visualization
+    renderBlockchainChain();
+    updateBlockchainStats();
+    
+    return block;
+    
+  } catch (error) {
+    console.error('Error creating blockchain block:', error);
+    addNotification('Error creating blockchain block', 'error');
+    throw error;
+  }
 }
 
 // Dashboard Initializers
@@ -566,72 +776,536 @@ function initFarmerDashboard() {
   if (captureLocationBtn) {
     captureLocationBtn.addEventListener('click', captureLocation);
   }
+  
+  // Initialize Leaflet map
+  initFarmerMap();
+  
+  // Initialize weather widget
+  initWeatherWidget();
+  
+  // Initialize market rates
+  initMarketRates();
+  
+  // Initialize recent collections
+  initRecentCollections();
+  
+  // Initialize SMS verification modal
+  initSMSVerification();
+  
+  // Load existing data
+  loadFarmerData();
 }
 
+// Initialize Leaflet Map for Farmer Dashboard
+function initFarmerMap() {
+  const mapContainer = document.getElementById('farmer-map');
+  if (!mapContainer) return;
+  
+  // Initialize map
+  const map = L.map('farmer-map').setView([20.5937, 78.9629], 5); // India center
+  
+  // Add tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+  }).addTo(map);
+  
+  // Add current location marker
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+      const { latitude, longitude } = position.coords;
+      const marker = L.marker([latitude, longitude]).addTo(map);
+      marker.bindPopup("📍 Your Farm Location").openPopup();
+      map.setView([latitude, longitude], 13);
+      
+      // Store location in global variable
+      window.currentFarmerLocation = { latitude, longitude };
+    }, (error) => {
+      console.error('Error getting location for map:', error);
+    });
+  }
+  
+  // Add click event to set marker
+  map.on('click', (e) => {
+    const { lat, lng } = e.latlng;
+    const marker = L.marker([lat, lng]).addTo(map);
+    marker.bindPopup(`📍 Selected Location: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`).openPopup();
+    
+    // Store selected location
+    window.selectedFarmerLocation = { latitude: lat, longitude: lng };
+    
+    // Update location display
+    const locationDisplay = document.getElementById('location-display');
+    if (locationDisplay) {
+      locationDisplay.textContent = `Location selected: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`;
+    }
+  });
+  
+  // Store map reference
+  window.farmerMap = map;
+}
+
+// Initialize Weather Widget
+function initWeatherWidget() {
+  const weatherWidget = document.querySelector('.weather-widget');
+  if (!weatherWidget) return;
+  
+  // Simulate weather data (in real app, this would come from an API)
+  const weatherData = {
+    temperature: Math.floor(Math.random() * 15) + 25, // 25-40°C
+    condition: ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy'][Math.floor(Math.random() * 4)],
+    humidity: Math.floor(Math.random() * 30) + 40, // 40-70%
+    windSpeed: Math.floor(Math.random() * 15) + 5, // 5-20 km/h
+    alerts: [
+      'Rain expected in 2 days. Harvest Tulsi before Sunday.',
+      'High humidity detected. Monitor for fungal growth.',
+      'Strong winds forecasted. Secure your crops.',
+      'Clear skies ahead. Perfect for drying herbs.'
+    ]
+  };
+  
+  weatherWidget.innerHTML = `
+    <div class="weather-info">
+      <div class="weather-main">
+        <span class="weather-temp">${weatherData.temperature}°C</span>
+        <span class="weather-condition">${weatherData.condition}</span>
+      </div>
+      <div class="weather-details">
+        <span class="weather-detail">Humidity: ${weatherData.humidity}%</span>
+        <span class="weather-detail">Wind: ${weatherData.windSpeed} km/h</span>
+      </div>
+    </div>
+    <div class="weather-alert">
+      <span class="alert-icon">⚠️</span>
+      <span>${weatherData.alerts[Math.floor(Math.random() * weatherData.alerts.length)]}</span>
+    </div>
+  `;
+}
+
+// Initialize Market Rates Widget
+function initMarketRates() {
+  const marketRatesContainer = document.querySelector('.market-rates');
+  if (!marketRatesContainer) return;
+  
+  // Current market rates for different herbs
+  const marketRates = [
+    { herb: 'Ashwagandha', rate: 450, trend: 'up' },
+    { herb: 'Tulsi', rate: 200, trend: 'stable' },
+    { herb: 'Neem', rate: 150, trend: 'down' },
+    { herb: 'Turmeric', rate: 300, trend: 'up' },
+    { herb: 'Amla', rate: 250, trend: 'stable' },
+    { herb: 'Ginseng', rate: 800, trend: 'up' },
+    { herb: 'Brahmi', rate: 350, trend: 'stable' },
+    { herb: 'Shatavari', rate: 400, trend: 'down' }
+  ];
+  
+  marketRatesContainer.innerHTML = marketRates.map(item => `
+    <div class="rate-item">
+      <div class="rate-info">
+        <span class="herb-name">${item.herb}</span>
+        <span class="rate-trend ${item.trend}">
+          ${item.trend === 'up' ? '📈' : item.trend === 'down' ? '📉' : '➡️'}
+          ${item.trend}
+        </span>
+      </div>
+      <span class="rate-value">₹${item.rate}/kg</span>
+    </div>
+  `).join('');
+}
+
+// Initialize SMS Verification Modal
+function initSMSVerification() {
+  const verifyBtn = document.getElementById('verify-phone-btn');
+  const smsModal = document.getElementById('sms-verification-modal');
+  const phoneInput = document.getElementById('phone-input');
+  const otpInput = document.getElementById('otp-input');
+  const sendOtpBtn = document.getElementById('send-otp-btn');
+  const verifyOtpBtn = document.getElementById('verify-otp-btn');
+  
+  if (verifyBtn) {
+    verifyBtn.addEventListener('click', () => {
+      smsModal.style.display = 'flex';
+    });
+  }
+  
+  if (sendOtpBtn) {
+    sendOtpBtn.addEventListener('click', () => {
+      const phone = phoneInput.value;
+      if (phone && phone.length === 10) {
+        // Simulate OTP sending
+        const otp = Math.floor(100000 + Math.random() * 900000);
+        window.currentOTP = otp;
+        showToast(`OTP sent to ${phone}: ${otp}`, 'success');
+        
+        // Auto-fill OTP for demo purposes
+        setTimeout(() => {
+          otpInput.value = otp;
+        }, 1000);
+      } else {
+        showToast('Please enter a valid 10-digit phone number', 'error');
+      }
+    });
+  }
+  
+  if (verifyOtpBtn) {
+    verifyOtpBtn.addEventListener('click', () => {
+      const enteredOtp = otpInput.value;
+      if (enteredOtp == window.currentOTP) {
+        showToast('Phone number verified successfully!', 'success');
+        smsModal.style.display = 'none';
+        document.getElementById('phone-verified').style.display = 'inline';
+      } else {
+        showToast('Invalid OTP. Please try again.', 'error');
+      }
+    });
+  }
+  
+  // Close modal when clicking outside
+  if (smsModal) {
+    smsModal.addEventListener('click', (e) => {
+      if (e.target === smsModal) {
+        smsModal.style.display = 'none';
+      }
+    });
+  }
+}
+
+// Enhanced Herb Collection Submission
 async function submitHerbCollection() {
   const farmerName = document.getElementById('farmer-name').value;
   const herbType = document.getElementById('herb-type').value;
   const quantity = document.getElementById('quantity').value;
   const harvestDate = document.getElementById('harvest-date').value;
+  const locationDisplay = document.getElementById('location-display');
+  
+  // Validation
+  if (!farmerName || !herbType || !quantity || !harvestDate) {
+    showToast('Please fill in all required fields', 'error');
+    return;
+  }
+  
+  if (!window.selectedFarmerLocation && !window.currentFarmerLocation) {
+    showToast('Please capture or select your farm location', 'error');
+    return;
+  }
   
   // Generate batch ID
   const batchId = `BATCH-${Date.now()}`;
   
-  // Create blockchain block
-  const block = await blockchain.addBlock(BLOCK_TYPES.COLLECTION, {
-    batchId: batchId,
-    farmerName: farmerName,
-    herbType: herbType,
-    quantity: quantity,
-    harvestDate: harvestDate,
-    location: getCurrentLocation() // Would be captured from GPS
-  });
+  // Get location data
+  const location = window.selectedFarmerLocation || window.currentFarmerLocation;
+  const locationString = `${location.latitude.toFixed(4)}°N, ${location.longitude.toFixed(4)}°E`;
   
-  showToast(`Herb collection tagged successfully! Batch ID: ${batchId}`, 'success');
-  addNotification(`New herb collection added: ${herbType} (${quantity}kg)`, 'success');
-  
-  // Update recent collections display
-  updateRecentCollections();
+  try {
+    // Create blockchain block
+    const block = await blockchain.addBlock(BLOCK_TYPES.COLLECTION, {
+      batchId: batchId,
+      farmerName: farmerName,
+      herbType: herbType,
+      quantity: quantity,
+      harvestDate: harvestDate,
+      location: locationString,
+      coordinates: {
+        latitude: location.latitude,
+        longitude: location.longitude
+      },
+      timestamp: new Date().toISOString(),
+      status: 'pending'
+    });
+    
+    // Save to Firestore
+    await saveBatchToFirestore(batchId, {
+      farmerName: farmerName,
+      herbType: herbType,
+      quantity: quantity,
+      harvestDate: harvestDate,
+      location: locationString,
+      coordinates: location,
+      batchId: batchId,
+      status: 'pending',
+      timestamp: new Date().toISOString()
+    });
+    
+    showToast(`Herb collection tagged successfully! Batch ID: ${batchId}`, 'success');
+    addNotification(`New herb collection added: ${herbType} (${quantity}kg) - Batch ${batchId}`, 'success');
+    
+    // Update recent collections display
+    updateRecentCollections();
+    
+    // Clear form
+    document.getElementById('herb-collection-form').reset();
+    if (locationDisplay) {
+      locationDisplay.textContent = '';
+    }
+    
+    // Show batch ID modal
+    showBatchIDModal(batchId, herbType, quantity);
+    
+  } catch (error) {
+    console.error('Error submitting herb collection:', error);
+    showToast('Error submitting collection. Please try again.', 'error');
+  }
 }
 
+// Save batch to Firestore
+async function saveBatchToFirestore(batchId, batchData) {
+  try {
+    await db.collection('batches').doc(batchId).set({
+      ...batchData,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log('Batch saved to Firestore:', batchId);
+  } catch (error) {
+    console.error('Error saving batch to Firestore:', error);
+    throw error;
+  }
+}
+
+// Update Recent Collections with real data
+async function updateRecentCollections() {
+  const collectionsList = document.getElementById('recent-collections');
+  if (!collectionsList) return;
+  
+  try {
+    // Get recent collections from Firestore
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    const batchesRef = db.collection('batches')
+      .where('farmerId', '==', user.uid)
+      .orderBy('createdAt', 'desc')
+      .limit(5);
+    
+    const snapshot = await batchesRef.get();
+    
+    if (snapshot.empty) {
+      collectionsList.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">🌱</span>
+          <p>No collections yet. Tag your first herb collection!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const date = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : data.harvestDate;
+      
+      html += `
+        <div class="collection-item">
+          <div class="collection-info">
+            <div class="collection-header">
+              <strong>${data.batchId}</strong>
+              <span class="collection-status pending">Pending Lab Test</span>
+            </div>
+            <div class="collection-details">
+              <span class="herb-type">${data.herbType}</span>
+              <span class="quantity">${data.quantity}kg</span>
+              <span class="date">${date}</span>
+            </div>
+            <div class="collection-location">
+              <span class="ph ph-map-pin"></span>
+              <span>${data.location}</span>
+            </div>
+          </div>
+          <div class="collection-actions">
+            <button class="btn-icon view-details" onclick="viewCollectionDetails('${doc.id}')">
+              <span class="ph ph-eye"></span>
+            </button>
+            <button class="btn-icon export-csv" onclick="exportCollectionCSV('${doc.id}')">
+              <span class="ph ph-download"></span>
+            </button>
+          </div>
+        </div>
+      `;
+    });
+    
+    collectionsList.innerHTML = html;
+    
+  } catch (error) {
+    console.error('Error loading recent collections:', error);
+    collectionsList.innerHTML = `
+      <div class="error-state">
+        <p>Error loading collections. Please try again.</p>
+      </div>
+    `;
+  }
+}
+
+// View Collection Details
+async function viewCollectionDetails(batchId) {
+  try {
+    const doc = await db.collection('batches').doc(batchId).get();
+    if (doc.exists) {
+      const data = doc.data();
+      const detailsHtml = `
+        <div class="collection-details-modal">
+          <h3>Collection Details</h3>
+          <div class="detail-row">
+            <span class="detail-label">Batch ID:</span>
+            <span class="detail-value">${data.batchId}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Herb Type:</span>
+            <span class="detail-value">${data.herbType}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Quantity:</span>
+            <span class="detail-value">${data.quantity}kg</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Harvest Date:</span>
+            <span class="detail-value">${data.harvestDate}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Location:</span>
+            <span class="detail-value">${data.location}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value status-${data.status}">${data.status}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Blockchain:</span>
+            <span class="detail-value">✓ Verified</span>
+          </div>
+        </div>
+      `;
+      
+      // Show modal (would need modal implementation)
+      showToast('Collection details loaded', 'info');
+      console.log('Collection details:', data);
+    }
+  } catch (error) {
+    console.error('Error viewing collection details:', error);
+    showToast('Error loading collection details', 'error');
+  }
+}
+
+// Export Collection to CSV
+function exportCollectionCSV(batchId) {
+  // This would export specific collection data to CSV
+  showToast('Exporting collection to CSV...', 'info');
+  // Implementation would be in exports.js
+}
+
+// Show Batch ID Modal
+function showBatchIDModal(batchId, herbType, quantity) {
+  const modal = document.getElementById('batch-id-modal');
+  const batchIdDisplay = document.getElementById('generated-batch-id');
+  const herbTypeDisplay = document.getElementById('batch-herb-type');
+  const quantityDisplay = document.getElementById('batch-quantity');
+  
+  if (modal && batchIdDisplay && herbTypeDisplay && quantityDisplay) {
+    batchIdDisplay.textContent = batchId;
+    herbTypeDisplay.textContent = herbType;
+    quantityDisplay.textContent = quantity;
+    modal.style.display = 'flex';
+  }
+}
+
+// Load Farmer Data
+async function loadFarmerData() {
+  // Load user info
+  const user = auth.currentUser;
+  if (user) {
+    document.getElementById('farmer-name').value = user.displayName || user.email.split('@')[0];
+  }
+  
+  // Load recent collections
+  await updateRecentCollections();
+  
+  // Load market rates
+  initMarketRates();
+  
+  // Load weather
+  initWeatherWidget();
+}
+
+// Enhanced GPS Location Capture
 function captureLocation() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((position) => {
-      const location = `${position.coords.latitude.toFixed(4)}°N, ${position.coords.longitude.toFixed(4)}°E`;
+      const { latitude, longitude } = position.coords;
+      const locationString = `${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`;
+      
       const locationDisplay = document.getElementById('location-display');
       if (locationDisplay) {
-        locationDisplay.textContent = `Location captured: ${location}`;
+        locationDisplay.innerHTML = `
+          <div class="location-capture">
+            <span class="location-icon">📍</span>
+            <span class="location-text">Location captured: ${locationString}</span>
+            <button type="button" class="btn-icon remove-location" onclick="removeLocation()">
+              <span class="ph ph-x"></span>
+            </button>
+          </div>
+        `;
       }
+      
+      // Store location
+      window.currentFarmerLocation = { latitude, longitude };
+      
+      // Update map if exists
+      if (window.farmerMap) {
+        window.farmerMap.setView([latitude, longitude], 15);
+        L.marker([latitude, longitude]).addTo(window.farmerMap)
+          .bindPopup(`📍 Your Farm Location: ${locationString}`).openPopup();
+      }
+      
       showToast('GPS location captured successfully!', 'success');
     }, (error) => {
       console.error('Error capturing location:', error);
-      showToast('Unable to capture location. Please enable GPS.', 'error');
+      let errorMessage = 'Unable to capture location.';
+      
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          errorMessage = 'Location access denied. Please enable location services.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          errorMessage = 'Location information unavailable.';
+          break;
+        case error.TIMEOUT:
+          errorMessage = 'Location request timed out.';
+          break;
+      }
+      
+      showToast(errorMessage, 'error');
+    }, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000 // 5 minutes
     });
   } else {
     showToast('Geolocation is not supported by this browser.', 'error');
   }
 }
 
-function getCurrentLocation() {
-  // This would return the captured GPS coordinates
-  return '23.25°N, 77.41°E'; // Placeholder
+// Remove Location
+function removeLocation() {
+  window.currentFarmerLocation = null;
+  window.selectedFarmerLocation = null;
+  
+  const locationDisplay = document.getElementById('location-display');
+  if (locationDisplay) {
+    locationDisplay.innerHTML = '';
+  }
+  
+  showToast('Location removed', 'info');
 }
 
-function updateRecentCollections() {
-  // Update the recent collections list
-  const collectionsList = document.getElementById('recent-collections');
-  if (collectionsList) {
-    collectionsList.innerHTML = `
-      <div class="collection-item">
-        <div>
-          <strong>BATCH-001</strong><br>
-          <span class="text-muted">Ashwagandha • 50kg • Mar 1, 2024</span>
-        </div>
-        <span class="text-success">✓ Blockchain</span>
-      </div>
-    `;
-  }
-}
+// Export functions for global use
+window.farmerDashboard = {
+  initFarmerDashboard,
+  submitHerbCollection,
+  captureLocation,
+  removeLocation,
+  viewCollectionDetails,
+  exportCollectionCSV,
+  showBatchIDModal
+};
 
 function initLabDashboard() {
   // Lab dashboard specific initialization

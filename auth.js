@@ -16,6 +16,9 @@ let userRole = null;
 
 // Initialize authentication
 function initAuth() {
+  // Initialize blockchain first
+  initBlockchainSystem();
+  
   auth.onAuthStateChanged(async (user) => {
     if (user) {
       currentUser = user;
@@ -31,6 +34,11 @@ function initAuth() {
       
       // Route to appropriate dashboard
       routeByRole(userRole);
+      
+      // Initialize blockchain viewer for all users
+      if (typeof initBlockchainViewer === 'function') {
+        initBlockchainViewer();
+      }
     } else {
       // Show landing page and login modal
       document.getElementById('landing-page').style.display = 'flex';
@@ -41,6 +49,31 @@ function initAuth() {
       showLoginModal();
     }
   });
+}
+
+// Initialize blockchain system
+async function initBlockchainSystem() {
+  try {
+    // Load blockchain from localStorage
+    if (typeof blockchain !== 'undefined') {
+      blockchain.loadChain();
+      console.log('✅ Blockchain loaded from localStorage');
+    }
+    
+    // Load blockchain from Firestore
+    if (typeof blockchain !== 'undefined') {
+      await blockchain.loadFromFirestore();
+      console.log('✅ Blockchain loaded from Firestore');
+    }
+    
+    // Initialize smart contracts
+    if (typeof contractRegistry !== 'undefined') {
+      console.log('✅ Smart contracts initialized');
+    }
+    
+  } catch (error) {
+    console.error('Error initializing blockchain system:', error);
+  }
 }
 
 // Get user role from Firestore

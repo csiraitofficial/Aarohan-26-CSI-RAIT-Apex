@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Test Suite - Krishi</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .test-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .test-status.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .test-status.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .test-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .test-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .test-panel h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .test-output {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #007bff;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .blockchain-visualization {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .block-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .block-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .block-content {
+            flex: 1;
+        }
+        
+        .block-hash {
+            color: #6c757d;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Krishi Blockchain Test Suite</h1>
+    <p>Testing blockchain functionality, smart contracts, and integration</p>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-value" id="chain-length">0</span>
+            <span class="stat-label">Chain Length</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="last-block">Genesis</span>
+            <span class="stat-label">Last Block</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="validation">✓</span>
+            <span class="stat-label">Validation</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value" id="contracts">0</span>
+            <span class="stat-label">Contracts</span>
+        </div>
+    </div>
+
+    <!-- Test 1: Blockchain Core Functionality -->
+    <div class="test-container">
+        <div class="test-header">
+            <span class="test-title">Test 1: Blockchain Core Functionality</span>
+            <span class="test-status" id="test1-status">Pending</span>
+        </div>
+        <div class="controls">
+            <button class="btn-primary" onclick="testBlockchainCore()">Run Core Tests</button>
+            <button class="btn-secondary" onclick="clearTestOutput('test1-output')">Clear Output</button>
+            <button class="btn-warning" onclick="resetBlockchain()">Reset Chain</button>
+        </div>
+        <div class="test-content">
+            <div class="test-panel">
+                <h4>Test Actions</h4>
+                <div class="controls">
+                    <button class="btn-success" onclick="createTestBlocks()">Create Test Blocks</button>
+                    <button class="btn-info" onclick="validateChain()">Validate Chain</button>
+                    <button class="btn-info" onclick="getChainLength()">Get Chain Length</button>
+                </div>
+            </div>
+            <div class="test-panel">
+                <h4>Output</h4>
+                <div class="test-output" id="test1-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 2: Smart Contracts -->
+    <div class="test-container">
+        <div class="test-header">
+            <span class="test-title">Test 2: Smart Contracts</span>
+            <span class="test-status" id="test2-status">Pending</span>
+        </div>
+        <div class="controls">
+            <button class="btn-primary" onclick="testSmartContracts()">Run Contract Tests</button>
+            <button class="btn-secondary" onclick="clearTestOutput('test2-output')">Clear Output</button>
+        </div>
+        <div class="test-content">
+            <div class="test-panel">
+                <h4>Contract Actions</h4>
+                <div class="controls">
+                    <button class="btn-success" onclick="testPaymentContract()">Test Payment Contract</button>
+                    <button class="btn-success" onclick="testQualityContract()">Test Quality Contract</button>
+                    <button class="btn-success" onclick="testInsuranceContract()">Test Insurance Contract</button>
+                    <button class="btn-success" onclick="testSupplyChainContract()">Test Supply Chain Contract</button>
+                </div>
+            </div>
+            <div class="test-panel">
+                <h4>Output</h4>
+                <div class="test-output" id="test2-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 3: Integration Tests -->
+    <div class="test-container">
+        <div class="test-header">
+            <span class="test-title">Test 3: End-to-End Integration</span>
+            <span class="test-status" id="test3-status">Pending</span>
+        </div>
+        <div class="controls">
+            <button class="btn-primary" onclick="testIntegration()">Run Integration Tests</button>
+            <button class="btn-secondary" onclick="clearTestOutput('test3-output')">Clear Output</button>
+        </div>
+        <div class="test-content">
+            <div class="test-panel">
+                <h4>Integration Flow</h4>
+                <div class="controls">
+                    <button class="btn-success" onclick="simulateFullFlow()">Simulate Full Flow</button>
+                    <button class="btn-info" onclick="testPersistence()">Test Persistence</button>
+                </div>
+            </div>
+            <div class="test-panel">
+                <h4>Output</h4>
+                <div class="test-output" id="test3-output"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blockchain Visualization -->
+    <div class="test-container">
+        <div class="test-header">
+            <span class="test-title">Blockchain Visualization</span>
+            <span class="test-status">Live</span>
+        </div>
+        <div class="blockchain-visualization" id="blockchain-viz">
+            <!-- Blocks will be rendered here -->
+        </div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.x.x/firebase-firestore-compat.js"></script>
+    
+    <!-- Application Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="blockchain-simulator.js"></script>
+    <script src="smart-contracts-enhanced.js"></script>
+
+    <script>
+        // Test utilities
+        let testResults = {
+            blockchainCore: false,
+            smartContracts: false,
+            integration: false
+        };
+
+        function logOutput(containerId, message, type = 'info') {
+            const output = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#495057';
+            output.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}\n</span>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateTestStatus(testId, passed) {
+            const statusEl = document.getElementById(testId);
+            statusEl.textContent = passed ? 'PASSED' : 'FAILED';
+            statusEl.className = `test-status ${passed ? 'pass' : 'fail'}`;
+        }
+
+        function clearTestOutput(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        // Test 1: Blockchain Core Functionality
+        async function testBlockchainCore() {
+            logOutput('test1-output', '=== Starting Blockchain Core Tests ===', 'info');
+            
+            try {
+                // Test 1.1: Genesis Block
+                logOutput('test1-output', '1. Testing Genesis Block...', 'info');
+                const genesis = await blockchain.getGenesisBlock();
+                logOutput('test1-output', `   Genesis block created: ${genesis.hash.substring(0, 10)}...`, 'success');
+                
+                // Test 1.2: Add Blocks
+                logOutput('test1-output', '2. Adding test blocks...', 'info');
+                const block1 = await blockchain.addBlock('collection', {
+                    batchId: 'TEST-001',
+                    farmerId: 'test-farmer',
+                    herbType: 'Ashwagandha',
+                    quantity: '50kg'
+                });
+                logOutput('test1-output', `   Block 1 added: ${block1.hash.substring(0, 10)}...`, 'success');
+                
+                const block2 = await blockchain.addBlock('lab-test', {
+                    batchId: 'TEST-001',
+                    testResult: 'PASS',
+                    parameters: {
+                        moisture: 8.5,
+                        activeMarkers: 2.1,
+                        pesticides: 'none'
+                    }
+                });
+                logOutput('test1-output', `   Block 2 added: ${block2.hash.substring(0, 10)}...`, 'success');
+                
+                // Test 1.3: Chain Validation
+                logOutput('test1-output', '3. Validating chain...', 'info');
+                const isValid = await blockchain.validateChain();
+                logOutput('test1-output', `   Chain validation: ${isValid ? 'PASSED' : 'FAILED'}`, isValid ? 'success' : 'error');
+                
+                // Test 1.4: Chain Length
+                const length = await blockchain.getChainLength();
+                logOutput('test1-output', `   Chain length: ${length}`, 'success');
+                
+                // Test 1.5: Block Retrieval
+                const blocks = await blockchain.getChain();
+                logOutput('test1-output', `   Retrieved ${blocks.length} blocks from chain`, 'success');
+                
+                testResults.blockchainCore = true;
+                updateTestStatus('test1-status', true);
+                logOutput('test1-output', '=== Blockchain Core Tests PASSED ===', 'success');
+                
+            } catch (error) {
+                logOutput('test1-output', `ERROR: ${error.message}`, 'error');
+                updateTestStatus('test1-status', false);
+            }
+            
+            updateStats();
+            renderBlockchainViz();
+        }
+
+        // Test 2: Smart Contracts
+        async function testSmartContracts() {
+            logOutput('test2-output', '=== Starting Smart Contract Tests ===', 'info');
+            
+            try {
+                // Test 2.1: Payment Contract
+                logOutput('test2-output', '1. Testing Payment Contract...', 'info');
+                const paymentContract = contractRegistry.getContract('PaymentContract');
+                const paymentResult = await paymentContract.execute({
+                    batchId: 'TEST-001',
+                    farmerId: 'test-farmer',
+                    herbType: 'Ashwagandha',
+                    quantity: 50
+                }, {
+                    result: 'PASS'
+                });
+                logOutput('test2-output', `   Payment contract: ${paymentResult.message}`, paymentResult.success ? 'success' : 'error');
+                
+                // Test 2.2: Quality Contract
+                logOutput('test2-output', '2. Testing Quality Contract...', 'info');
+                const qualityContract = contractRegistry.getContract('QualityContract');
+                const qualityResult = await qualityContract.execute('Ashwagandha', {
+                    moisture: 8.5,
+                    activeMarkers: 2.1,
+                    pesticides: 'none',
+                    heavyMetals: 'within-limits',
+                    microbial: 'within-limits'
+                });
+                logOutput('test2-output', `   Quality evaluation: ${qualityResult.result}`, qualityResult.result === 'PASS' ? 'success' : 'error');
+                
+                // Test 2.3: Insurance Contract
+                logOutput('test2-output', '3. Testing Insurance Contract...', 'info');
+                const insuranceContract = contractRegistry.getContract('InsuranceContract');
+                const insuranceResult = await insuranceContract.execute({
+                    batchId: 'TEST-002',
+                    farmerId: 'test-farmer',
+                    herbType: 'Tulsi',
+                    quantity: 30
+                }, {
+                    result: 'FAIL'
+                });
+                logOutput('test2-output', `   Insurance contract: ${insuranceResult.message}`, insuranceResult.success ? 'success' : 'error');
+                
+                // Test 2.4: Supply Chain Contract
+                logOutput('test2-output', '4. Testing Supply Chain Contract...', 'info');
+                const supplyChainContract = contractRegistry.getContract('SupplyChainContract');
+                const reputationResult = await supplyChainContract.execute('test-farmer', {
+                    type: 'collection',
+                    batchId: 'TEST-003'
+                });
+                logOutput('test2-output', `   Reputation updated: ${reputationResult.newScore}`, 'success');
+                
+                testResults.smartContracts = true;
+                updateTestStatus('test2-status', true);
+                logOutput('test2-output', '=== Smart Contract Tests PASSED ===', 'success');
+                
+            } catch (error) {
+                logOutput('test2-output', `ERROR: ${error.message}`, 'error');
+                updateTestStatus('test2-status', false);
+            }
+            
+            updateStats();
+        }
+
+        // Test 3: Integration Tests
+        async function testIntegration() {
+            logOutput('test3-output', '=== Starting Integration Tests ===', 'info');
+            
+            try {
+                // Test 3.1: Full Flow Simulation
+                logOutput('test3-output', '1. Simulating full supply chain flow...', 'info');
+                
+                // Collection
+                const collectionBlock = await blockchain.addBlock('collection', {
+                    batchId: 'INTEGRATION-001',
+                    farmerId: 'integration-farmer',
+                    herbType: 'Neem',
+                    quantity: '100kg',
+                    location: '23.25°N, 77.41°E'
+                });
+                logOutput('test3-output', `   Collection block created: ${collectionBlock.hash.substring(0, 10)}...`, 'success');
+                
+                // Lab Test with Smart Contract
+                const labBlock = await blockchain.addBlock('lab-test', {
+                    batchId: 'INTEGRATION-001',
+                    testResult: 'PASS',
+                    parameters: {
+                        moisture: 12.0,
+                        activeMarkers: 1.8,
+                        pesticides: 'none',
+                        heavyMetals: 'within-limits',
+                        microbial: 'within-limits'
+                    }
+                });
+                logOutput('test3-output', `   Lab test block created: ${labBlock.hash.substring(0, 10)}...`, 'success');
+                
+                // Manufacturing
+                const manufacturingBlock = await blockchain.addBlock('manufacturing', {
+                    batchId: 'INTEGRATION-001',
+                    productId: 'PRODUCT-001',
+                    productName: 'Neem Extract',
+                    productType: 'Extract',
+                    manufacturingDate: new Date().toISOString(),
+                    expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+                });
+                logOutput('test3-output', `   Manufacturing block created: ${manufacturingBlock.hash.substring(0, 10)}...`, 'success');
+                
+                // Test 3.2: Search Functionality
+                logOutput('test3-output', '2. Testing search functionality...', 'info');
+                const searchResults = await blockchain.getBlocksByBatchId('INTEGRATION-001');
+                logOutput('test3-output', `   Found ${searchResults.length} blocks for batch INTEGRATION-001`, 'success');
+                
+                // Test 3.3: Chain Validation
+                const isValid = await blockchain.validateChain();
+                logOutput('test3-output', `   Final chain validation: ${isValid ? 'PASSED' : 'FAILED'}`, isValid ? 'success' : 'error');
+                
+                testResults.integration = true;
+                updateTestStatus('test3-status', true);
+                logOutput('test3-output', '=== Integration Tests PASSED ===', 'success');
+                
+            } catch (error) {
+                logOutput('test3-output', `ERROR: ${error.message}`, 'error');
+                updateTestStatus('test3-status', false);
+            }
+            
+            updateStats();
+            renderBlockchainViz();
+        }
+
+        // Helper Functions
+        async function createTestBlocks() {
+            logOutput('test1-output', 'Creating additional test blocks...', 'info');
+            await blockchain.addBlock('collection', { batchId: 'TEST-002', farmerId: 'test-farmer-2', herbType: 'Tulsi', quantity: '30kg' });
+            await blockchain.addBlock('collection', { batchId: 'TEST-003', farmerId: 'test-farmer-3', herbType: 'Turmeric', quantity: '40kg' });
+            logOutput('test1-output', 'Test blocks created successfully', 'success');
+            updateStats();
+            renderBlockchainViz();
+        }
+
+        async function validateChain() {
+            const isValid = await blockchain.validateChain();
+            logOutput('test1-output', `Chain validation: ${isValid ? 'PASSED' : 'FAILED'}`, isValid ? 'success' : 'error');
+        }
+
+        async function getChainLength() {
+            const length = await blockchain.getChainLength();
+            logOutput('test1-output', `Current chain length: ${length}`, 'info');
+        }
+
+        async function resetBlockchain() {
+            logOutput('test1-output', 'Resetting blockchain...', 'warning');
+            blockchain.chain = [];
+            blockchain.persistChain();
+            await blockchain.loadChain();
+            logOutput('test1-output', 'Blockchain reset complete', 'success');
+            updateStats();
+            renderBlockchainViz();
+        }
+
+        async function testPaymentContract() {
+            const result = await contractRegistry.executeContract('PaymentContract', {
+                batchId: 'TEST-PAYMENT',
+                farmerId: 'test-farmer',
+                herbType: 'Ashwagandha',
+                quantity: 25
+            }, { result: 'PASS' });
+            logOutput('test2-output', `Payment contract result: ${result.message}`, result.success ? 'success' : 'error');
+        }
+
+        async function testQualityContract() {
+            const result = await contractRegistry.executeContract('QualityContract', 'Ashwagandha', {
+                moisture: 9.0,
+                activeMarkers: 1.6,
+                pesticides: 'none',
+                heavyMetals: 'within-limits',
+                microbial: 'within-limits'
+            });
+            logOutput('test2-output', `Quality contract result: ${result.result}`, result.result === 'PASS' ? 'success' : 'error');
+        }
+
+        async function testInsuranceContract() {
+            const result = await contractRegistry.executeContract('InsuranceContract', {
+                batchId: 'TEST-INSURANCE',
+                farmerId: 'test-farmer',
+                herbType: 'Tulsi',
+                quantity: 20
+            }, { result: 'FAIL' });
+            logOutput('test2-output', `Insurance contract result: ${result.message}`, result.success ? 'success' : 'error');
+        }
+
+        async function testSupplyChainContract() {
+            const result = await contractRegistry.executeContract('SupplyChainContract', 'test-farmer', {
+                type: 'collection',
+                batchId: 'TEST-SC'
+            });
+            logOutput('test2-output', `Supply chain contract result: Stakeholder ${result.stakeholderId} score updated to ${result.newScore}`, 'success');
+        }
+
+        async function simulateFullFlow() {
+            logOutput('test3-output', 'Simulating complete supply chain flow...', 'info');
+            await testIntegration();
+        }
+
+        async function testPersistence() {
+            logOutput('test3-output', 'Testing blockchain persistence...', 'info');
+            
+            // Save current chain
+            blockchain.persistChain();
+            logOutput('test3-output', 'Chain saved to localStorage', 'success');
+            
+            // Create new blockchain instance
+            const tempChain = new KrishiBlockchain();
+            await tempChain.loadChain();
+            
+            const originalLength = await blockchain.getChainLength();
+            const loadedLength = await tempChain.getChainLength();
+            
+            if (originalLength === loadedLength) {
+                logOutput('test3-output', `Persistence test: PASSED (${originalLength} blocks loaded)`, 'success');
+            } else {
+                logOutput('test3-output', `Persistence test: FAILED (Expected: ${originalLength}, Got: ${loadedLength})`, 'error');
+            }
+        }
+
+        // Visualization and Stats
+        async function renderBlockchainViz() {
+            const viz = document.getElementById('blockchain-viz');
+            const chain = await blockchain.getChain();
+            
+            viz.innerHTML = chain.map((block, index) => {
+                const iconColor = getBlockIconColor(block.data.type);
+                const icon = getBlockIcon(block.data.type);
+                
+                return `
+                    <div class="block-item">
+                        <div class="block-icon" style="background-color: ${iconColor}">
+                            ${icon}
+                        </div>
+                        <div class="block-content">
+                            <strong>${block.data.type || 'unknown'}</strong> - ${new Date(block.timestamp).toLocaleString()}
+                            <div class="block-hash">Hash: ${block.hash.substring(0, 40)}...</div>
+                            <div style="font-size: 10px; color: #6c757d; margin-top: 2px;">
+                                Data: ${JSON.stringify(block.data).substring(0, 100)}${JSON.stringify(block.data).length > 100 ? '...' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getBlockIconColor(type) {
+            const colors = {
+                'genesis': '#6C63FF',
+                'collection': '#2D6A4F',
+                'lab-test': '#3A86FF',
+                'manufacturing': '#F4A261',
+                'smart-contract-event': '#57CC99',
+                'insurance-claim': '#F7B731',
+                'dna-registration': '#E63946'
+            };
+            return colors[type] || '#6c757d';
+        }
+
+        function getBlockIcon(type) {
+            const icons = {
+                'genesis': '🌱',
+                'collection': '🌱',
+                'lab-test': '🧪',
+                'manufacturing': '🏭',
+                'smart-contract-event': '⚡',
+                'insurance-claim': '💰',
+                'dna-registration': '🧬'
+            };
+            return icons[type] || '📦';
+        }
+
+        async function updateStats() {
+            const length = await blockchain.getChainLength();
+            document.getElementById('chain-length').textContent = length;
+            
+            const chain = await blockchain.getChain();
+            const lastBlock = chain.length > 0 ? chain[chain.length - 1].data.type : 'Genesis';
+            document.getElementById('last-block').textContent = lastBlock;
+            
+            const isValid = await blockchain.validateChain();
+            document.getElementById('validation').textContent = isValid ? '✓' : '✗';
+            document.getElementById('validation').style.color = isValid ? '#28a745' : '#dc3545';
+            
+            const contracts = contractRegistry.getAllContracts().length;
+            document.getElementById('contracts').textContent = contracts;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            logOutput('test1-output', 'Test suite initialized. Click "Run Core Tests" to begin.', 'info');
+            await updateStats();
+            await renderBlockchainViz();
+        });
+    </script>
+</body>
+</html>

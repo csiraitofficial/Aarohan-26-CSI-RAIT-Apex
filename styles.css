@@ -2393,6 +2393,353 @@ textarea {
 }
 
 /* ========================================
+   Blockchain Visualization Styles
+   ======================================== */
+
+/* Blockchain Chain Visualization */
+.blockchain-chain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  background: linear-gradient(180deg, var(--color-surface), var(--color-surface-50));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-height: 400px;
+  position: relative;
+}
+
+.blockchain-chain::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--color-blockchain), transparent);
+  opacity: 0.3;
+}
+
+.blockchain-block {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  position: relative;
+  animation: fadeInUp var(--transition-normal);
+}
+
+.blockchain-block:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-blockchain);
+  background: rgba(108, 99, 255, 0.05);
+}
+
+.blockchain-block::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: var(--color-blockchain);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 4px var(--color-surface), 0 0 0 6px var(--color-border);
+}
+
+.blockchain-block.genesis {
+  border-left: 4px solid var(--color-blockchain);
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), transparent);
+}
+
+.blockchain-block.collection {
+  border-left: 4px solid var(--color-primary);
+  background: linear-gradient(135deg, rgba(45, 106, 79, 0.1), transparent);
+}
+
+.blockchain-block.lab-test {
+  border-left: 4px solid var(--color-info);
+  background: linear-gradient(135deg, rgba(58, 134, 255, 0.1), transparent);
+}
+
+.blockchain-block.manufacturing {
+  border-left: 4px solid var(--color-accent);
+  background: linear-gradient(135deg, rgba(244, 162, 97, 0.1), transparent);
+}
+
+.blockchain-block.smart-contract {
+  border-left: 4px solid var(--color-success);
+  background: linear-gradient(135deg, rgba(87, 204, 153, 0.1), transparent);
+}
+
+.blockchain-block.insurance {
+  border-left: 4px solid var(--color-warning);
+  background: linear-gradient(135deg, rgba(247, 183, 49, 0.1), transparent);
+}
+
+.blockchain-block.dna {
+  border-left: 4px solid var(--color-danger);
+  background: linear-gradient(135deg, rgba(230, 57, 70, 0.1), transparent);
+}
+
+.block-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-blockchain), #9d8cff);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  box-shadow: var(--shadow-lg);
+  flex-shrink: 0;
+}
+
+.block-content {
+  flex: 1;
+}
+
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.block-type {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.block-timestamp {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.block-data {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.block-field {
+  background: var(--color-surface-50);
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.block-field strong {
+  color: var(--color-text);
+  margin-right: var(--space-xs);
+}
+
+.block-hash {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  background: var(--color-surface-50);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  margin-top: var(--space-sm);
+  word-break: break-all;
+}
+
+/* Blockchain Details Panel */
+.block-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.block-info {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.block-info h4 {
+  margin: 0 0 var(--space-md) 0;
+  color: var(--color-text);
+}
+
+.block-info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.block-info-item:last-child {
+  border-bottom: none;
+}
+
+.block-info-label {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.block-info-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.block-visualization {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.block-chain-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid var(--color-blockchain);
+  border-radius: var(--radius-md);
+}
+
+.chain-arrow {
+  font-size: var(--text-2xl);
+  color: var(--color-blockchain);
+}
+
+.chain-hash {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  flex: 1;
+  text-align: center;
+}
+
+/* Search Results */
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.block-result {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: all var(--transition-fast);
+}
+
+.block-result:hover {
+  background: rgba(108, 99, 255, 0.1);
+  border-color: var(--color-blockchain);
+}
+
+.block-result h4 {
+  margin: 0 0 var(--space-xs) 0;
+  color: var(--color-blockchain);
+}
+
+.block-result p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Blockchain Stats */
+.blockchain-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+.stat-item {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.stat-value {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-blockchain);
+}
+
+/* Blockchain Info */
+.blockchain-info {
+  background: linear-gradient(135deg, var(--color-blockchain), #9d8cff);
+  color: white;
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+.blockchain-info h4 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--text-lg);
+}
+
+.blockchain-info p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: var(--text-sm);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chainPulse {
+  0% { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(108, 99, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(108, 99, 255, 0); }
+}
+
+.blockchain-block.pulsing {
+  animation: chainPulse 2s infinite;
+}
+
+/* ========================================
    Print Styles
    ======================================== */
 
@@ -2418,5 +2765,26 @@ textarea {
   
   h1, h2, h3, h4, h5, h6 {
     color: black;
+  }
+  
+  /* Blockchain specific print styles */
+  .blockchain-chain {
+    border: 1px solid #ccc;
+    background: white;
+  }
+  
+  .blockchain-block {
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+  }
+  
+  .blockchain-block::before {
+    background: #666;
+    box-shadow: 0 0 0 4px white, 0 0 0 6px #ccc;
+  }
+  
+  .block-icon {
+    background: #666;
+    color: white;
   }
 }

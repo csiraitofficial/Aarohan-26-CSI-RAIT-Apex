@@ -867,6 +867,70 @@
         </div>
     </div>
 
+    <!-- SMS Verification Modal -->
+    <div id="sms-verification-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content sms-modal-content">
+            <div class="modal-header">
+                <h3>📱 Phone Verification</h3>
+                <p>Verify your phone number for enhanced security</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="phone-input">Phone Number</label>
+                    <input type="tel" id="phone-input" placeholder="Enter your 10-digit phone number" pattern="[0-9]{10}" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label for="otp-input">OTP Code</label>
+                    <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" maxlength="6">
+                </div>
+                <div class="form-actions">
+                    <button id="send-otp-btn" class="btn btn-secondary">Send OTP</button>
+                    <button id="verify-otp-btn" class="btn btn-primary">Verify</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch ID Modal -->
+    <div id="batch-id-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content batch-modal-content">
+            <div class="modal-header">
+                <h3>✅ Collection Successfully Tagged</h3>
+                <p>Your herb collection has been recorded on the blockchain</p>
+            </div>
+            <div class="modal-body">
+                <div class="batch-info-display">
+                    <div class="info-row">
+                        <span class="info-label">Batch ID:</span>
+                        <span class="info-value" id="generated-batch-id">BATCH-001</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Herb Type:</span>
+                        <span class="info-value" id="batch-herb-type">Ashwagandha</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Quantity:</span>
+                        <span class="info-value" id="batch-quantity">50kg</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value status-success">✓ Blockchain Verified</span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" onclick="document.getElementById('batch-id-modal').style.display='none'">
+                        <span class="ph ph-check"></span>
+                        Continue
+                    </button>
+                    <button class="btn btn-outline" onclick="exportCollectionCSV(document.getElementById('generated-batch-id').textContent)">
+                        <span class="ph ph-download"></span>
+                        Export Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
