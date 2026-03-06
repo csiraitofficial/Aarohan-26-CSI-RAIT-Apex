@@ -2147,38 +2147,290 @@ function loadBatchesForSendToLab() {
 function loadRecentCollections() {
     const container = document.getElementById('dashboard-container');
     container.innerHTML = `
-        <div class="dashboard shadcn-style">
-            <div class="page-header">
-                <button class="back-btn" onclick="showDashboard('farmer')">← Back to Farmer Dashboard</button>
-                <h1>Recent Collections</h1>
+            <div class="dashboard shadcn-style">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+                    <button class="back-btn" onclick="showDashboard('farmer')" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                        <i class="ph ph-arrow-left" style="font-size: 1.2rem;"></i> Back to Farmer Dashboard
+                    </button>
+                    <h1 style="margin: 0; font-size: 2rem; font-weight: 700; color: var(--foreground);">Recent Collections</h1>
+                </div>
+            <div class="collections-table-container">
+                <div class="table-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div class="table-stats" style="display: flex; gap: 1rem; align-items: center;">
+                        <span class="stat-badge" style="background: var(--muted); color: var(--foreground); padding: 4px 8px; border-radius: 6px; font-size: 0.8rem;">
+                            Total: <strong>${getAllHerbTransactions().filter(tx => tx.data.type === 'collection').length}</strong>
+                        </span>
+                        <span class="stat-badge" style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem;">
+                            Active: <strong>${getAllHerbTransactions().filter(tx => tx.data.type === 'collection' && tx.data.status === 'collected').length}</strong>
+                        </span>
+                    </div>
+                    <div class="table-search" style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="collection-search" placeholder="Search collections..." style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; width: 250px;">
+                        <button class="action-btn outline" onclick="exportCollectionsCSV()" style="padding: 8px 16px; font-size: 0.9rem;">
+                            <i class="ph ph-download-simple"></i> Export
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-wrapper" style="background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm);">
+                    <div class="table-header" style="background: #f8fafc; border-bottom: 1px solid var(--border); padding: 0;">
+                        <div class="table-row" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr; gap: 1rem; padding: 1rem; font-weight: 600; color: var(--muted-foreground); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <div>Herb Type & Batch</div>
+                            <div>Date</div>
+                            <div>Quantity</div>
+                            <div>Location</div>
+                            <div>Price</div>
+                            <div>Status</div>
+                        </div>
+                    </div>
+                    <div class="table-body" id="collections-table-body" style="max-height: 500px; overflow-y: auto;">
+                        <!-- Table rows will be inserted here -->
+                    </div>
+                </div>
             </div>
-            <div class="collections-grid" id="collections-grid"></div>
         </div>
     `;
 
+    // Add search functionality
+    const searchInput = document.getElementById('collection-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterCollections(this.value);
+        });
+    }
+
+    loadCollectionsTable();
+}
+
+function loadCollectionsTable() {
+    const tbody = document.getElementById('collections-table-body');
     const allTransactions = getAllHerbTransactions();
     const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
-    const grid = document.getElementById('collections-grid');
 
     if (collectionTransactions.length === 0) {
-        grid.innerHTML = '<div class="empty-state"><h3>No Collections Yet</h3></div>';
+        tbody.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: var(--muted-foreground);">
+                <i class="ph ph-package" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <h3 style="margin: 0 0 0.5rem; font-size: 1.1rem;">No Collections Yet</h3>
+                <p style="margin: 0; font-size: 0.9rem;">Start by tagging new herb collections in your dashboard.</p>
+            </div>
+        `;
         return;
     }
 
+    // Sort by date (newest first)
+    collectionTransactions.sort((a, b) => new Date(b.data.collectionDate) - new Date(a.data.collectionDate));
+
     let html = '';
-    collectionTransactions.reverse().forEach(tx => {
-        const location = tx.data.location ? `${tx.data.location.latitude}, ${tx.data.location.longitude}` : 'Not recorded';
+    collectionTransactions.forEach(tx => {
+        const data = tx.data;
+        const herbDisplay = data.herbType ? (data.herbType.charAt(0).toUpperCase() + data.herbType.slice(1)) : 'N/A';
+        const location = data.location ? `${parseFloat(data.location.latitude).toFixed(4)}, ${parseFloat(data.location.longitude).toFixed(4)}` : 'Not recorded';
+        const price = data.price ? `₹${parseFloat(data.price).toLocaleString('en-IN')}/kg` : 'N/A';
+        const totalPrice = (data.price && data.quantity) ? `₹${(parseFloat(data.price) * parseFloat(data.quantity)).toLocaleString('en-IN')}` : 'N/A';
+        const statusClass = data.status === 'collected' ? 'success' : 'warning';
+        
         html += `
-            <div class="collection-card">
-                <h4>${tx.data.herbType} (Batch: ${tx.data.batchId})</h4>
-                <p><strong>Date:</strong> ${tx.data.collectionDate}</p>
-                <p><strong>Quantity:</strong> ${tx.data.quantity} kg</p>
-                <p><strong>Location:</strong> ${location}</p>
-                <p><strong>Status:</strong> ${tx.data.status}</p>
+            <div class="table-row" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr; gap: 1rem; padding: 1rem; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600; color: var(--foreground); display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="background: #eff6ff; color: #1d4ed8; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">🌿</span>
+                        ${herbDisplay}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground); font-family: 'Geist Mono', monospace;">
+                        Batch: ${data.batchId}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600;">${data.collectionDate}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        ${new Date(data.timestamp).toLocaleTimeString()}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600; color: #059669;">${data.quantity} kg</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        Total: ${totalPrice}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600;">${location}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        ${data.location ? 'GPS Verified' : 'Location Pending'}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600; color: #7c3aed;">${price}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        Market Rate
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span class="status-badge status-${statusClass}" style="padding: 4px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">
+                        ${data.status || 'collected'}
+                    </span>
+                </div>
             </div>
         `;
     });
-    grid.innerHTML = html;
+
+    tbody.innerHTML = html;
+    
+    // Add hover effect
+    const rows = tbody.querySelectorAll('.table-row');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', () => row.style.backgroundColor = '#f8fafc');
+        row.addEventListener('mouseleave', () => row.style.backgroundColor = 'transparent');
+    });
+}
+
+function filterCollections(searchTerm) {
+    const tbody = document.getElementById('collections-table-body');
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    if (!searchTerm.trim()) {
+        loadCollectionsTable();
+        return;
+    }
+
+    const filtered = collectionTransactions.filter(tx => {
+        const data = tx.data;
+        const searchText = searchTerm.toLowerCase();
+        return (
+            data.herbType.toLowerCase().includes(searchText) ||
+            data.batchId.toLowerCase().includes(searchText) ||
+            data.collectionDate.toLowerCase().includes(searchText) ||
+            (data.location && `${data.location.latitude}, ${data.location.longitude}`.includes(searchText)) ||
+            data.quantity.toString().includes(searchText) ||
+            (data.price && data.price.toString().includes(searchText))
+        );
+    });
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: var(--muted-foreground);">
+                <i class="ph ph-search" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                <p>No collections found matching "${searchTerm}"</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Sort by date (newest first)
+    filtered.sort((a, b) => new Date(b.data.collectionDate) - new Date(a.data.collectionDate));
+
+    let html = '';
+    filtered.forEach(tx => {
+        const data = tx.data;
+        const herbDisplay = data.herbType ? (data.herbType.charAt(0).toUpperCase() + data.herbType.slice(1)) : 'N/A';
+        const location = data.location ? `${parseFloat(data.location.latitude).toFixed(4)}, ${parseFloat(data.location.longitude).toFixed(4)}` : 'Not recorded';
+        const price = data.price ? `₹${parseFloat(data.price).toLocaleString('en-IN')}/kg` : 'N/A';
+        const totalPrice = (data.price && data.quantity) ? `₹${(parseFloat(data.price) * parseFloat(data.quantity)).toLocaleString('en-IN')}` : 'N/A';
+        const statusClass = data.status === 'collected' ? 'success' : 'warning';
+        
+        html += `
+            <div class="table-row" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr; gap: 1rem; padding: 1rem; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600; color: var(--foreground); display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="background: #eff6ff; color: #1d4ed8; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">🌿</span>
+                        ${herbDisplay}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground); font-family: 'Geist Mono', monospace;">
+                        Batch: ${data.batchId}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600;">${data.collectionDate}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        ${new Date(data.timestamp).toLocaleTimeString()}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600; color: #059669;">${data.quantity} kg</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        Total: ${totalPrice}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600;">${location}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        ${data.location ? 'GPS Verified' : 'Location Pending'}
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <div style="font-weight: 600; color: #7c3aed;">${price}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                        Market Rate
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span class="status-badge status-${statusClass}" style="padding: 4px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">
+                        ${data.status || 'collected'}
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+
+    tbody.innerHTML = html;
+    
+    // Add hover effect
+    const rows = tbody.querySelectorAll('.table-row');
+    rows.forEach(row => {
+        row.addEventListener('mouseenter', () => row.style.backgroundColor = '#f8fafc');
+        row.addEventListener('mouseleave', () => row.style.backgroundColor = 'transparent');
+    });
+}
+
+function exportCollectionsCSV() {
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    if (collectionTransactions.length === 0) {
+        alert('No collections to export.');
+        return;
+    }
+
+    // Sort by date (newest first)
+    collectionTransactions.sort((a, b) => new Date(b.data.collectionDate) - new Date(a.data.collectionDate));
+
+    const headers = ['Herb Type', 'Batch ID', 'Collection Date', 'Quantity (kg)', 'Price (₹/kg)', 'Total Value (₹)', 'Location', 'Status', 'Timestamp'];
+    const rows = collectionTransactions.map(tx => {
+        const data = tx.data;
+        const location = data.location ? `${data.location.latitude}, ${data.location.longitude}` : 'Not recorded';
+        const totalPrice = (data.price && data.quantity) ? (parseFloat(data.price) * parseFloat(data.quantity)).toLocaleString('en-IN') : 'N/A';
+        return [
+            data.herbType || 'N/A',
+            data.batchId || 'N/A',
+            data.collectionDate || 'N/A',
+            data.quantity || 'N/A',
+            data.price || 'N/A',
+            totalPrice,
+            location,
+            data.status || 'collected',
+            new Date(data.timestamp).toLocaleString()
+        ];
+    });
+
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `collections_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    if (window.showNotification) {
+        window.showNotification('Collections exported successfully!', 'success');
+    }
 }
 
 // Recent Tests Page
