@@ -2,38 +2,102 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Users Collection ───────────────────────────────
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
+    // Helper function to check user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    // ─── Batches Collection (Farmers write, all roles read) ─
+    // Users collection - read own profile, create own profile
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || request.auth.uid != null;
+      allow create: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId;
+      allow delete: if false; // Never delete users
+    }
+
+    // Batches - farmers can create, all authenticated users can read
     match /batches/{batchId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && 
-                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'farmer';
-      allow update: if request.auth != null;
+        (getUserRole() == 'farmer' || getUserRole() == 'admin');
+      allow update: if request.auth != null && 
+        (getUserRole() == 'farmer' || getUserRole() == 'admin' || getUserRole() == 'lab');
+      allow delete: if request.auth != null && getUserRole() == 'admin';
     }
 
-    // ─── Lab Tests Collection ────────────────────────────
+    // Lab Tests - lab users can create, all can read
     match /labTests/{testId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && 
-                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['lab', 'admin'];
+        (getUserRole() == 'lab' || getUserRole() == 'admin');
+      allow update: if request.auth != null && 
+        (getUserRole() == 'lab' || getUserRole() == 'admin');
+      allow delete: if request.auth != null && getUserRole() == 'admin';
     }
 
-    // ─── Products Collection ─────────────────────────────
+    // Products - manufacturers can create, all can read (public verification)
     match /products/{productId} {
-      allow read: if true;   // Public — consumers can read
-      allow create: if request.auth != null &&
-                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['manufacturer', 'admin'];
+      allow read: if true; // Public for consumer verification
+      allow create: if request.auth != null && 
+        (getUserRole() == 'manufacturer' || getUserRole() == 'admin');
+      allow update: if request.auth != null && 
+        (getUserRole() == 'manufacturer' || getUserRole() == 'admin');
+      allow delete: if request.auth != null && getUserRole() == 'admin';
     }
 
-    // ─── Admin Only ──────────────────────────────────────
+    // Blockchain records - read by all authenticated, write by admin only
     match /blockchain/{docId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow write: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'farmer' || 
+         getUserRole() == 'lab' || getUserRole() == 'manufacturer');
+    }
+
+    // Waste records
+    match /waste/{docId} {
+      allow read: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'manufacturer');
+      allow write: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'manufacturer');
+    }
+
+    // Insurance - farmers and admin
+    match /insurance/{docId} {
+      allow read: if request.auth != null && 
+        (getUserRole() == 'farmer' || getUserRole() == 'admin');
+      allow write: if request.auth != null && 
+        (getUserRole() == 'farmer' || getUserRole() == 'admin');
+    }
+
+    // DNA Profiles - lab and admin
+    match /dnaProfiles/{docId} {
+      allow read: if request.auth != null && 
+        (getUserRole() == 'lab' || getUserRole() == 'admin');
+      allow write: if request.auth != null && 
+        (getUserRole() == 'lab' || getUserRole() == 'admin');
+    }
+
+    // Orders - manufacturers and admin
+    match /orders/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        (getUserRole() == 'manufacturer' || getUserRole() == 'admin');
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+    }
+
+    match /inventory/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /notifications/{docId} {
+      allow read, write: if request.auth != null;
     }
   }
 }

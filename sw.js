@@ -1,48 +1,74 @@
-const CACHE_NAME = 'vaidyachain-v1';
-const ASSETS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/auth.js',
-    '/i18n.js',
-    '/notifications.js',
-    '/search.js',
-    'https://unpkg.com/phosphor-icons',
-    'https://unpkg.com/@phosphor-icons/web@2.0.3/src/css/phosphor.css',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+// sw.js — Service Worker for PWA
+
+const CACHE_NAME = 'krishi-v1';
+const URLS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/auth.js',
+  '/firebase-config.js',
+  '/blockchain-simulator.js',
+  '/smart-contracts-enhanced.js',
+  '/notifications.js',
+  '/chatbot.js',
+  '/search.js',
+  '/exports.js',
+  '/i18n.js',
+  '/manifest.json'
 ];
 
-// Install Event
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            console.log('Caching essential assets');
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
-    );
-    self.skipWaiting();
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('✅ Caching app shell');
+        return cache.addAll(URLS_TO_CACHE);
+      })
+      .catch(err => console.error('Cache failed:', err))
+  );
+  self.skipWaiting();
 });
 
-// Activate Event
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((keys) => {
-            return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-            );
-        })
-    );
-    self.clients.claim();
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(names => {
+      return Promise.all(
+        names.filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      );
+    })
+  );
+  self.clients.claim();
 });
 
-// Fetch Event
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || fetch(event.request).catch(() => {
-                // Return offline page if needed
-            });
-        })
-    );
+self.addEventListener('fetch', event => {
+  // Skip Firebase and external API requests
+  if (event.request.url.includes('firebasestorage') ||
+      event.request.url.includes('googleapis') ||
+      event.request.url.includes('gstatic') ||
+      event.request.url.includes('unpkg') ||
+      event.request.url.includes('cdn.jsdelivr') ||
+      event.request.url.includes('cdnjs.cloudflare') ||
+      event.request.url.includes('tile.openstreetmap')) {
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request)
+      .then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (!response || response.status !== 200) return response;
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        });
+      })
+      .catch(() => {
+        if (event.request.destination === 'document') {
+          return caches.match('/index.html');
+        }
+      })
+  );
 });

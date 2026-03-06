@@ -1,22 +1,24 @@
 {
-    "name": "VaidyaChain",
-    "short_name": "VaidyaChain",
-    "description": "Blockchain-based botanical traceability system for Ayurvedic herbs",
-    "start_url": "/index.html",
-    "display": "standalone",
-    "background_color": "#064e3b",
-    "theme_color": "#064e3b",
-    "icons": [
-        {
-            "src": "https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=192&q=80",
-            "sizes": "192x192",
-            "type": "image/jpeg"
-        },
-        {
-            "src": "https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=512&q=80",
-            "sizes": "512x512",
-            "type": "image/jpeg"
-        }
-    ],
-    "orientation": "portrait"
+  "name": "Krishi - Herb Traceability",
+  "short_name": "Krishi",
+  "description": "Blockchain-powered Ayurvedic Herb Traceability Platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F9FA",
+  "theme_color": "#2D6A4F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

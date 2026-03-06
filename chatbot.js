@@ -1,351 +1,160 @@
-// chatbot.js - OpenRouter AI Chatbot Integration for VaidyaChain
-// API Key: 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
+// chatbot.js
+// AI Chatbot for Krishi
 
-const OPENROUTER_API_KEY = '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';
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const KrishiChatbot = {
+  isOpen: false,
+  messages: [],
 
-// System prompt for the chatbot
-const SYSTEM_PROMPT = `You are a helpful AI assistant for VaidyaChain - a blockchain-based Ayurvedic herb traceability system. 
+  knowledgeBase: [
+    {
+      keywords: ['hello', 'hi', 'hey', 'namaste'],
+      response: '🙏 Namaste! Welcome to Krishi. I can help you with herb traceability, batch tagging, lab testing, and blockchain verification. What would you like to know?'
+    },
+    {
+      keywords: ['tag', 'batch', 'collection', 'how to tag'],
+      response: '🌾 To tag a new herb batch:\n1. Go to Farmer Dashboard\n2. Fill in: Farmer Name, Herb Type, Quantity, Harvest Date\n3. Your GPS location is auto-captured\n4. Click "Submit Batch" — a blockchain block is created automatically!\n\nYour unique Batch ID (BATCH-XXXX) will be generated.'
+    },
+    {
+      keywords: ['lab', 'test', 'testing', 'quality'],
+      response: '🧪 Lab Testing Process:\n1. Lab selects a pending batch\n2. Tests: Moisture%, Active Markers, Pesticides, Heavy Metals, Microbial Count\n3. Our Quality Smart Contract auto-evaluates against herb-specific thresholds\n4. PASS → Payment released to farmer\n5. FAIL → Insurance claim auto-filed'
+    },
+    {
+      keywords: ['blockchain', 'hash', 'block', 'chain', 'how blockchain'],
+      response: '⛓️ Krishi Blockchain:\n• Each action (collection, testing, manufacturing) creates a new block\n• Blocks are cryptographically linked using hash functions\n• Any tampering breaks the chain — making data immutable\n• You can verify the entire chain in the Blockchain Explorer panel\n• Each block shows: type, timestamp, hash, and data'
+    },
+    {
+      keywords: ['smart contract', 'contract', 'payment', 'automatic'],
+      response: '📜 Krishi has 4 Smart Contracts:\n1. **QualityContract** — Auto-evaluates lab results against herb thresholds\n2. **PaymentContract** — Auto-releases payment to farmer on PASS\n3. **InsuranceContract** — Auto-files insurance claim on FAIL\n4. **SupplyChainContract** — Tracks reputation scores for all stakeholders'
+    },
+    {
+      keywords: ['qr', 'scan', 'trace', 'consumer', 'verify'],
+      response: '📱 For Consumers:\n1. Go to Consumer Portal\n2. Enter a Product ID or scan the QR code on the product\n3. See the complete supply chain journey: Farm → Lab → Factory\n4. Each step is blockchain-verified with a cryptographic seal\n5. You can verify the herb is authentic and tested!'
+    },
+    {
+      keywords: ['herb', 'herbs', 'ayurvedic', 'types'],
+      response: '🌿 Supported Herbs:\n• Ashwagandha — ₹450/kg\n• Tulsi — ₹320/kg\n• Neem — ₹280/kg\n• Turmeric — ₹200/kg\n• Brahmi — ₹550/kg\n• Shatavari — ₹480/kg\n• Amla — ₹180/kg\n• Guduchi — ₹400/kg\n\nEach herb has specific quality thresholds for lab testing.'
+    },
+    {
+      keywords: ['price', 'market', 'rate', 'cost'],
+      response: '💰 Current Market Rates:\n• Ashwagandha: ₹450/kg\n• Tulsi: ₹320/kg\n• Neem: ₹280/kg\n• Turmeric: ₹200/kg\n• Brahmi: ₹550/kg\n• Shatavari: ₹480/kg\n• Amla: ₹180/kg\n• Guduchi: ₹400/kg\n\nPrices update seasonally. Quality bonus of 10% for premium grades!'
+    },
+    {
+      keywords: ['insurance', 'claim', 'coverage'],
+      response: '🛡️ Insurance System:\n• Coverage: 50-75% of batch value depending on herb type\n• Auto-filed when lab test FAILS\n• Claim ID generated automatically\n• Track status in Insurance Dashboard\n• Protects farmers from losses on contaminated batches'
+    },
+    {
+      keywords: ['dna', 'genetic', 'authenticity'],
+      response: '🧬 DNA Banking:\n• Register genetic profiles for herb varieties\n• Each profile includes: variety name, genetic markers, lab ID\n• Used to verify authenticity against adulteration\n• Provides scientific proof for premium herb claims\n• Registered on blockchain for immutability'
+    },
+    {
+      keywords: ['waste', 'disposal', 'recycle'],
+      response: '♻️ Waste Management:\n• Register failed/expired batches for proper disposal\n• Methods: Composting, Biogas, CPCB-compliant disposal\n• Track waste volumes by category\n• Supports sustainability goals and circular economy'
+    },
+    {
+      keywords: ['weather', 'climate', 'forecast'],
+      response: '🌦️ Weather Information:\n• Weather widget shows current conditions for your farm area\n• Alerts for extreme weather that may affect herb quality\n• Temperature and humidity monitoring\n• Helps farmers plan harvest timing for optimal quality'
+    },
+    {
+      keywords: ['export', 'download', 'csv', 'pdf', 'report'],
+      response: '📤 Export Options:\n• CSV — Download batch data as spreadsheet\n• PDF — Generate lab certificates\n• JSON — Export entire blockchain for audit\n• Available from toolbar buttons in each dashboard'
+    },
+    {
+      keywords: ['language', 'hindi', 'gujarati', 'marathi', 'translation'],
+      response: '🌐 Language Support:\n• English (EN)\n• हिंदी (HI)\n• ગુજરાતી (GU)\n• मराठी (MR)\n\nChange language from the dropdown in the header. Your preference is saved!'
+    },
+    {
+      keywords: ['help', 'support', 'how to', 'guide'],
+      response: '❓ I can help with:\n• 🌾 Tagging herb batches\n• 🧪 Understanding lab tests\n• ⛓️ Blockchain verification\n• 📱 QR code scanning\n• 💰 Market prices\n• 📜 Smart contracts\n• 🛡️ Insurance claims\n• 📤 Exporting data\n\nJust ask me about any of these topics!'
+    }
+  ],
 
-Your role is to help users with:
-1. Understanding how the blockchain traceability system works
-2. Guiding farmers through herb collection and registration
-3. Explaining the quality testing process at laboratories
-4. Helping manufacturers with product creation and QR code generation
-5. Assisting consumers in tracing product authenticity
-6. Answering questions about blockchain technology in simple terms
-7. Providing information about insurance, sustainability, and DNA banking features
+  findResponse(input) {
+    const q = input.toLowerCase().trim();
 
-Key features of VaidyaChain:
-- Blockchain-powered tracking from farm to consumer
-- QR code scanning for product verification
-- Quality assurance through lab testing
-- Multi-stakeholder platform (farmers, labs, manufacturers, consumers)
-- Sustainability monitoring
-- Crop insurance with parametric triggers
-- DNA banking for herb preservation
+    for (const entry of this.knowledgeBase) {
+      if (entry.keywords.some(kw => q.includes(kw))) {
+        return entry.response;
+      }
+    }
 
-Always be friendly, helpful, and provide clear explanations. If you don't know something, admit it and suggest where the user might find more information.
+    return '🤔 I\'m not sure about that. Try asking about:\n• Batch tagging\n• Lab testing\n• Blockchain\n• Smart contracts\n• Market prices\n• QR tracing\n\nOr type "help" for all topics!';
+  },
 
-Language: Respond in the same language as the user's query. If the user writes in Hindi or Gujarati, respond in Hindi or Gujarati respectively.`;
+  toggle() {
+    this.isOpen = !this.isOpen;
+    const panel = document.getElementById('chatbot-panel');
+    if (panel) {
+      panel.style.display = this.isOpen ? 'flex' : 'none';
+    }
+    if (this.isOpen && this.messages.length === 0) {
+      this.addBotMessage('🙏 Namaste! I\'m KrishiBot. How can I help you today?\n\nType "help" to see all topics I can assist with.');
+    }
+  },
 
-let chatHistory = [];
-let isChatOpen = false;
-
-// Initialize chatbot
-document.addEventListener('DOMContentLoaded', function() {
-    createChatbotUI();
-    setupChatbotEventListeners();
-});
-
-// Create the chatbot UI
-function createChatbotUI() {
-    const chatbotContainer = document.createElement('div');
-    chatbotContainer.id = 'chatbot-container';
-    chatbotContainer.className = 'chatbot-container';
-    chatbotContainer.innerHTML = `
-        <!-- Chatbot Toggle Button -->
-        <button id="chatbot-toggle" class="chatbot-toggle" title="Chat with AI Assistant">
-            <i class="ph ph-robot"></i>
-            <span class="chatbot-badge">AI</span>
-        </button>
-        
-        <!-- Chatbot Window -->
-        <div id="chatbot-window" class="chatbot-window">
-            <div class="chatbot-header">
-                <div class="chatbot-header-info">
-                    <div class="chatbot-avatar">
-                        <i class="ph ph-robot"></i>
-                    </div>
-                    <div>
-                        <h3 data-i18n="chatbotTitle">VaidyaChain Assistant</h3>
-                        <span class="chatbot-status">
-                            <span class="status-dot"></span>
-                            Online
-                        </span>
-                    </div>
-                </div>
-                <button id="chatbot-close" class="chatbot-close">
-                    <i class="ph ph-x"></i>
-                </button>
-            </div>
-            
-            <div id="chatbot-messages" class="chatbot-messages">
-                <div class="chatbot-message bot-message">
-                    <div class="message-avatar">
-                        <i class="ph ph-robot"></i>
-                    </div>
-                    <div class="message-content">
-                        <p data-i18n="chatbotWelcome">Hello! I'm your VaidyaChain assistant. How can I help you today?</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="chatbot-input-area">
-                <input 
-                    type="text" 
-                    id="chatbot-input" 
-                    data-i18n-placeholder="chatbotPlaceholder"
-                    placeholder="Ask me anything about VaidyaChain..."
-                >
-                <button id="chatbot-send" class="chatbot-send">
-                    <i class="ph ph-paper-plane-tilt"></i>
-                </button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(chatbotContainer);
-}
-
-// Setup event listeners
-function setupChatbotEventListeners() {
-    const toggle = document.getElementById('chatbot-toggle');
-    const close = document.getElementById('chatbot-close');
-    const sendBtn = document.getElementById('chatbot-send');
+  sendMessage() {
     const input = document.getElementById('chatbot-input');
-    const window = document.getElementById('chatbot-window');
-    
-    if (toggle) {
-        toggle.addEventListener('click', toggleChatbot);
-    }
-    
-    if (close) {
-        close.addEventListener('click', closeChatbot);
-    }
-    
-    if (sendBtn) {
-        sendBtn.addEventListener('click', sendMessage);
-    }
-    
-    if (input) {
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    }
-}
+    if (!input) return;
 
-// Toggle chatbot visibility
-function toggleChatbot() {
-    const window = document.getElementById('chatbot-window');
-    const toggle = document.getElementById('chatbot-toggle');
-    
-    isChatOpen = !isChatOpen;
-    
-    if (isChatOpen) {
-        window.classList.add('chatbot-open');
-        toggle.classList.add('chatbot-hidden');
-    } else {
-        window.classList.remove('chatbot-open');
-        toggle.classList.remove('chatbot-hidden');
-    }
-}
+    const text = input.value.trim();
+    if (!text) return;
 
-// Close chatbot
-function closeChatbot() {
-    const window = document.getElementById('chatbot-window');
-    const toggle = document.getElementById('chatbot-toggle');
-    
-    isChatOpen = false;
-    window.classList.remove('chatbot-open');
-    toggle.classList.remove('chatbot-hidden');
-}
-
-// Send message to OpenRouter
-async function sendMessage() {
-    const input = document.getElementById('chatbot-input');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    // Add user message to UI
-    addMessage(message, 'user');
+    this.addUserMessage(text);
     input.value = '';
-    
-    // Show typing indicator
-    showTypingIndicator();
-    
-    try {
-        // Send to OpenRouter API
-        const response = await getAIResponse(message);
-        
-        // Remove typing indicator
-        removeTypingIndicator();
-        
-        // Add bot response
-        addMessage(response, 'bot');
-    } catch (error) {
-        removeTypingIndicator();
-        console.error('Chatbot error:', error);
-        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
-    }
-}
 
-// Get AI response from OpenRouter
-async function getAIResponse(userMessage) {
-    // Add current message to history
-    chatHistory.push({
-        role: 'user',
-        content: userMessage
-    });
-    
-    // Keep only last 10 messages
-    if (chatHistory.length > 10) {
-        chatHistory = chatHistory.slice(-10);
-    }
-    
-    try {
-        const response = await fetch(OPENROUTER_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                'HTTP-Referer': window.location.href,
-                'X-Title': 'VaidyaChain AI Assistant'
-            },
-            body: JSON.stringify({
-                model: 'openai/gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: SYSTEM_PROMPT },
-                    ...chatHistory
-                ],
-                temperature: 0.7,
-                max_tokens: 500
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.choices && data.choices[0]) {
-            const botResponse = data.choices[0].message.content;
-            
-            // Add bot response to history
-            chatHistory.push({
-                role: 'assistant',
-                content: botResponse
-            });
-            
-            return botResponse;
-        } else {
-            throw new Error('Invalid response format');
-        }
-    } catch (error) {
-        console.error('OpenRouter API error:', error);
-        
-        // Fallback to a simple response if API fails
-        return getFallbackResponse(userMessage);
-    }
-}
+    // Simulate typing
+    this.showTyping();
+    setTimeout(() => {
+      this.hideTyping();
+      const response = this.findResponse(text);
+      this.addBotMessage(response);
+    }, 800 + Math.random() * 800);
+  },
 
-// Fallback responses when API is unavailable
-function getFallbackResponse(message) {
-    const lowerMessage = message.toLowerCase();
-    
-    // Check for common questions
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('namaste')) {
-        return "Hello! Namaste! Welcome to VaidyaChain. How can I help you today?";
-    }
-    
-    if (lowerMessage.includes('trace') || lowerMessage.includes('track')) {
-        return "VaidyaChain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
-    }
-    
-    if (lowerMessage.includes('farmer') || lowerMessage.includes('farm')) {
-        return "As a farmer, you can use the Farmer Dashboard to register your herb collections with GPS location. Simply select the herb type, enter the quantity, and the system will create a blockchain record with a unique batch ID.";
-    }
-    
-    if (lowerMessage.includes('lab') || lowerMessage.includes('test') || lowerMessage.includes('quality')) {
-        return "The Testing Lab dashboard allows quality testers to verify herb batches. They can check moisture content, pesticides, heavy metals, and microbial count. Approved batches can then be used for manufacturing.";
-    }
-    
-    if (lowerMessage.includes('manufacturer') || lowerMessage.includes('product')) {
-        return "Manufacturers can create products from approved herb batches. After entering batch details and product information, the system generates a unique QR code that consumers can scan to verify authenticity.";
-    }
-    
-    if (lowerMessage.includes('consumer') || lowerMessage.includes('verify')) {
-        return "Consumers can verify product authenticity by scanning the QR code or entering the Product ID in the Consumer Portal. This shows the complete journey from farm collection through lab testing to manufacturing.";
-    }
-    
-    if (lowerMessage.includes('blockchain')) {
-        return "Blockchain technology creates an immutable, transparent record of every transaction. In VaidyaChain, each step (collection, testing, manufacturing) is recorded on the blockchain, ensuring complete traceability and trust.";
-    }
-    
-    if (lowerMessage.includes('insurance')) {
-        return "VaidyaChain offers blockchain-based crop insurance with automatic claim processing. Parametric triggers like weather conditions or quality test failures can automatically initiate claim approvals.";
-    }
-    
-    if (lowerMessage.includes('sustainability')) {
-        return "The Sustainability Dashboard tracks environmental impact metrics like herbs tracked and quality pass rates. It also shows source locations on a map to monitor sustainable sourcing practices.";
-    }
-    
-    if (lowerMessage.includes('dna') || lowerMessage.includes('genetic')) {
-        return "DNA Banking allows preservation of Ayurvedic herb genetics for future regeneration. DNA samples can be stored indefinitely and used to regenerate rare or endangered herb species.";
-    }
-    
-    return "Thank you for your question! For detailed information, please explore the different dashboards in VaidyaChain. Each section - Farmer, Lab, Manufacturer, and Consumer - has specific tools and features to help you.";
-}
+  addUserMessage(text) {
+    this.messages.push({ sender: 'user', text, time: Date.now() });
+    this.renderMessages();
+  },
 
-// Add message to chat
-function addMessage(content, sender) {
-    const messagesContainer = document.getElementById('chatbot-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chatbot-message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
-    
-    const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
-    
-    messageDiv.innerHTML = `
-        ${sender === 'bot' ? `
-            <div class="message-avatar">
-                <i class="ph ph-robot"></i>
-            </div>
-        ` : ''}
-        <div class="message-content">
-            <p>${content}</p>
+  addBotMessage(text) {
+    this.messages.push({ sender: 'bot', text, time: Date.now() });
+    this.renderMessages();
+  },
+
+  showTyping() {
+    const chat = document.getElementById('chatbot-messages');
+    if (!chat) return;
+    const typing = document.createElement('div');
+    typing.id = 'chatbot-typing';
+    typing.className = 'chat-msg bot';
+    typing.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    chat.appendChild(typing);
+    chat.scrollTop = chat.scrollHeight;
+  },
+
+  hideTyping() {
+    const typing = document.getElementById('chatbot-typing');
+    if (typing) typing.remove();
+  },
+
+  renderMessages() {
+    const chat = document.getElementById('chatbot-messages');
+    if (!chat) return;
+
+    chat.innerHTML = this.messages.map(msg => `
+      <div class="chat-msg ${msg.sender}">
+        <div class="chat-bubble ${msg.sender}">
+          ${msg.text.replace(/\n/g, '<br>')}
         </div>
-    `;
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
+        <small class="chat-time">${new Date(msg.time).toLocaleTimeString()}</small>
+      </div>
+    `).join('');
 
-// Show typing indicator
-function showTypingIndicator() {
-    const messagesContainer = document.getElementById('chatbot-messages');
-    const typingDiv = document.createElement('div');
-    typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'chatbot-message bot-message';
-    typingDiv.innerHTML = `
-        <div class="message-avatar">
-            <i class="ph ph-robot"></i>
-        </div>
-        <div class="message-content typing">
-            <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    `;
-    
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
+    chat.scrollTop = chat.scrollHeight;
+  },
 
-// Remove typing indicator
-function removeTypingIndicator() {
-    const typing = document.getElementById('typing-indicator');
-    if (typing) {
-        typing.remove();
-    }
-}
+  init() {
+    console.log('🤖 KrishiBot initialized');
+  }
+};
 
-// Make chatbot functions globally available
-window.toggleChatbot = toggleChatbot;
-window.closeChatbot = closeChatbot;
-window.sendMessage = sendMessage;
+document.addEventListener('DOMContentLoaded', () => KrishiChatbot.init());
