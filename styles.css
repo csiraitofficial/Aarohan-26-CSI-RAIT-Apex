@@ -3871,6 +3871,11 @@ body {
     gap: 1rem;
 }
 
+.notification-wrapper {
+    display: inline-block;
+    position: relative;
+}
+
 .icon-btn {
     background: transparent;
     border: 1px solid var(--border);
@@ -3890,6 +3895,16 @@ body {
 
 .icon-btn:hover {
     background: var(--secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
+}
+
+.icon-btn i {
+    font-size: 1.25rem;
+    color: var(--foreground);
+    display: inline-block;
+    line-height: 1;
+    pointer-events: none;
 }
 
 .notification-badge {
@@ -4360,7 +4375,19 @@ textarea::placeholder {
     z-index: 9998;
 }
 
-/* Phosphor Icon Styles for Chatbot */
+/* Global Icon Fix */
+.ph,
+i.ph {
+    display: inline-block !important;
+    vertical-align: middle;
+    line-height: 1;
+    font-size: inherit;
+    color: inherit;
+    font-style: normal;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
 .chatbot-toggle i.ph {
     font-size: 1.75rem;
     color: white;

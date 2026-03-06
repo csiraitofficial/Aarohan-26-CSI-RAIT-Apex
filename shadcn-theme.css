@@ -1940,3 +1940,40 @@ div[class*="metric-card"] {
 .sidebar-nav * {
     color: inherit;
 }
+
+/* ── Wallet & Returned Products ── */
+.wallet-status-badge {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(9, 9, 11, 0.15);
+}
+
+.wallet-status-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(9, 9, 11, 0.2);
+}
+
+.batch-card-failed {
+    border-top: 5px solid #ef4444 !important;
+}
+
+.status-danger {
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fecaca !important;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+        height: 10%
+    }
+
+    100% {
+        opacity: 1;
+        height: 100%
+    }
+}
+
+.spectral-bar {
+    background: #ffffff !important;
+}

@@ -33,10 +33,16 @@ let chatHistory = [];
 let isChatOpen = false;
 
 // Initialize chatbot
-document.addEventListener('DOMContentLoaded', function () {
+
 document.addEventListener('DOMContentLoaded', function () {
     createChatbotUI();
     setupChatbotEventListeners();
+    
+    // Ensure chatbot toggle is visible on page load
+    const toggle = document.getElementById('chatbot-toggle');
+    if (toggle) {
+        toggle.classList.remove('chatbot-hidden');
+    }
 });
 
 // Create the chatbot UI
@@ -47,7 +53,7 @@ function createChatbotUI() {
     chatbotContainer.innerHTML = `
         <!-- Chatbot Toggle Button -->
         <button id="chatbot-toggle" class="chatbot-toggle" title="Chat with AI Assistant">
-            <i class="ph ph-robot"></i>
+            <i class="ph-fill ph-robot"></i>
             <span class="chatbot-badge">AI</span>
         </button>
         
@@ -56,7 +62,7 @@ function createChatbotUI() {
             <div class="chatbot-header">
                 <div class="chatbot-header-info">
                     <div class="chatbot-avatar">
-                        <i class="ph ph-robot"></i>
+                        <i class="ph-fill ph-robot"></i>
                     </div>
                     <div>
                         <h3 data-i18n="chatbotTitle">vaidyachain Assistant</h3>
@@ -67,14 +73,14 @@ function createChatbotUI() {
                     </div>
                 </div>
                 <button id="chatbot-close" class="chatbot-close">
-                    <i class="ph ph-x"></i>
+                    <i class="ph-bold ph-x"></i>
                 </button>
             </div>
             
             <div id="chatbot-messages" class="chatbot-messages">
                 <div class="chatbot-message bot-message">
                     <div class="message-avatar">
-                        <i class="ph ph-robot"></i>
+                        <i class="ph-fill ph-robot"></i>
                     </div>
                     <div class="message-content">
                         <p data-i18n="chatbotWelcome">Hello! I'm your vaidyachain assistant. How can I help you today?</p>
@@ -90,7 +96,7 @@ function createChatbotUI() {
                     placeholder="Ask me anything about vaidyachain..."
                 >
                 <button id="chatbot-send" class="chatbot-send">
-                    <i class="ph ph-paper-plane-tilt"></i>
+                    <i class="ph-fill ph-paper-plane-tilt"></i>
                 </button>
             </div>
         </div>
@@ -125,7 +131,6 @@ function setupChatbotEventListeners() {
 
 
     if (input) {
-        input.addEventListener('keypress', function (e) {
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 sendMessage();
@@ -338,7 +343,7 @@ function addMessage(content, sender) {
     messageDiv.innerHTML = `
         ${sender === 'bot' ? `
             <div class="message-avatar">
-                <i class="ph ph-robot"></i>
+                <i class="ph-fill ph-robot"></i>
             </div>
         ` : ''}
         <div class="message-content">
@@ -359,7 +364,7 @@ function showTypingIndicator() {
     typingDiv.className = 'chatbot-message bot-message';
     typingDiv.innerHTML = `
         <div class="message-avatar">
-            <i class="ph ph-robot"></i>
+            <i class="ph-fill ph-robot"></i>
         </div>
         <div class="message-content typing">
             <div class="typing-dots">

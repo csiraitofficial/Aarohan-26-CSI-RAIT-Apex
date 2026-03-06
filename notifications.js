@@ -24,9 +24,9 @@ class NotificationSystem {
         toast.id = id;
 
         // Default icons
-        let icon = 'ph-info';
-        if (type === 'success') icon = 'ph-check-circle';
-        if (type === 'error') icon = 'ph-warning-circle';
+        let icon = 'ph-info-fill';
+        if (type === 'success') icon = 'ph-check-circle-fill';
+        if (type === 'error') icon = 'ph-warning-circle-fill';
 
         // Default title
         if (!title) {
@@ -42,7 +42,7 @@ class NotificationSystem {
                 <p>${message}</p>
             </div>
             <button class="toast-close" onclick="document.getElementById('${id}').remove()">
-                <i class="ph ph-x"></i>
+                <i class="ph-bold ph-x"></i>
             </button>
         `;
 
