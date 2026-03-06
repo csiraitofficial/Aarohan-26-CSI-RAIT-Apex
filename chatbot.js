@@ -34,6 +34,7 @@ let isChatOpen = false;
 
 // Initialize chatbot
 document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {
     createChatbotUI();
     setupChatbotEventListeners();
 });
@@ -95,6 +96,7 @@ function createChatbotUI() {
         </div>
     `;
 
+
     document.body.appendChild(chatbotContainer);
 }
 
@@ -106,19 +108,24 @@ function setupChatbotEventListeners() {
     const input = document.getElementById('chatbot-input');
     const window = document.getElementById('chatbot-window');
 
+
     if (toggle) {
         toggle.addEventListener('click', toggleChatbot);
     }
+
 
     if (close) {
         close.addEventListener('click', closeChatbot);
     }
 
+
     if (sendBtn) {
         sendBtn.addEventListener('click', sendMessage);
     }
 
+
     if (input) {
+        input.addEventListener('keypress', function (e) {
         input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 sendMessage();
@@ -132,7 +139,9 @@ function toggleChatbot() {
     const window = document.getElementById('chatbot-window');
     const toggle = document.getElementById('chatbot-toggle');
 
+
     isChatOpen = !isChatOpen;
+
 
     if (isChatOpen) {
         window.classList.add('chatbot-open');
@@ -148,6 +157,7 @@ function closeChatbot() {
     const window = document.getElementById('chatbot-window');
     const toggle = document.getElementById('chatbot-toggle');
 
+
     isChatOpen = false;
     window.classList.remove('chatbot-open');
     toggle.classList.remove('chatbot-hidden');
@@ -158,21 +168,27 @@ async function sendMessage() {
     const input = document.getElementById('chatbot-input');
     const message = input.value.trim();
 
+
     if (!message) return;
+
 
     // Add user message to UI
     addMessage(message, 'user');
     input.value = '';
 
+
     // Show typing indicator
     showTypingIndicator();
+
 
     try {
         // Send to OpenRouter API
         const response = await getAIResponse(message);
 
+
         // Remove typing indicator
         removeTypingIndicator();
+
 
         // Add bot response
         addMessage(response, 'bot');
@@ -191,10 +207,12 @@ async function getAIResponse(userMessage) {
         content: userMessage
     });
 
+
     // Keep only last 10 messages
     if (chatHistory.length > 10) {
         chatHistory = chatHistory.slice(-10);
     }
+
 
     try {
         const response = await fetch(OPENROUTER_API_URL, {
@@ -216,14 +234,18 @@ async function getAIResponse(userMessage) {
             })
         });
 
+
         if (!response.ok) {
             throw new Error(`API Error: ${response.status}`);
         }
 
+
         const data = await response.json();
+
 
         if (data.choices && data.choices[0]) {
             const botResponse = data.choices[0].message.content;
+
 
             // Add bot response to history
             chatHistory.push({
@@ -231,12 +253,14 @@ async function getAIResponse(userMessage) {
                 content: botResponse
             });
 
+
             return botResponse;
         } else {
             throw new Error('Invalid response format');
         }
     } catch (error) {
         console.error('OpenRouter API error:', error);
+
 
         // Fallback to a simple response if API fails
         return getFallbackResponse(userMessage);
@@ -247,42 +271,52 @@ async function getAIResponse(userMessage) {
 function getFallbackResponse(message) {
     const lowerMessage = message.toLowerCase();
 
+
     // Check for common questions
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('namaste')) {
         return "Hello! Namaste! Welcome to vaidyachain. How can I help you today?";
     }
 
+
     if (lowerMessage.includes('trace') || lowerMessage.includes('track')) {
         return "vaidyachain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
     }
+
 
     if (lowerMessage.includes('farmer') || lowerMessage.includes('farm')) {
         return "As a farmer, you can use the Farmer Dashboard to register your herb collections with GPS location. Simply select the herb type, enter the quantity, and the system will create a blockchain record with a unique batch ID.";
     }
 
+
     if (lowerMessage.includes('lab') || lowerMessage.includes('test') || lowerMessage.includes('quality')) {
         return "The Testing Lab dashboard allows quality testers to verify herb batches. They can check moisture content, pesticides, heavy metals, and microbial count. Approved batches can then be used for manufacturing.";
     }
+
 
     if (lowerMessage.includes('manufacturer') || lowerMessage.includes('product')) {
         return "Manufacturers can create products from approved herb batches. After entering batch details and product information, the system generates a unique QR code that consumers can scan to verify authenticity.";
     }
 
+
     if (lowerMessage.includes('consumer') || lowerMessage.includes('verify')) {
         return "Consumers can verify product authenticity by scanning the QR code or entering the Product ID in the Consumer Portal. This shows the complete journey from farm collection through lab testing to manufacturing.";
     }
+
 
     if (lowerMessage.includes('blockchain')) {
         return "Blockchain technology creates an immutable, transparent record of every transaction. In vaidyachain, each step (collection, testing, manufacturing) is recorded on the blockchain, ensuring complete traceability and trust.";
     }
 
+
     if (lowerMessage.includes('insurance')) {
         return "vaidyachain offers blockchain-based crop insurance with automatic claim processing. Parametric triggers like weather conditions or quality test failures can automatically initiate claim approvals.";
     }
 
+
     if (lowerMessage.includes('sustainability')) {
         return "The Sustainability Dashboard tracks environmental impact metrics like herbs tracked and quality pass rates. It also shows source locations on a map to monitor sustainable sourcing practices.";
     }
+
 
     if (lowerMessage.includes('dna') || lowerMessage.includes('genetic')) {
         return "DNA Banking allows preservation of Ayurvedic herb genetics for future regeneration. DNA samples can be stored indefinitely and used to regenerate rare or endangered herb species.";
@@ -297,7 +331,9 @@ function addMessage(content, sender) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `chatbot-message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
 
+
     const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
+
 
     messageDiv.innerHTML = `
         ${sender === 'bot' ? `
@@ -309,6 +345,7 @@ function addMessage(content, sender) {
             <p>${content}</p>
         </div>
     `;
+
 
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -332,6 +369,7 @@ function showTypingIndicator() {
             </div>
         </div>
     `;
+
 
     messagesContainer.appendChild(typingDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
