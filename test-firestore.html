@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDh5cV49WlNazPCGBK5R52LTTwKG7xk1tE",
+            authDomain: "vaidyachain.firebaseapp.com",
+            projectId: "vaidyachain",
+            storageBucket: "vaidyachain.firebasestorage.app",
+            messagingSenderId: "211911202172",
+            appId: "1:211911202172:web:24e547f43185744c8c40f9",
+            measurementId: "G-JXJTMQKPKG"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const dbInstance = firebase.firestore();
+        
+        async function run() {
+            try {
+                const batchId = "TEST-" + Date.now();
+                await dbInstance.collection("collections").doc(batchId).set({
+                    batchId: batchId,
+                    farmerId: "test",
+                    farmerName: "test",
+                    herbType: "test",
+                    quantity: 10,
+                    price: 10,
+                    totalValue: 100,
+                    collectionDate: "2023-01-01",
+                    location: {
+                        latitude: 23.25,
+                        longitude: 77.41,
+                        address: 'Farm Location'
+                    },
+                    status: 'collected',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                console.log("SUCCESS");
+                document.body.innerHTML += "<h1>SUCCESS</h1>";
+            } catch (e) {
+                console.error("FAIL", e);
+                document.body.innerHTML += "<h1>FAIL: " + e.message + "</h1>";
+            }
+        }
+        run();
+    </script>
+</head>
+<body></body>
+</html>
