@@ -1983,3 +1983,47 @@ div[class*="metric-card"] {
 .spectral-bar {
     background: #ffffff !important;
 }
+
+/* ── CHATBOT AGENT — Role label & utility ──────────── */
+
+/* Role label badge inside the chatbot header status */
+#chatbot-role-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #3f3f46;
+    letter-spacing: 0.01em;
+}
+
+/* Spin animation for the refresh button icon */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Chatbot window — increase height for more room */
+.chatbot-window {
+    display: flex;
+    flex-direction: column;
+    max-height: 580px;
+}
+
+.chatbot-messages {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* Make bot messages look card-like for data responses */
+.bot-message .message-content p {
+    line-height: 1.6;
+}
+
+/* Refresh context button (reuse chatbot-close styles) */
+#chatbot-refresh-ctx {
+    font-size: 0.9rem !important;
+}
