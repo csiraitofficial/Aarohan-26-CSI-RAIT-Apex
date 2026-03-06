@@ -1094,12 +1094,12 @@ git checkout main && git pull
 ```
 
 ### ✅ Phase 11 Checklist
-- [ ] Chatbot floating button + panel works
-- [ ] Chatbot responds to key herb/blockchain queries
-- [ ] Global search finds batches, herbs, farmers
-- [ ] CSV export downloads correct data
-- [ ] PDF export generates correct jsPDF
-- [ ] Toast notifications used throughout app
+- [x] Chatbot floating button + panel works
+- [x] Chatbot responds to key herb/blockchain queries
+- [x] Global search finds batches, herbs, farmers
+- [x] CSV export downloads correct data
+- [x] PDF export generates correct jsPDF
+- [x] Toast notifications used throughout app
 
 ---
 
@@ -1189,12 +1189,12 @@ git checkout main && git pull
 ```
 
 ### ✅ Phase 12 Checklist
-- [ ] Translation files created for all 4 languages
-- [ ] Language switcher in header works
-- [ ] Hindi and Gujarati text renders correctly
-- [ ] Service Worker registers successfully
-- [ ] App loads offline after first visit
-- [ ] `manifest.json` added for PWA installability
+- [x] Translation files created for all 4 languages
+- [x] Language switcher in header works
+- [x] Hindi and Gujarati text renders correctly
+- [x] Service Worker registers successfully
+- [x] App loads offline after first visit
+- [x] `manifest.json` added for PWA installability
 
 ---
 

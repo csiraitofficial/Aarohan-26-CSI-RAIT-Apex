@@ -262,6 +262,24 @@ function navigateToDashboard(dashboardId) {
     case 'blockchain-viewer':
       initBlockchainViewer();
       break;
+    case 'waste-dashboard':
+      initWasteDashboard();
+      break;
+    case 'sustainability-dashboard':
+      initSustainabilityDashboard();
+      break;
+    case 'inventory-dashboard':
+      initInventoryDashboard();
+      break;
+    case 'orders-dashboard':
+      initOrdersDashboard();
+      break;
+    case 'insurance-dashboard':
+      initInsuranceDashboard();
+      break;
+    case 'dna-dashboard':
+      initDnaDashboard();
+      break;
   }
 }
 
@@ -295,23 +313,59 @@ function initSearch() {
 }
 
 function performSearch(query) {
+  const searchResultsContainer = document.getElementById('search-results-container');
   if (!query || query.length < 2) {
-    document.getElementById('search-results-container').innerHTML = '';
+    searchResultsContainer.innerHTML = '';
     return;
   }
   
-  // Search through blockchain data
+  // Search through local known data arrays and Firestore
   const results = [];
-  
-  // This would be implemented with actual search logic
-  // For now, show placeholder results
-  const searchResultsContainer = document.getElementById('search-results-container');
-  searchResultsContainer.innerHTML = `
-    <div class="search-result-item">
-      <h4>Search Results for: "${query}"</h4>
-      <p>Implementing search functionality...</p>
-    </div>
-  `;
+  const lowerQuery = query.toLowerCase();
+
+  // Search batches in memory
+  Object.values(availableBatches || {}).forEach(batch => {
+    if(
+      batch.id.toLowerCase().includes(lowerQuery) ||
+      batch.farmerName?.toLowerCase().includes(lowerQuery) ||
+      batch.herbType?.toLowerCase().includes(lowerQuery)
+    ) {
+      results.push({
+        title: `Batch: ${batch.id}`,
+        desc: `${batch.herbType} from ${batch.farmerName}`,
+        icon: '🌱',
+        action: `navigateToDashboard('lab-dashboard')`
+      });
+    }
+  });
+
+  // Example additional results matching keywords
+  if('ashwagandha'.includes(lowerQuery) || 'tulsi'.includes(lowerQuery)) {
+     results.push({ title: 'Inventory Stock', desc: 'View herb stock levels', icon: '📦', action: `navigateToDashboard('inventory-dashboard')` });
+  }
+
+  if(lowerQuery.startsWith('prod-')) {
+     results.push({ title: `Product: ${query.toUpperCase()}`, desc: 'Trace this product', icon: '🏭', action: `navigateToDashboard('consumer-portal'); document.getElementById('product-id-input').value='${query}';` });
+  }
+
+  // Render results
+  if(results.length === 0) {
+    searchResultsContainer.innerHTML = `
+      <div class="search-result-item" style="text-align:center; color:#6b7280;">
+        <p>No results found for "${query}"</p>
+      </div>
+    `;
+  } else {
+    searchResultsContainer.innerHTML = results.map(r => `
+      <div class="search-result-item" onclick="document.getElementById('search-modal').style.display='none'; ${r.action}" style="cursor:pointer; display:flex; align-items:center; gap:15px; padding:15px; border-bottom:1px solid #eee;">
+        <div style="font-size:24px;">${r.icon}</div>
+        <div>
+          <h4 style="margin:0 0 5px 0;">${r.title}</h4>
+          <p style="margin:0; font-size:14px; color:#6b7280;">${r.desc}</p>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 // Notifications System
@@ -519,7 +573,6 @@ function getChatbotResponse(message) {
 // Exports
 function initExports() {
   const exportCsvBtn = document.getElementById('export-csv-btn');
-  
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener('click', () => {
       exportCollectionsToCSV();
@@ -527,23 +580,96 @@ function initExports() {
   }
 }
 
-function exportCollectionsToCSV() {
-  // This would export farmer collections to CSV
-  const csvContent = "data:text/csv;charset=utf-8,";
-  const header = "Batch ID,Farmer,Herb Type,Quantity,Harvest Date,Location\n";
-  
-  // Sample data - would be replaced with actual data
-  const data = "BATCH-001,Ramesh Patel,Ashwagandha,50kg,2024-03-01,23.25°N,77.41°E\n";
-  
-  const encodedUri = encodeURI(csvContent + header + data);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "krishi-collections.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+async function exportCollectionsToCSV() {
+  // Export farmer collections from Firestore to CSV
+  try {
+    const snapshot = await db.collection('batches').get();
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Batch ID,Farmer,Herb Type,Quantity,Location,Status\n";
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      csvContent += `${doc.id},"${data.farmerName}","${data.herbType}",${data.quantity},"${data.location}","${data.status}"\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `krishi-collections-${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('CSV exported successfully', 'success');
+  } catch(error) {
+    console.error('Export CSV error', error);
+    showToast('Failed to export CSV', 'error');
+  }
 }
 
+window.exportLabReportPDF = async function(batchId) {
+  if(!window.jspdf) {
+    showToast('PDF Library not loaded', 'error');
+    return;
+  }
+  
+  try {
+    const doc = await db.collection('batches').doc(batchId).get();
+    if(!doc.exists) return showToast('Batch not found', 'error');
+    
+    const data = doc.data();
+    if(!data.labResults) return showToast('No lab results available for this batch', 'warning');
+    
+    // AutoTable isn't loaded by default, so we'll do manual drawing
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    
+    pdf.setFontSize(22);
+    pdf.setTextColor(16, 185, 129); // Green
+    pdf.text("Krishi - Certified Lab Report", 20, 20);
+    
+    pdf.setFontSize(12);
+    pdf.setTextColor(0,0,0);
+    pdf.text(`Batch ID: ${batchId}`, 20, 40);
+    pdf.text(`Herb Type: ${data.herbType}`, 20, 50);
+    pdf.text(`Testing Date: ${data.labResults.testedAt ? new Date(data.labResults.testedAt.toDate()).toLocaleString() : new Date().toLocaleString()}`, 20, 60);
+    pdf.text(`Overall Result: ${data.labResults.result}`, 20, 70);
+    
+    pdf.setFontSize(16);
+    pdf.text("Detailed Parameters", 20, 90);
+    pdf.setFontSize(12);
+    
+    let y = 100;
+    for(const [key, val] of Object.entries(data.labResults.parameters)) {
+      pdf.text(`${key}: ${val}`, 20, y);
+      y += 10;
+    }
+    
+    pdf.setFontSize(10);
+    pdf.setTextColor(150,150,150);
+    pdf.text("This report is cryptographically verified on the Krishi Blockchain.", 20, y+20);
+    
+    pdf.save(`Krishi-Lab-Report-${batchId}.pdf`);
+    showToast('Lab Report PDF downloaded', 'success');
+  } catch(error) {
+    console.error("PDF export error", error);
+    showToast('Failed to generate PDF', 'error');
+  }
+};
+
+window.exportBlockchainJSON = async function() {
+  try {
+    const chain = await blockchain.getChain();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(chain, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute("href",     dataStr     );
+    dlAnchorElem.setAttribute("download", `krishi-blockchain-dump-${new Date().toISOString().slice(0,10)}.json`);
+    dlAnchorElem.click();
+    showToast('Blockchain ledger downloaded', 'success');
+  } catch (error) {
+    console.error('Blockchain JSON export error', error);
+    showToast('Failed to export blockchain', 'error');
+  }
+};
 // Blockchain Viewer
 function initBlockchainViewer() {
   // Initialize blockchain visualization
