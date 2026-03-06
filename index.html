@@ -215,6 +215,42 @@
                             <span class="nav-label">Blockchain</span>
                         </a>
                     </li>
+                    <li class="nav-item manufacturer-lab-only" data-role="manufacturer,lab,admin">
+                        <a href="#waste-dashboard">
+                            <span class="ph ph-trash"></span>
+                            <span class="nav-label">Waste Mgmt</span>
+                        </a>
+                    </li>
+                    <li class="nav-item all-roles" data-role="all">
+                        <a href="#sustainability-dashboard">
+                            <span class="ph ph-leaf"></span>
+                            <span class="nav-label">Sustainability</span>
+                        </a>
+                    </li>
+                    <li class="nav-item manufacturer-only" data-role="manufacturer,admin">
+                        <a href="#inventory-dashboard">
+                            <span class="ph ph-package"></span>
+                            <span class="nav-label">Inventory</span>
+                        </a>
+                    </li>
+                    <li class="nav-item manufacturer-only" data-role="manufacturer,admin">
+                        <a href="#orders-dashboard">
+                            <span class="ph ph-shopping-cart"></span>
+                            <span class="nav-label">Orders</span>
+                        </a>
+                    </li>
+                    <li class="nav-item farmer-manufacturer-only" data-role="farmer,manufacturer,admin">
+                        <a href="#insurance-dashboard">
+                            <span class="ph ph-shield-plus"></span>
+                            <span class="nav-label">Insurance</span>
+                        </a>
+                    </li>
+                    <li class="nav-item lab-consumer-only" data-role="lab,consumer,admin">
+                        <a href="#dna-dashboard">
+                            <span class="ph ph-dna"></span>
+                            <span class="nav-label">DNA Banking</span>
+                        </a>
+                    </li>
                 </ul>
             </nav>
 
@@ -754,6 +790,200 @@
                                     <span class="stat-label">Last Block</span>
                                     <span class="stat-value" id="last-block-hash">-</span>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Waste Management Dashboard -->
+                <section id="waste-dashboard" class="dashboard-section" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>🗑️ Waste Management Dashboard</h2>
+                        <p>Track and manage failed batches and production waste</p>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Register Waste</h3>
+                            <form id="waste-registration-form">
+                                <div class="form-group">
+                                    <label for="waste-batch-id">Batch ID</label>
+                                    <select id="waste-batch-id">
+                                        <option value="">Select a failed batch</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="disposal-method">Disposal Method</label>
+                                    <select id="disposal-method" required>
+                                        <option value="">Select Method</option>
+                                        <option value="Compost">Compost</option>
+                                        <option value="Biogas">Biogas Processing</option>
+                                        <option value="CPCB">CPCB Approved Disposal</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Register Waste</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <h3>Waste Volume by Category</h3>
+                            <div class="analytics-chart">
+                                <canvas id="waste-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Sustainability Dashboard -->
+                <section id="sustainability-dashboard" class="dashboard-section" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>🍃 Sustainability Dashboard</h2>
+                        <p>Track environmental impact and carbon footprint</p>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Environmental Impact</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <span class="stat-label">Total Carbon Footprint</span>
+                                    <span class="stat-value text-success" id="total-carbon">Loading...</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">Sustainable sourcing score</span>
+                                    <span class="stat-value text-success" id="sustainability-score">4.8/5</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3>Sustainability Trend</h3>
+                            <div class="analytics-chart">
+                                <canvas id="sustainability-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Inventory Dashboard -->
+                <section id="inventory-dashboard" class="dashboard-section" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>📦 Inventory Dashboard</h2>
+                        <p>Monitor raw herbs and finished products</p>
+                    </div>
+                    
+                    <div class="dashboard-grid" id="inventory-grid">
+                        <!-- Inventory alerts and stock limits will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Orders Dashboard -->
+                <section id="orders-dashboard" class="dashboard-section" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>🛒 Orders Dashboard</h2>
+                        <p>Manage incoming consumer and retailer orders</p>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="card full-width">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h3>Order List</h3>
+                                <select id="order-status-filter" style="width: 200px;">
+                                    <option value="All">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Processing">Processing</option>
+                                    <option value="Shipped">Shipped</option>
+                                    <option value="Delivered">Delivered</option>
+                                </select>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table" id="orders-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="orders-list-body">
+                                        <!-- Orders will go here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Insurance Dashboard -->
+                <section id="insurance-dashboard" class="dashboard-section" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>🛡️ Insurance Dashboard</h2>
+                        <p>Manage crop and transit insurance policies</p>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Purchase Insurance</h3>
+                            <form id="insurance-form">
+                                <div class="form-group">
+                                    <label for="ins-batch-id">Batch ID</label>
+                                    <input type="text" id="ins-batch-id" placeholder="Enter Batch ID" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ins-amount">Coverage Amount (₹)</label>
+                                    <input type="number" id="ins-amount" placeholder="e.g. 50000" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Buy Policy</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <h3>Active Policies & Claims</h3>
+                            <button id="file-claim-btn" class="btn btn-danger" style="margin-bottom: 15px;">Auto-File Claim (Failed Batches)</button>
+                            <div id="insurance-list" class="list-container">
+                                <!-- Claims/policies injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- DNA Banking Dashboard -->
+                <section id="dna-dashboard" class="dashboard-section" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>🧬 DNA Banking Dashboard</h2>
+                        <p>Verify botanical authenticity using genetic markers</p>
+                    </div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <h3>Register DNA Profile</h3>
+                            <form id="dna-register-form">
+                                <div class="form-group">
+                                    <label for="dna-herb-type">Herb Variety</label>
+                                    <input type="text" id="dna-herb-type" placeholder="e.g. Ashwagandha Premium Root" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dna-markers">Genetic Markers sequence snippet</label>
+                                    <input type="text" id="dna-markers" placeholder="e.g. GTGAC...GCT" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Register DNA</button>
+                            </form>
+                        </div>
+                        <div class="card">
+                            <h3>DNA Authenticity Checker</h3>
+                            <form id="dna-check-form">
+                                <div class="form-group">
+                                    <label for="dna-check-batch">Batch ID to Check</label>
+                                    <input type="text" id="dna-check-batch" placeholder="Enter Batch ID" required>
+                                </div>
+                                <button type="submit" class="btn btn-secondary">Verify Authenticity</button>
+                            </form>
+                            <div id="dna-result" style="margin-top: 20px; font-weight: bold;"></div>
+                        </div>
+                        <div class="card full-width">
+                            <h3>Registered Profiles</h3>
+                            <div id="dna-profiles-list" class="list-container">
+                                <!-- Registered profiles -->
                             </div>
                         </div>
                     </div>

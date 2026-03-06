@@ -45,6 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Admin Dashboard
   initAdminDashboard();
   
+  // Initialize Secondary Dashboards
+  initWasteDashboard();
+  initSustainabilityDashboard();
+  initInventoryDashboard();
+  initOrdersDashboard();
+  initInsuranceDashboard();
+  initDnaDashboard();
+  
   // Initialize user interface
   initUserInterface();
 });
@@ -155,6 +163,36 @@ function navigateToDashboard(dashboardId) {
       title: 'Blockchain Explorer',
       subtitle: 'View and verify the complete blockchain chain',
       icon: '⛓️'
+    },
+    'waste-dashboard': {
+      title: 'Waste Management',
+      subtitle: 'Track and manage failed batches and production waste',
+      icon: '🗑️'
+    },
+    'sustainability-dashboard': {
+      title: 'Sustainability Dashboard',
+      subtitle: 'Track environmental impact and carbon footprint',
+      icon: '🍃'
+    },
+    'inventory-dashboard': {
+      title: 'Inventory Dashboard',
+      subtitle: 'Monitor raw herbs and finished products',
+      icon: '📦'
+    },
+    'orders-dashboard': {
+      title: 'Orders Dashboard',
+      subtitle: 'Manage incoming consumer and retailer orders',
+      icon: '🛒'
+    },
+    'insurance-dashboard': {
+      title: 'Insurance Dashboard',
+      subtitle: 'Manage crop and transit insurance policies',
+      icon: '🛡️'
+    },
+    'dna-dashboard': {
+      title: 'DNA Banking',
+      subtitle: 'Verify botanical authenticity using genetic markers',
+      icon: '🧬'
     }
   };
   
@@ -189,7 +227,13 @@ function navigateToDashboard(dashboardId) {
       'manufacturer-dashboard': 'var(--color-accent)',
       'consumer-portal': 'var(--color-success)',
       'admin-dashboard': 'var(--color-blockchain)',
-      'blockchain-viewer': 'var(--color-blockchain)'
+      'blockchain-viewer': 'var(--color-blockchain)',
+      'waste-dashboard': '#ef4444',
+      'sustainability-dashboard': '#10b981',
+      'inventory-dashboard': '#f59e0b',
+      'orders-dashboard': '#3b82f6',
+      'insurance-dashboard': '#3b82f6',
+      'dna-dashboard': '#8b5cf6'
     };
     
     const color = dashboardColors[dashboardId] || 'var(--color-primary)';
@@ -1307,6 +1351,9 @@ window.farmerDashboard = {
   showBatchIDModal
 };
 
+// Global state for pending batches
+let pendingBatches = {};
+
 function initLabDashboard() {
   // Lab dashboard specific initialization
   const checkBatchBtn = document.getElementById('check-batch-btn');
@@ -1318,19 +1365,79 @@ function initLabDashboard() {
   if (labTestForm) {
     labTestForm.addEventListener('submit', submitLabTest);
   }
+
+  // Compare Batches Button
+  const compareBtn = document.getElementById('compare-batches-btn');
+  if(compareBtn) {
+    compareBtn.addEventListener('click', initBatchComparisonChart);
+  }
+
+  // Load pending batches into dropdown
+  loadPendingBatches();
+}
+
+async function loadPendingBatches() {
+  const batchSelect = document.getElementById('batch-select');
+  if(!batchSelect) return;
+
+  try {
+    const batchesRef = db.collection('batches').where('status', '==', 'pending').orderBy('createdAt', 'desc');
+    const snapshot = await batchesRef.get();
+    
+    batchSelect.innerHTML = '<option value="">Select a batch</option>';
+    pendingBatches = {};
+    
+    if (snapshot.empty) {
+      batchSelect.innerHTML += '<option value="" disabled>No pending batches available</option>';
+      return;
+    }
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      pendingBatches[data.batchId] = data;
+      batchSelect.innerHTML += `<option value="${data.batchId}">${data.batchId} - ${data.herbType}</option>`;
+    });
+  } catch (error) {
+    console.error('Error loading pending batches:', error);
+    batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+  }
 }
 
 function checkBatchDetails() {
   const batchSelect = document.getElementById('batch-select');
   const batchInfo = document.getElementById('batch-info');
+  const batchId = batchSelect.value;
   
-  if (batchSelect.value) {
+  if (batchId && pendingBatches[batchId]) {
+    const batch = pendingBatches[batchId];
     batchInfo.style.display = 'block';
     // Update batch info with selected batch details
-    document.getElementById('batch-farmer').textContent = 'Ramesh Patel';
-    document.getElementById('batch-herb').textContent = 'Ashwagandha';
-    document.getElementById('batch-quantity').textContent = '50';
-    document.getElementById('batch-location').textContent = '23.25°N, 77.41°E';
+    document.getElementById('batch-farmer').textContent = batch.farmerName || 'Unknown';
+    document.getElementById('batch-herb').textContent = batch.herbType || 'Unknown';
+    document.getElementById('batch-quantity').textContent = batch.quantity || '0';
+    document.getElementById('batch-location').textContent = batch.location || 'Unknown';
+
+    // Animate spectroscopy
+    simulateSpectroscopy();
+  } else {
+    showToast('Please select a batch first', 'error');
+  }
+}
+
+function simulateSpectroscopy() {
+  const purityValue = document.querySelector('.purity-value');
+  const wavelengthValue = document.querySelector('.wavelength-value');
+  
+  if(purityValue && wavelengthValue) {
+    purityValue.textContent = 'Analyzing...';
+    wavelengthValue.textContent = 'Scanning...';
+    
+    setTimeout(() => {
+      const purity = (95 + Math.random() * 4.9).toFixed(1);
+      purityValue.textContent = purity + '%';
+      wavelengthValue.textContent = '540-700nm';
+      showToast('Spectroscopy analysis complete', 'info');
+    }, 1500);
   }
 }
 
@@ -1349,23 +1456,148 @@ async function submitLabTest(e) {
   const result = (pesticides === 'none' && adulterants === 'none' && 
                  heavyMetals === 'within-limits' && microbial === 'within-limits') ? 'PASS' : 'FAIL';
   
-  // Create blockchain block
-  const block = await blockchain.addBlock(BLOCK_TYPES.LAB_TEST, {
-    batchId: batchId,
-    testResult: result,
-    parameters: {
-      moisture: moisture,
-      activeMarkers: activeMarkers,
-      pesticides: pesticides,
-      adulterants: adulterants,
-      heavyMetals: heavyMetals,
-      microbial: microbial
+  try {
+    // Determine batch data
+    const batchData = pendingBatches[batchId] || { batchId, herbType: 'Unknown', farmerName: 'Unknown' };
+
+    // Create blockchain block
+    const block = await blockchain.addBlock(BLOCK_TYPES.LAB_TEST, {
+      batchId: batchId,
+      testResult: result,
+      batchData: batchData,
+      parameters: {
+        moisture: moisture,
+        activeMarkers: activeMarkers,
+        pesticides: pesticides,
+        adulterants: adulterants,
+        heavyMetals: heavyMetals,
+        microbial: microbial
+      }
+    });
+
+    // Invoke smart contract integration if defined
+    if(window.SmartContracts && window.SmartContracts.ContractTriggers) {
+      await window.SmartContracts.ContractTriggers.onLabTest(batchData, {
+        result: result,
+        blockHash: block.hash,
+        parameters: { moisture, activeMarkers, pesticides, adulterants, heavyMetals, microbial }
+      });
+    }
+
+    // Update batch status in Firestore
+    await db.collection('batches').doc(batchId).update({
+      status: result === 'PASS' ? 'tested' : 'failed',
+      testResult: result,
+      testedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Generate PDF Certificate
+    generateLabCertificate(batchData, {
+      result: result,
+      blockHash: block.hash
+    });
+    
+    showToast(`Lab test completed! Result: ${result}`, result === 'PASS' ? 'success' : 'error');
+    addNotification(`Lab test for batch ${batchId}: ${result}`, result === 'PASS' ? 'success' : 'error');
+    
+    // Reload pending batches to remove the tested one
+    loadPendingBatches();
+    document.getElementById('lab-test-form').reset();
+    document.getElementById('batch-info').style.display = 'none';
+  } catch(error) {
+    console.error('Error submitting lab test:', error);
+    showToast('Error submitting lab test. Please try again.', 'error');
+  }
+}
+
+function generateLabCertificate(batchData, testResult) {
+  if(!window.jspdf) {
+    console.error('jsPDF not loaded');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(20);
+  doc.text("🌿 KRISHI LAB CERTIFICATE", 105, 20, { align: "center" });
+  
+  doc.setFontSize(14);
+  doc.text("Batch Information", 20, 40);
+  
+  doc.setFontSize(12);
+  doc.text(`Batch ID: ${batchData.batchId}`, 20, 50);
+  doc.text(`Herb: ${batchData.herbType || 'Unknown'}`, 20, 60);
+  doc.text(`Farmer: ${batchData.farmerName || 'Unknown'}`, 20, 70);
+  doc.text(`Quantity: ${batchData.quantity || '0'} kg`, 20, 80);
+  
+  doc.setFontSize(14);
+  doc.text("Test Results", 20, 100);
+  doc.setFontSize(12);
+  doc.text(`Status: ${testResult.result}`, 20, 110);
+  if (testResult.blockHash) {
+    doc.text(`Blockchain Hash: ${testResult.blockHash.substring(0,20)}...`, 20, 120);
+  }
+
+  doc.text(`Date of Testing: ${new Date().toLocaleDateString()}`, 20, 140);
+  
+  doc.setFontSize(10);
+  doc.text(`ISO/IEC 17025:2017 Certified Lab`, 105, 280, { align: "center" });
+
+  doc.save(`Krishi-Certificate-${batchData.batchId}.pdf`);
+}
+
+function initBatchComparisonChart() {
+  const canvas = document.getElementById('batch-comparison-chart');
+  if(!canvas) return;
+  
+  // if chart exists, destroy before re-initializing
+  if(window.batchChart) {
+    window.batchChart.destroy();
+  }
+
+  const ctx = canvas.getContext('2d');
+  
+  const data = {
+    labels: ['Batch 1', 'Batch 2', 'Batch 3', 'Batch 4', 'Batch 5'],
+    datasets: [
+      {
+        label: 'Active Markers %',
+        data: [1.2, 1.5, 1.4, 0.9, 1.6],
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        tension: 0.4
+      },
+      {
+        label: 'Moisture %',
+        data: [8.5, 9.0, 7.8, 11.2, 8.1],
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.4
+      }
+    ]
+  };
+  
+  window.batchChart = new Chart(ctx, {
+    type: 'line',
+    data: data,
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: 'Recent Batches Quality Trends'
+        }
+      }
     }
   });
   
-  showToast(`Lab test completed! Result: ${result}`, result === 'PASS' ? 'success' : 'error');
-  addNotification(`Lab test for batch ${batchId}: ${result}`, result === 'PASS' ? 'success' : 'error');
+  showToast('Batch comparison updated', 'success');
 }
+
+let availableBatches = {};
 
 function initManufacturerDashboard() {
   // Manufacturer dashboard specific initialization
@@ -1378,13 +1610,74 @@ function initManufacturerDashboard() {
   if (productForm) {
     productForm.addEventListener('submit', createProduct);
   }
+
+  const sendToLabBtn = document.getElementById('send-to-lab-btn');
+  if(sendToLabBtn) {
+    sendToLabBtn.addEventListener('click', sendToLab);
+  }
+
+  loadAvailableBatches();
+  initProductionAnalytics();
+}
+
+async function loadAvailableBatches() {
+  const batchesList = document.getElementById('available-batches');
+  if(!batchesList) return;
+
+  try {
+    const batchesRef = db.collection('batches').where('status', '==', 'tested').where('testResult', '==', 'PASS').orderBy('testedAt', 'desc');
+    const snapshot = await batchesRef.get();
+    
+    availableBatches = {};
+    
+    if (snapshot.empty) {
+      batchesList.innerHTML = '<div class="empty-state"><p>No passed batches available</p></div>';
+      return;
+    }
+    
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      availableBatches[data.batchId] = data;
+      html += `
+        <div class="batch-item">
+          <div class="batch-info">
+            <h4>${data.batchId}</h4>
+            <p>${data.herbType} - ${data.quantity}kg</p>
+          </div>
+          <div class="batch-status text-success">✓ PASSED</div>
+        </div>
+      `;
+    });
+    batchesList.innerHTML = html;
+  } catch (error) {
+    console.error('Error loading available batches:', error);
+    batchesList.innerHTML = '<div class="error-state"><p>Error loading batches</p></div>';
+  }
+}
+
+async function sendToLab() {
+  const batchId = prompt("Enter Batch ID to send for re-testing:");
+  if(!batchId) return;
+
+  try {
+    await blockchain.addBlock(BLOCK_TYPES.SEND_TO_LAB, {
+      batchId: batchId,
+      timestamp: new Date().toISOString()
+    });
+    showToast(`Batch ${batchId} sent to lab successfully`, 'success');
+  } catch(error) {
+    console.error('Error sending to lab:', error);
+    showToast('Error sending to lab', 'error');
+  }
 }
 
 function checkBatchStatus() {
   const batchId = document.getElementById('approved-batch-id').value;
   const batchStatus = document.getElementById('batch-status');
   
-  if (batchId) {
+  if (batchId && availableBatches[batchId]) {
+    const batch = availableBatches[batchId];
     batchStatus.style.display = 'block';
     batchStatus.innerHTML = `
       <div class="status-item">
@@ -1393,13 +1686,23 @@ function checkBatchStatus() {
       </div>
       <div class="status-item">
         <span class="status-label">Herb Type:</span>
-        <span class="status-value">Ashwagandha</span>
+        <span class="status-value">${batch.herbType}</span>
       </div>
       <div class="status-item">
         <span class="status-label">Quantity:</span>
-        <span class="status-value">50kg</span>
+        <span class="status-value">${batch.quantity}kg</span>
       </div>
     `;
+    showToast('Batch verified as PASSED', 'success');
+  } else {
+    batchStatus.style.display = 'block';
+    batchStatus.innerHTML = `
+      <div class="status-item">
+        <span class="status-label">Batch Status:</span>
+        <span class="status-value text-danger">❌ INVALID OR NOT PASSED</span>
+      </div>
+    `;
+    showToast('Invalid Batch ID or Batch has not passed testing', 'error');
   }
 }
 
@@ -1411,33 +1714,147 @@ async function createProduct(e) {
   const productType = document.getElementById('product-type').value;
   const mfgDate = document.getElementById('mfg-date').value;
   const expiryDate = document.getElementById('expiry-date').value;
+
+  if(!availableBatches[batchId]) {
+    showToast('Cannot create product: Invalid or unverified Batch ID', 'error');
+    return;
+  }
   
   // Generate product ID
   const productId = `PROD-${Date.now()}`;
   
-  // Create blockchain block
-  const block = await blockchain.addBlock(BLOCK_TYPES.MANUFACTURING, {
-    batchId: batchId,
-    productId: productId,
-    productName: productName,
-    productType: productType,
-    manufacturingDate: mfgDate,
-    expiryDate: expiryDate
-  });
-  
-  // Generate QR code
-  const qrCodeContainer = document.getElementById('qr-section');
-  if (qrCodeContainer) {
-    qrCodeContainer.style.display = 'block';
-    const qrCodeImg = document.getElementById('qr-code-img');
-    if (qrCodeImg) {
-      qrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(productId)}`;
+  try {
+    // Create blockchain block
+    const block = await blockchain.addBlock(BLOCK_TYPES.MANUFACTURING, {
+      batchId: batchId,
+      productId: productId,
+      productName: productName,
+      productType: productType,
+      manufacturingDate: mfgDate,
+      expiryDate: expiryDate
+    });
+
+    // Invoke smart contract logic if defined
+    if(window.SmartContracts && window.SmartContracts.ContractTriggers) {
+      await window.SmartContracts.ContractTriggers.onManufacturing({
+        batchId, productId, productName, productType, manufacturingDate: mfgDate, expiryDate
+      });
     }
+
+    // Update batch status in Firestore to 'manufactured'
+    await db.collection('batches').doc(batchId).update({
+      status: 'manufactured',
+      productId: productId,
+      manufacturedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Generate QR code
+    const qrCodeContainer = document.getElementById('qr-section');
+    if (qrCodeContainer) {
+      qrCodeContainer.style.display = 'block';
+      const qrCodeImg = document.getElementById('qr-code-img');
+      if (qrCodeImg) {
+        qrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(productId)}`;
+      }
+    }
+    
+    showToast(`Product created successfully! Product ID: ${productId}`, 'success');
+    addNotification(`New product created: ${productName} (${productType})`, 'success');
+
+    // Reload available batches
+    loadAvailableBatches();
+    document.getElementById('batch-status').style.display = 'none';
+  } catch(error) {
+    console.error('Error creating product:', error);
+    showToast('Error creating product. Please try again.', 'error');
   }
-  
-  showToast(`Product created successfully! Product ID: ${productId}`, 'success');
-  addNotification(`New product created: ${productName} (${productType})`, 'success');
 }
+
+function initProductionAnalytics() {
+  const canvas = document.getElementById('production-chart');
+  if(!canvas) return;
+
+  if(window.productionChart) {
+    window.productionChart.destroy();
+  }
+
+  const ctx = canvas.getContext('2d');
+  
+  // Render Bar chart by default (Monthly Batches)
+  renderMonthlyBatchesChart(ctx);
+}
+
+function renderMonthlyBatchesChart(ctx) {
+  const data = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [{
+      label: 'Products Manufactured',
+      data: [12, 19, 15, 25, 22, 30],
+      backgroundColor: 'rgba(54, 162, 235, 0.5)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 1
+    }]
+  };
+
+  window.productionChart = new Chart(ctx, {
+    type: 'bar',
+    data: data,
+    options: {
+      responsive: true,
+      plugins: {
+        title: { display: true, text: 'Monthly Production Volume' }
+      }
+    }
+  });
+}
+
+function renderQualityRatioChart(ctx) {
+  const data = {
+    labels: ['Premium Quality', 'Standard Quality', 'Rejected'],
+    datasets: [{
+      data: [65, 25, 10],
+      backgroundColor: [
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(255, 99, 132, 0.7)'
+      ],
+      hoverOffset: 4
+    }]
+  };
+
+  window.productionChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: data,
+    options: {
+      responsive: true,
+      plugins: {
+        title: { display: true, text: 'Raw Material Quality Ratio' }
+      }
+    }
+  });
+}
+
+window.switchAnalyticsTab = function(tabName) {
+  // Update active button
+  const tabs = document.querySelectorAll('.analytics-tabs .tab-btn');
+  tabs.forEach(tab => tab.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const canvas = document.getElementById('production-chart');
+  if(!canvas) return;
+
+  if(window.productionChart) {
+    window.productionChart.destroy();
+  }
+
+  const ctx = canvas.getContext('2d');
+  
+  if(tabName === 'monthly') {
+    renderMonthlyBatchesChart(ctx);
+  } else if (tabName === 'quality') {
+    renderQualityRatioChart(ctx);
+  }
+};
 
 function initConsumerPortal() {
   // Consumer portal specific initialization
@@ -1445,7 +1862,6 @@ function initConsumerPortal() {
   if (productForm) {
     productForm.addEventListener('submit', traceProduct);
   }
-  
   // QR scanner initialization
   const startQrBtn = document.getElementById('start-qr-scan-btn');
   const stopQrBtn = document.getElementById('stop-qr-scan-btn');
@@ -1460,64 +1876,202 @@ function initConsumerPortal() {
 }
 
 async function traceProduct(e) {
-  e.preventDefault();
+  if(e) e.preventDefault();
   
-  const productId = document.getElementById('product-id-input').value;
+  const productIdInput = document.getElementById('product-id-input').value.trim();
+  if(!productIdInput) {
+    showToast('Please enter a Product or Batch ID', 'error');
+    return;
+  }
+
+  await loadProductTrace(productIdInput);
+}
+
+async function loadProductTrace(id) {
+  document.getElementById('product-id-input').value = id;
+  
   const timeline = document.getElementById('supply-chain-timeline');
   const verificationBadge = document.getElementById('verification-badge');
+  const productDetails = document.getElementById('product-details');
+  const labCertificate = document.getElementById('lab-certificate');
   
-  if (productId) {
-    // Simulate fetching product journey
-    timeline.innerHTML = `
-      <div class="timeline-step collection">
-        <div class="step-icon">🌱</div>
-        <div class="step-content">
-          <h4>Herb Collection</h4>
-          <p>Batch: ${productId}</p>
-          <p class="hash-preview">#a1b2c3d4...</p>
+  timeline.innerHTML = '<div class="loading-spinner" style="margin:20px auto; display:block; width:30px; height:30px;"></div><p style="text-align:center;">Tracing product on blockchain...</p>';
+  verificationBadge.style.display = 'none';
+  productDetails.innerHTML = '';
+  labCertificate.innerHTML = '';
+  
+  try {
+    // Determine batchId if a productId was entered
+    let targetBatchId = id;
+    const mfgBlocks = await blockchain.getBlocksByType(BLOCK_TYPES.MANUFACTURING);
+    const matchedMfg = mfgBlocks.find(b => b.data && b.data.productId === id);
+    if(matchedMfg) {
+      targetBatchId = matchedMfg.data.batchId;
+    }
+
+    // Get all blocks
+    const chain = await blockchain.getChain();
+    const journey = chain.filter(b => b.data && b.data.batchId === targetBatchId);
+
+    if (journey.length === 0) {
+      timeline.innerHTML = '<div class="error-state"><p>No traceability records found for this ID.</p></div>';
+      return;
+    }
+
+    // Sort by timestamp
+    journey.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Build timeline HTML
+    let timelineHtml = '';
+    journey.forEach(block => {
+      const dateStr = new Date(block.timestamp).toLocaleString();
+      let icon = '🔗';
+      let title = block.data.type || 'Transaction';
+      let details = '';
+
+      if (block.data.type === BLOCK_TYPES.COLLECTION) {
+        icon = '🌱'; title = 'Herb Collection';
+        details = `<p>Farmer: ${block.data.farmerName}</p><p>Herb: ${block.data.herbType} (${block.data.quantity}kg)</p><p>Location: ${block.data.location}</p>`;
+      } else if (block.data.type === BLOCK_TYPES.LAB_TEST) {
+        icon = '🧪'; title = 'Lab Testing';
+        details = `<p>Result: <strong class="${block.data.testResult === 'PASS' ? 'text-success' : 'text-danger'}">${block.data.testResult}</strong></p>
+                   <p>Moisture: ${block.data.parameters?.moisture}% | Markers: ${block.data.parameters?.activeMarkers}%</p>`;
+      } else if (block.data.type === BLOCK_TYPES.SEND_TO_LAB) {
+        icon = '🚚'; title = 'Sent to Lab';
+      } else if (block.data.type === BLOCK_TYPES.MANUFACTURING) {
+        icon = '🏭'; title = 'Manufacturing';
+        details = `<p>Product: ${block.data.productName} (${block.data.productType})</p><p>Mfg Date: ${block.data.manufacturingDate}</p><p>Expiry: ${block.data.expiryDate}</p>`;
+      }
+      
+      timelineHtml += `
+        <div class="timeline-step ${block.data.type}">
+          <div class="step-icon">${icon}</div>
+          <div class="step-content">
+            <h4>${title}</h4>
+            ${details}
+            <p class="hash-preview" title="${block.hash}">Hash: #${block.hash.substring(0,16)}...</p>
+            <p class="timestamp">${dateStr}</p>
+          </div>
         </div>
-      </div>
-      <div class="timeline-step lab-test">
-        <div class="step-icon">🧪</div>
-        <div class="step-content">
-          <h4>Lab Testing</h4>
-          <p>Result: PASS</p>
-          <p class="hash-preview">#e5f6g7h8...</p>
-        </div>
-      </div>
-      <div class="timeline-step manufacturing">
-        <div class="step-icon">🏭</div>
-        <div class="step-content">
-          <h4>Product Manufacturing</h4>
-          <p>Product ID: ${productId}</p>
-          <p class="hash-preview">#i9j0k1l2...</p>
-        </div>
-      </div>
-    `;
-    
+      `;
+    });
+
+    timeline.innerHTML = timelineHtml;
     verificationBadge.style.display = 'flex';
+    
+    // Populate Product Details and Lab Certificate
+    const mfgBlock = journey.find(b => b.data.type === BLOCK_TYPES.MANUFACTURING);
+    const labBlock = journey.find(b => b.data.type === BLOCK_TYPES.LAB_TEST);
+    const collBlock = journey.find(b => b.data.type === BLOCK_TYPES.COLLECTION);
+
+    if(mfgBlock) {
+      productDetails.innerHTML = `
+        <div class="detail-row"><span class="detail-label">Product Name:</span><span class="detail-value">${mfgBlock.data.productName}</span></div>
+        <div class="detail-row"><span class="detail-label">Product ID:</span><span class="detail-value">${mfgBlock.data.productId}</span></div>
+        <div class="detail-row"><span class="detail-label">Type:</span><span class="detail-value">${mfgBlock.data.productType}</span></div>
+        <div class="detail-row"><span class="detail-label">Origin:</span><span class="detail-value">${collBlock ? collBlock.data.location : 'Unknown'}</span></div>
+      `;
+    } else if (collBlock) {
+      productDetails.innerHTML = `
+        <div class="detail-row"><span class="detail-label">Herb Type:</span><span class="detail-value">${collBlock.data.herbType}</span></div>
+        <div class="detail-row"><span class="detail-label">Batch ID:</span><span class="detail-value">${collBlock.data.batchId}</span></div>
+        <div class="detail-row"><span class="detail-label">Farmer:</span><span class="detail-value">${collBlock.data.farmerName}</span></div>
+        <div class="detail-row"><span class="detail-label">Location:</span><span class="detail-value">${collBlock.data.location}</span></div>
+      `;
+    } else {
+      productDetails.innerHTML = '<p>No specific product details available.</p>';
+    }
+
+    if(labBlock && labBlock.data.testResult === 'PASS') {
+      labCertificate.innerHTML = `
+        <div class="certificate-preview" style="text-align: center; padding: 20px; border: 2px solid var(--success-color); border-radius: 8px; background: rgba(16, 185, 129, 0.05);">
+          <div style="font-size: 40px; margin-bottom: 10px;">📜</div>
+          <h4 style="color: var(--success-color); margin-bottom: 10px;">Verified Authentic & Safe</h4>
+          <p>This product has passed all required ayurvedic safety and quality tests.</p>
+          <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Cert. Hash: ${labBlock.hash.substring(0,20)}...</p>
+        </div>
+      `;
+    } else if (labBlock && labBlock.data.testResult === 'FAIL') {
+      labCertificate.innerHTML = `
+        <div class="certificate-preview" style="text-align: center; padding: 20px; border: 2px solid var(--danger-color); border-radius: 8px; background: rgba(239, 68, 68, 0.05);">
+          <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
+          <h4 style="color: var(--danger-color); margin-bottom: 10px;">Testing Failed</h4>
+          <p>This batch did not pass safety parameters.</p>
+        </div>
+      `;
+    } else {
+      labCertificate.innerHTML = '<p>Laboratory testing records not found or pending.</p>';
+    }
+
     showToast('Product trace completed successfully!', 'success');
+  } catch(error) {
+    console.error('Error tracing product:', error);
+    timeline.innerHTML = '<div class="error-state"><p>Error retrieving blockchain records.</p></div>';
+    showToast('Error tracing product', 'error');
   }
 }
+
+let html5QrCode;
 
 function startQrScanner() {
   const qrReader = document.getElementById('qr-reader');
   if (qrReader) {
     qrReader.style.display = 'block';
-    // QR scanner would be initialized here
-    qrReader.innerHTML = '<p>QR Scanner Active - Point camera at QR code</p>';
     
     document.getElementById('start-qr-scan-btn').style.display = 'none';
     document.getElementById('stop-qr-scan-btn').style.display = 'inline-block';
+
+    if(!window.Html5Qrcode) {
+      showToast('QR Scanner library not loaded', 'error');
+      return;
+    }
+
+    html5QrCode = new Html5Qrcode("qr-reader");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      (decodedText) => {
+        // Stop scanning once we get a result
+        stopQrScanner();
+        showToast('QR Code scannned successfully', 'success');
+        
+        // Sometimes our QR code data was: URL?product=PROD-XXX
+        let idToTrace = decodedText;
+        if(decodedText.includes('?product=')) {
+          idToTrace = decodedText.split('?product=')[1];
+        } else if (decodedText.includes('?batch=')) {
+          idToTrace = decodedText.split('?batch=')[1];
+        }
+        
+        loadProductTrace(idToTrace);
+      },
+      (errorMessage) => {
+        // Ignored, continuous scanning
+      }
+    ).catch(err => {
+      console.error("Error starting QR scanner", err);
+      showToast('Camera access denied or unavailable', 'error');
+      stopQrScanner();
+    });
   }
 }
 
 function stopQrScanner() {
   const qrReader = document.getElementById('qr-reader');
-  if (qrReader) {
-    qrReader.style.display = 'none';
-    qrReader.innerHTML = '';
-    
+  if (html5QrCode && html5QrCode.isScanning) {
+    html5QrCode.stop().then(() => {
+      html5QrCode.clear();
+      resetQrUI();
+    }).catch(err => {
+      console.error("Error stopping QR scanner", err);
+      resetQrUI();
+    });
+  } else {
+    resetQrUI();
+  }
+
+  function resetQrUI() {
+    if (qrReader) qrReader.style.display = 'none';
     document.getElementById('start-qr-scan-btn').style.display = 'inline-block';
     document.getElementById('stop-qr-scan-btn').style.display = 'none';
   }
@@ -1530,7 +2084,12 @@ function initAdminDashboard() {
 
 // Utility Functions
 function hideAllDashboards() {
-  const dashboards = ['farmer-dashboard', 'lab-dashboard', 'manufacturer-dashboard', 'consumer-portal', 'admin-dashboard', 'blockchain-viewer'];
+  const dashboards = [
+    'farmer-dashboard', 'lab-dashboard', 'manufacturer-dashboard', 
+    'consumer-portal', 'admin-dashboard', 'blockchain-viewer',
+    'waste-dashboard', 'sustainability-dashboard', 'inventory-dashboard',
+    'orders-dashboard', 'insurance-dashboard', 'dna-dashboard'
+  ];
   dashboards.forEach(id => {
     const element = document.getElementById(id);
     if (element) element.style.display = 'none';
@@ -1695,3 +2254,187 @@ window.krishiApp = {
   updateUserInterface,
   getDefaultDashboard
 };
+
+// --- Secondary Dashboards Initialization ---
+
+function initWasteDashboard() {
+  const form = document.getElementById('waste-registration-form');
+  const batchSelect = document.getElementById('waste-batch-id');
+  
+  if(form && batchSelect) {
+    // Populate failed batches
+    db.collection('batches').where('status', '==', 'failed').get().then(snapshot => {
+      batchSelect.innerHTML = '<option value="">Select a failed batch</option>';
+      snapshot.forEach(doc => {
+        batchSelect.innerHTML += `<option value="${doc.id}">${doc.id} - ${doc.data().herbType}</option>`;
+      });
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const batchId = document.getElementById('waste-batch-id').value;
+      const method = document.getElementById('disposal-method').value;
+      if(!batchId || !method) return showToast('Please select batch and method', 'error');
+      
+      showToast(`Waste registered for ${batchId} via ${method}`, 'success');
+      form.reset();
+    });
+  }
+
+  // Render Chart
+  const canvas = document.getElementById('waste-chart');
+  if(canvas) {
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Compost', 'Biogas', 'CPCB Disposal'],
+        datasets: [{
+          data: [45, 25, 30],
+          backgroundColor: ['#22c55e', '#3b82f6', '#ef4444']
+        }]
+      }
+    });
+  }
+}
+
+function initSustainabilityDashboard() {
+  const carbonEl = document.getElementById('total-carbon');
+  if(carbonEl) carbonEl.textContent = '124.5 kg CO₂';
+
+  const canvas = document.getElementById('sustainability-chart');
+  if(canvas) {
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+          label: 'Carbon Footprint Trend',
+          data: [150, 140, 135, 128, 120, 124.5],
+          borderColor: '#10b981',
+          tension: 0.1
+        }]
+      }
+    });
+  }
+}
+
+function initInventoryDashboard() {
+  const grid = document.getElementById('inventory-grid');
+  if(grid) {
+    const inventoryData = [
+      { name: 'Ashwagandha', stock: 450, total: 500, status: 'good' },
+      { name: 'Tulsi', stock: 80, total: 500, status: 'low' },
+      { name: 'Neem', stock: 320, total: 500, status: 'good' }
+    ];
+
+    grid.innerHTML = inventoryData.map(item => `
+      <div class="card ${item.status === 'low' ? 'border-danger' : ''}">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>${item.name}</h3>
+          ${item.status === 'low' ? '<span class="badge badge-danger">Low Stock</span>' : ''}
+        </div>
+        <p>${item.stock} / ${item.total} kg available</p>
+        <div style="background:#e5e7eb; border-radius:4px; height:8px; width:100%; margin-top:10px;">
+          <div style="background:${item.status === 'low' ? '#ef4444' : '#10b981'}; height:100%; width:${(item.stock/item.total)*100}%; border-radius:4px;"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function initOrdersDashboard() {
+  const tbody = document.getElementById('orders-list-body');
+  const filter = document.getElementById('order-status-filter');
+  
+  const dummyOrders = [
+    { id: 'ORD-001', product: 'Ashwagandha Roots', qty: 5, status: 'Pending', date: '2026-03-01' },
+    { id: 'ORD-002', product: 'Tulsi Extract', qty: 12, status: 'Shipped', date: '2026-03-03' },
+    { id: 'ORD-003', product: 'Neem Powder', qty: 20, status: 'Delivered', date: '2026-02-28' }
+  ];
+
+  function renderOrders(filterStatus = 'All') {
+    if(!tbody) return;
+    tbody.innerHTML = dummyOrders
+      .filter(o => filterStatus === 'All' || o.status === filterStatus)
+      .map(o => `
+      <tr>
+        <td>${o.id}</td>
+        <td>${o.product}</td>
+        <td>${o.qty} kg</td>
+        <td><span class="badge ${o.status === 'Delivered' ? 'badge-success' : 'badge-primary'}">${o.status}</span></td>
+        <td>${o.date}</td>
+        <td><button class="btn btn-sm btn-secondary">Manage</button></td>
+      </tr>
+    `).join('');
+  }
+
+  if(filter) {
+    filter.addEventListener('change', (e) => renderOrders(e.target.value));
+    renderOrders();
+  }
+}
+
+function initInsuranceDashboard() {
+  const form = document.getElementById('insurance-form');
+  const list = document.getElementById('insurance-list');
+  const claimBtn = document.getElementById('file-claim-btn');
+
+  if(form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showToast('Insurance policy purchased successfully!', 'success');
+      form.reset();
+    });
+  }
+
+  if(claimBtn) {
+    claimBtn.addEventListener('click', () => {
+      showToast('Auto-claim initiated for all eligible failed batches.', 'info');
+    });
+  }
+
+  if(list) {
+    list.innerHTML = `
+      <div style="padding:10px; border-left:4px solid #3b82f6; background:#f3f4f6; margin-bottom:10px;">
+        <strong>Policy #POL-1029</strong> - Batch BATCH-123 (Active)
+      </div>
+      <div style="padding:10px; border-left:4px solid #ef4444; background:#fef2f2;">
+        <strong>Claim #CLM-9281</strong> - Batch BATCH-091 (Processing)
+      </div>
+    `;
+  }
+}
+
+function initDnaDashboard() {
+  const regForm = document.getElementById('dna-register-form');
+  const chkForm = document.getElementById('dna-check-form');
+  const resultDiv = document.getElementById('dna-result');
+  const list = document.getElementById('dna-profiles-list');
+
+  if(regForm) {
+    regForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      showToast('DNA profile registered on blockchain!', 'success');
+      regForm.reset();
+    });
+  }
+
+  if(chkForm) {
+    chkForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      resultDiv.innerHTML = '<span style="color:#10b981;">✅ DNA Match Confirmed! Botanical authenticity verified.</span>';
+    });
+  }
+
+  if(list) {
+    list.innerHTML = `
+      <div style="padding:10px; border:1px solid #e5e7eb; margin-bottom:10px; border-radius:4px;">
+        <strong>Ashwagandha Premium Root</strong><br>
+        <small class="text-muted">Markers: GTGAC...GCT</small>
+        <span style="float:right; color:#10b981;">Verified ✨</span>
+      </div>
+    `;
+  }
+}

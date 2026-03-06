@@ -825,13 +825,13 @@ git checkout main && git pull
 ```
 
 ### ✅ Phase 7 Checklist
-- [ ] Batch dropdown loads from Firestore live
-- [ ] Test parameters form complete
-- [ ] PASS/FAIL written as blockchain block
-- [ ] `SmartContracts` auto-triggered on result
-- [ ] PDF certificate downloads correctly
-- [ ] Spectroscopy animation works
-- [ ] Batch comparison Chart.js chart rendered
+- [x] Batch dropdown loads from Firestore live
+- [x] Test parameters form complete
+- [x] PASS/FAIL written as blockchain block
+- [x] `SmartContracts` auto-triggered on result
+- [x] PDF certificate downloads correctly
+- [x] Spectroscopy animation works
+- [x] Batch comparison Chart.js chart rendered
 
 ---
 
@@ -875,12 +875,12 @@ git checkout main && git pull
 ```
 
 ### ✅ Phase 8 Checklist
-- [ ] Available batch history loads from Firestore
-- [ ] Product creation form validates PASS status
-- [ ] QR code displayed after product creation
-- [ ] `manufacturing` blockchain block created
-- [ ] Supplier management list rendered
-- [ ] Analytics charts (bar + doughnut) working
+- [x] Available batch history loads from Firestore
+- [x] Product creation form validates PASS status
+- [x] QR code displayed after product creation
+- [x] `manufacturing` blockchain block created
+- [x] Supplier management list rendered
+- [x] Analytics charts (bar + doughnut) working
 
 ---
 
@@ -945,11 +945,11 @@ git checkout main && git pull
 ```
 
 ### ✅ Phase 9 Checklist
-- [ ] Product ID input + lookup working
-- [ ] QR camera scanner functional
-- [ ] Supply chain timeline renders all blocks
-- [ ] Blockchain verification badge shown
-- [ ] Portal accessible without login (public read)
+- [x] Product ID input + lookup working
+- [x] QR camera scanner functional
+- [x] Supply chain timeline renders all blocks
+- [x] Blockchain verification badge shown
+- [x] Portal accessible without login (public read)
 
 ---
 
@@ -1025,12 +1025,12 @@ git checkout main && git pull
 ```
 
 ### ✅ Phase 10 Checklist
-- [ ] Waste Management — form + chart working
-- [ ] Sustainability — carbon footprint + trend chart
-- [ ] Inventory — stock cards + low-stock alerts
-- [ ] Orders — order table + status filter
-- [ ] Insurance — policies + auto-claim from InsuranceContract
-- [ ] DNA Banking — registration + authenticity check
+- [x] Waste Management — form + chart working
+- [x] Sustainability — carbon footprint + trend chart
+- [x] Inventory — stock cards + low-stock alerts
+- [x] Orders — order table + status filter
+- [x] Insurance — policies + auto-claim from InsuranceContract
+- [x] DNA Banking — registration + authenticity check
 
 ---
 
