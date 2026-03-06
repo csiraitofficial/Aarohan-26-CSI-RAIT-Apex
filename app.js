@@ -5,6 +5,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const dashboard = urlParams.get('dashboard');
 
     if (dashboard) {
+        // Immediately hide home page and show app container to prevent flash
+        const homePage = document.getElementById('home-page');
+        const appContainer = document.querySelector('.app-container');
+        const hero = document.getElementById('hero');
+        
+        if (homePage) homePage.style.display = 'none';
+        if (appContainer) appContainer.style.display = 'flex';
+        if (hero) hero.style.display = 'none';
+        
         // Initial load will be handled by auth.js once session is resolved
         console.log('Initial dashboard requested:', dashboard);
     }
