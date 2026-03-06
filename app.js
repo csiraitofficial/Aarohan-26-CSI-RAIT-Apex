@@ -1,2566 +1,2910 @@
-// Main Application Logic
-// Handles dashboard interactions and UI state management
+﻿// Main application logic
+document.addEventListener('DOMContentLoaded', function () {
+    // Check if we have a dashboard parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const dashboard = urlParams.get('dashboard');
 
-// Global state
-let currentDashboard = null;
-let notifications = [];
-
-// Initialize application
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🌿 Krishi Application Initialized');
-  
-  // Initialize role-based navigation
-  initRoleBasedNavigation();
-  
-  // Initialize dashboard event listeners
-  initDashboardListeners();
-  
-  // Initialize search functionality
-  initSearch();
-  
-  // Initialize notifications
-  initNotifications();
-  
-  // Initialize chatbot
-  initChatbot();
-  
-  // Initialize exports
-  initExports();
-  
-  // Initialize blockchain viewer
-  initBlockchainViewer();
-  
-  // Initialize Farmer Dashboard
-  initFarmerDashboard();
-  
-  // Initialize Lab Dashboard
-  initLabDashboard();
-  
-  // Initialize Manufacturer Dashboard
-  initManufacturerDashboard();
-  
-  // Initialize Consumer Portal
-  initConsumerPortal();
-  
-  // Initialize Admin Dashboard
-  initAdminDashboard();
-  
-  // Initialize Secondary Dashboards
-  initWasteDashboard();
-  initSustainabilityDashboard();
-  initInventoryDashboard();
-  initOrdersDashboard();
-  initInsuranceDashboard();
-  initDnaDashboard();
-  
-  // Initialize user interface
-  initUserInterface();
+    if (dashboard) {
+        // Initial load will be handled by auth.js once session is resolved
+        console.log('Initial dashboard requested:', dashboard);
+    }
 });
 
-// Dashboard Navigation - Enhanced
-function initDashboardListeners() {
-  // Navigation links with role-based visibility
-  const navLinks = document.querySelectorAll('.nav-menu a');
-  navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = link.getAttribute('href').substring(1);
-      navigateToDashboard(target);
-    });
-  });
-  
-  // Mobile menu toggle
-  const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-  const sidebar = document.getElementById('sidebar');
-  
-  if (mobileMenuToggle && sidebar) {
-    mobileMenuToggle.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-      mobileMenuToggle.classList.toggle('active');
-    });
-  }
-  
-  // Sidebar toggle
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  if (sidebarToggle && sidebar) {
-    sidebarToggle.addEventListener('click', () => {
-      sidebar.classList.remove('active');
-      if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
-    });
-  }
-  
-  // Close sidebar when clicking outside
-  document.addEventListener('click', (e) => {
-    if (sidebar && sidebar.classList.contains('active') && 
-        !e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-toggle')) {
-      sidebar.classList.remove('active');
-      if (mobileMenuToggle) mobileMenuToggle.classList.remove('active');
+// Function to show different dashboards
+function showDashboard(type, event) {
+    if (event) {
+        event.preventDefault();
     }
-  });
-  
-  // Language switcher
-  const languageSwitcher = document.getElementById('language-switcher');
-  const languageIndicator = document.getElementById('language-indicator');
-  
-  if (languageSwitcher) {
-    languageSwitcher.addEventListener('click', () => {
-      const modal = document.getElementById('language-modal');
-      if (modal) modal.style.display = 'flex';
-    });
-  }
-  
-  if (languageIndicator) {
-    languageIndicator.addEventListener('click', () => {
-      const modal = document.getElementById('language-modal');
-      if (modal) modal.style.display = 'flex';
-    });
-  }
-  
-  // Close language modal
-  const languageModal = document.getElementById('language-modal');
-  if (languageModal) {
-    languageModal.addEventListener('click', (e) => {
-      if (e.target === languageModal) {
-        languageModal.style.display = 'none';
-      }
-    });
-  }
-}
 
-function navigateToDashboard(dashboardId) {
-  // Update page title and icon
-  const pageTitle = document.getElementById('page-title');
-  const pageSubtitle = document.getElementById('page-subtitle');
-  const pageIcon = document.getElementById('page-icon');
-  
-  const dashboardConfig = {
-    'farmer-dashboard': {
-      title: 'Farmer Dashboard',
-      subtitle: 'Tag new herb collections and manage your farm data',
-      icon: '🌱'
-    },
-    'lab-dashboard': {
-      title: 'Lab Testing Dashboard',
-      subtitle: 'Quality testing and certification for herb batches',
-      icon: '🧪'
-    },
-    'manufacturer-dashboard': {
-      title: 'Manufacturer Dashboard',
-      subtitle: 'Product creation and supply chain management',
-      icon: '🏭'
-    },
-    'consumer-portal': {
-      title: 'Consumer Portal',
-      subtitle: 'Trace your Ayurvedic products from farm to formula',
-      icon: '👤'
-    },
-    'admin-dashboard': {
-      title: 'Admin Dashboard',
-      subtitle: 'System management and oversight',
-      icon: '⚙️'
-    },
-    'blockchain-viewer': {
-      title: 'Blockchain Explorer',
-      subtitle: 'View and verify the complete blockchain chain',
-      icon: '⛓️'
-    },
-    'waste-dashboard': {
-      title: 'Waste Management',
-      subtitle: 'Track and manage failed batches and production waste',
-      icon: '🗑️'
-    },
-    'sustainability-dashboard': {
-      title: 'Sustainability Dashboard',
-      subtitle: 'Track environmental impact and carbon footprint',
-      icon: '🍃'
-    },
-    'inventory-dashboard': {
-      title: 'Inventory Dashboard',
-      subtitle: 'Monitor raw herbs and finished products',
-      icon: '📦'
-    },
-    'orders-dashboard': {
-      title: 'Orders Dashboard',
-      subtitle: 'Manage incoming consumer and retailer orders',
-      icon: '🛒'
-    },
-    'insurance-dashboard': {
-      title: 'Insurance Dashboard',
-      subtitle: 'Manage crop and transit insurance policies',
-      icon: '🛡️'
-    },
-    'dna-dashboard': {
-      title: 'DNA Banking',
-      subtitle: 'Verify botanical authenticity using genetic markers',
-      icon: '🧬'
+    const container = document.getElementById('dashboard-container');
+    const hero = document.getElementById('hero');
+    const homePage = document.getElementById('home-page');
+    const appContainer = document.querySelector('.app-container');
+    const loginBtn = document.getElementById('login-btn');
+    const userInfo = document.getElementById('user-info');
+    const userPhoto = document.getElementById('user-photo');
+    const userEmail = document.getElementById('user-email');
+
+    // Hide home page when showing a dashboard
+    if (homePage) {
+        homePage.style.display = 'none';
     }
-  };
-  
-  const config = dashboardConfig[dashboardId] || {
-    title: 'Dashboard',
-    subtitle: 'Welcome to Krishi Platform',
-    icon: '📊'
-  };
-  
-  if (pageTitle) pageTitle.textContent = config.title;
-  if (pageSubtitle) pageSubtitle.textContent = config.subtitle;
-  if (pageIcon) pageIcon.textContent = config.icon;
-  
-  // Show appropriate dashboard
-  hideAllDashboards();
-  showDashboard(dashboardId);
-  
-  // Update active navigation
-  const navItems = document.querySelectorAll('.nav-menu li');
-  navItems.forEach(item => {
-    item.classList.remove('active');
-    if (item.querySelector(`a[href="#${dashboardId}"]`)) {
-      item.classList.add('active');
+
+    // Show app container when showing dashboard
+    if (appContainer) {
+        appContainer.style.display = 'flex';
     }
-  });
-  
-  // Update page icon color based on dashboard
-  if (pageIcon) {
-    const dashboardColors = {
-      'farmer-dashboard': 'var(--color-primary)',
-      'lab-dashboard': 'var(--color-info)',
-      'manufacturer-dashboard': 'var(--color-accent)',
-      'consumer-portal': 'var(--color-success)',
-      'admin-dashboard': 'var(--color-blockchain)',
-      'blockchain-viewer': 'var(--color-blockchain)',
-      'waste-dashboard': '#ef4444',
-      'sustainability-dashboard': '#10b981',
-      'inventory-dashboard': '#f59e0b',
-      'orders-dashboard': '#3b82f6',
-      'insurance-dashboard': '#3b82f6',
-      'dna-dashboard': '#8b5cf6'
-    };
-    
-    const color = dashboardColors[dashboardId] || 'var(--color-primary)';
-    pageIcon.style.background = `linear-gradient(135deg, ${color}, ${color})`;
-  }
-  
-  currentDashboard = dashboardId;
-  
-  // Add dashboard-specific initialization
-  switch (dashboardId) {
-    case 'farmer-dashboard':
-      initFarmerDashboard();
-      break;
-    case 'lab-dashboard':
-      initLabDashboard();
-      break;
-    case 'manufacturer-dashboard':
-      initManufacturerDashboard();
-      break;
-    case 'consumer-portal':
-      initConsumerPortal();
-      break;
-    case 'admin-dashboard':
-      initAdminDashboard();
-      break;
-    case 'blockchain-viewer':
-      initBlockchainViewer();
-      break;
-    case 'waste-dashboard':
-      initWasteDashboard();
-      break;
-    case 'sustainability-dashboard':
-      initSustainabilityDashboard();
-      break;
-    case 'inventory-dashboard':
-      initInventoryDashboard();
-      break;
-    case 'orders-dashboard':
-      initOrdersDashboard();
-      break;
-    case 'insurance-dashboard':
-      initInsuranceDashboard();
-      break;
-    case 'dna-dashboard':
-      initDnaDashboard();
-      break;
-  }
+
+    // Hide hero section when showing a dashboard
+    if (hero) {
+        hero.style.display = 'none';
+    }
+
+    // Auth-dependent UI elements are managed by auth.js and CSS
+    // We only update the dynamic dashboard content here
+
+    // Update URL without reloading page
+    const url = new URL(window.location);
+    url.searchParams.set('dashboard', type);
+    window.history.pushState({}, '', url);
+
+    // Update sidebar active state
+    updateSidebarActiveState(type);
+
+    // Load the appropriate dashboard
+    switch (type) {
+        case 'farmer':
+            loadFarmerDashboard();
+            break;
+        case 'lab':
+            loadLabDashboard();
+            break;
+        case 'manufacturer':
+            loadManufacturerDashboard();
+            break;
+        case 'sustainability':
+            loadSustainabilityDashboard();
+            break;
+        case 'waste-management':
+            loadWasteManagementDashboard();
+            break;
+        case 'inventory':
+            loadInventoryDashboard();
+            break;
+        case 'orders':
+            loadOrdersDashboard();
+            break;
+        case 'consumer':
+            loadConsumerPortal();
+            break;
+        case 'recent-collections':
+            loadRecentCollections();
+            break;
+        case 'recent-tests':
+            loadRecentTests();
+            break;
+        case 'recent-manufactured':
+            loadRecentManufactured();
+            break;
+        case 'smart-contracts':
+            loadSmartContractsDashboard();
+            break;
+        case 'dna-banking':
+            loadDNABankingDashboard();
+            break;
+        case 'insurance':
+            loadInsuranceDashboard();
+            break;
+        default:
+            container.innerHTML = '<div class="dashboard"><h2>Welcome to VaidyaChain</h2><p>Select a dashboard from the navigation menu.</p></div>';
+    }
 }
 
-// Search Functionality
-function initSearch() {
-  const searchBtn = document.getElementById('search-btn');
-  const searchModal = document.getElementById('search-modal');
-  const searchInput = document.getElementById('search-input');
-  const searchResults = document.getElementById('search-results-container');
-  
-  if (searchBtn) {
-    searchBtn.addEventListener('click', () => {
-      searchModal.style.display = 'flex';
-      searchInput.focus();
+// Update sidebar active state
+function updateSidebarActiveState(activeType) {
+    // Remove active class from all sidebar links
+    const allLinks = document.querySelectorAll('.sidebar-nav a');
+    allLinks.forEach(link => {
+        link.classList.remove('active');
     });
-  }
-  
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase();
-      performSearch(query);
-    });
-  }
-  
-  // Close search modal
-  searchModal.addEventListener('click', (e) => {
-    if (e.target === searchModal) {
-      searchModal.style.display = 'none';
+
+    // Add active class to the current dashboard link
+    const activeLink = document.getElementById(`nav-${activeType}`);
+    if (activeLink) {
+        activeLink.classList.add('active');
     }
-  });
 }
 
-function performSearch(query) {
-  const searchResultsContainer = document.getElementById('search-results-container');
-  if (!query || query.length < 2) {
-    searchResultsContainer.innerHTML = '';
-    return;
-  }
-  
-  // Search through local known data arrays and Firestore
-  const results = [];
-  const lowerQuery = query.toLowerCase();
-
-  // Search batches in memory
-  Object.values(availableBatches || {}).forEach(batch => {
-    if(
-      batch.id.toLowerCase().includes(lowerQuery) ||
-      batch.farmerName?.toLowerCase().includes(lowerQuery) ||
-      batch.herbType?.toLowerCase().includes(lowerQuery)
-    ) {
-      results.push({
-        title: `Batch: ${batch.id}`,
-        desc: `${batch.herbType} from ${batch.farmerName}`,
-        icon: '🌱',
-        action: `navigateToDashboard('lab-dashboard')`
-      });
-    }
-  });
-
-  // Example additional results matching keywords
-  if('ashwagandha'.includes(lowerQuery) || 'tulsi'.includes(lowerQuery)) {
-     results.push({ title: 'Inventory Stock', desc: 'View herb stock levels', icon: '📦', action: `navigateToDashboard('inventory-dashboard')` });
-  }
-
-  if(lowerQuery.startsWith('prod-')) {
-     results.push({ title: `Product: ${query.toUpperCase()}`, desc: 'Trace this product', icon: '🏭', action: `navigateToDashboard('consumer-portal'); document.getElementById('product-id-input').value='${query}';` });
-  }
-
-  // Render results
-  if(results.length === 0) {
-    searchResultsContainer.innerHTML = `
-      <div class="search-result-item" style="text-align:center; color:#6b7280;">
-        <p>No results found for "${query}"</p>
-      </div>
-    `;
-  } else {
-    searchResultsContainer.innerHTML = results.map(r => `
-      <div class="search-result-item" onclick="document.getElementById('search-modal').style.display='none'; ${r.action}" style="cursor:pointer; display:flex; align-items:center; gap:15px; padding:15px; border-bottom:1px solid #eee;">
-        <div style="font-size:24px;">${r.icon}</div>
-        <div>
-          <h4 style="margin:0 0 5px 0;">${r.title}</h4>
-          <p style="margin:0; font-size:14px; color:#6b7280;">${r.desc}</p>
-        </div>
-      </div>
-    `).join('');
-  }
-}
-
-// Notifications System
-function initNotifications() {
-  const notificationsBtn = document.getElementById('notifications-btn');
-  const notificationsModal = document.getElementById('notifications-modal');
-  const notificationsList = document.getElementById('notifications-list');
-  const clearBtn = document.getElementById('clear-notifications-btn');
-  
-  if (notificationsBtn) {
-    notificationsBtn.addEventListener('click', () => {
-      notificationsModal.style.display = 'flex';
-      updateNotificationsList();
-    });
-  }
-  
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      notifications = [];
-      updateNotificationsList();
-      updateNotificationBadge();
-      notificationsModal.style.display = 'none';
-    });
-  }
-  
-  // Close notifications modal
-  notificationsModal.addEventListener('click', (e) => {
-    if (e.target === notificationsModal) {
-      notificationsModal.style.display = 'none';
-    }
-  });
-}
-
-function addNotification(message, type = 'info') {
-  const notification = {
-    id: Date.now(),
-    message: message,
-    type: type,
-    timestamp: new Date(),
-    read: false
-  };
-  
-  notifications.unshift(notification);
-  updateNotificationBadge();
-  showToast(message, type);
-}
-
-function updateNotificationsList() {
-  const notificationsList = document.getElementById('notifications-list');
-  if (!notificationsList) return;
-  
-  if (notifications.length === 0) {
-    notificationsList.innerHTML = '<p class="text-muted">No notifications</p>';
-    return;
-  }
-  
-  notificationsList.innerHTML = notifications.map(notification => `
-    <div class="notification-item ${notification.read ? 'read' : 'unread'}">
-      <div class="notification-content">
-        <span class="notification-message">${notification.message}</span>
-        <span class="notification-time">${formatTime(notification.timestamp)}</span>
-      </div>
-      <button class="btn-icon mark-read-btn" onclick="markNotificationRead(${notification.id})">
-        <span class="ph ph-check"></span>
-      </button>
-    </div>
-  `).join('');
-}
-
-function updateNotificationBadge() {
-  const badge = document.getElementById('notification-badge');
-  const unreadCount = notifications.filter(n => !n.read).length;
-  
-  if (badge) {
-    badge.textContent = unreadCount > 0 ? unreadCount.toString() : '';
-    badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-  }
-}
-
-function markNotificationRead(id) {
-  const notification = notifications.find(n => n.id === id);
-  if (notification) {
-    notification.read = true;
-    updateNotificationsList();
-    updateNotificationBadge();
-  }
-}
-
-// Chatbot
-function initChatbot() {
-  const chatbotFab = document.getElementById('chatbot-fab');
-  const chatbotContainer = document.getElementById('chatbot-container');
-  const chatbotToggle = document.getElementById('chatbot-toggle');
-  const chatbotMinimize = document.getElementById('chatbot-minimize');
-  const chatbotInput = document.getElementById('chatbot-input');
-  const chatbotSend = document.getElementById('chatbot-send');
-  const chatbotMessages = document.getElementById('chatbot-messages');
-  
-  // Toggle chatbot
-  [chatbotFab, chatbotToggle].forEach(btn => {
-    if (btn) {
-      btn.addEventListener('click', () => {
-        chatbotContainer.classList.toggle('active');
-      });
-    }
-  });
-  
-  // Minimize chatbot
-  if (chatbotMinimize) {
-    chatbotMinimize.addEventListener('click', () => {
-      chatbotContainer.classList.remove('active');
-    });
-  }
-  
-  // Send message
-  [chatbotSend, chatbotInput].forEach(element => {
-    if (element) {
-      element.addEventListener('click', sendMessage);
-    }
-  });
-  
-  chatbotInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      sendMessage();
-    }
-  });
-  
-  // Close chatbot when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!chatbotContainer.contains(e.target) && !chatbotFab.contains(e.target)) {
-      chatbotContainer.classList.remove('active');
-    }
-  });
-}
-
-function sendMessage() {
-  const input = document.getElementById('chatbot-input');
-  const messages = document.getElementById('chatbot-messages');
-  
-  if (!input || !messages) return;
-  
-  const message = input.value.trim();
-  if (!message) return;
-  
-  // Add user message
-  addChatMessage(message, 'user');
-  input.value = '';
-  
-  // Process message and respond
-  setTimeout(() => {
-    const response = getChatbotResponse(message);
-    addChatMessage(response, 'bot');
-  }, 1000);
-}
-
-function addChatMessage(text, sender) {
-  const messages = document.getElementById('chatbot-messages');
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `chat-message ${sender}`;
-  messageDiv.innerHTML = `
-    <div class="message-bubble">
-      <span class="message-text">${text}</span>
-      <span class="message-time">${formatTime(new Date())}</span>
-    </div>
-  `;
-  messages.appendChild(messageDiv);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function getChatbotResponse(message) {
-  const msg = message.toLowerCase();
-  
-  // Keyword-based responses
-  if (msg.includes('help') || msg.includes('how')) {
-    return "I can help you with:\n• Tagging herb collections\n• Understanding lab results\n• Creating products\n• Tracing supply chain\n• Using blockchain features\n\nWhat would you like to know more about?";
-  }
-  
-  if (msg.includes('batch') || msg.includes('collection')) {
-    return "To tag a new herb collection:\n1. Go to Farmer Dashboard\n2. Fill in the collection form\n3. Capture GPS location\n4. Submit to blockchain\n\nEach batch gets a unique ID and is permanently recorded!";
-  }
-  
-  if (msg.includes('lab') || msg.includes('test')) {
-    return "Lab testing process:\n1. Select a batch from the dropdown\n2. Check batch details\n3. Enter test parameters\n4. Upload lab report\n5. Submit result\n\nResults are stored immutably on the blockchain.";
-  }
-  
-  if (msg.includes('product') || msg.includes('manufactur')) {
-    return "To create a product:\n1. Go to Manufacturer Dashboard\n2. Check batch status (must pass lab test)\n3. Fill product details\n4. Generate QR code\n5. Product is ready for consumers to trace!";
-  }
-  
-  if (msg.includes('trace') || msg.includes('qr') || msg.includes('scan')) {
-    return "To trace a product:\n1. Go to Consumer Portal\n2. Enter product ID or scan QR code\n3. View complete supply chain journey\n4. See blockchain verification\n\nEvery step is transparent and verifiable!";
-  }
-  
-  if (msg.includes('blockchain') || msg.includes('hash')) {
-    return "Our blockchain:\n• Records every transaction permanently\n• Uses cryptographic hashing\n• Links blocks together securely\n• Provides full transparency\n• Cannot be altered or deleted\n\nEach block contains a unique hash that links to the previous block.";
-  }
-  
-  if (msg.includes('thank')) {
-    return "You're welcome! Is there anything else I can help you with today?";
-  }
-  
-  return "I'm still learning about Krishi. For now, I can help with:\n• Herb collection process\n• Lab testing\n• Product creation\n• Supply chain tracing\n• Blockchain basics\n\nPlease ask about one of these topics!";
-}
-
-// Exports
-function initExports() {
-  const exportCsvBtn = document.getElementById('export-csv-btn');
-  if (exportCsvBtn) {
-    exportCsvBtn.addEventListener('click', () => {
-      exportCollectionsToCSV();
-    });
-  }
-}
-
-async function exportCollectionsToCSV() {
-  // Export farmer collections from Firestore to CSV
-  try {
-    const snapshot = await db.collection('batches').get();
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Batch ID,Farmer,Herb Type,Quantity,Location,Status\n";
-    
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      csvContent += `${doc.id},"${data.farmerName}","${data.herbType}",${data.quantity},"${data.location}","${data.status}"\n`;
-    });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `krishi-collections-${new Date().toISOString().slice(0,10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('CSV exported successfully', 'success');
-  } catch(error) {
-    console.error('Export CSV error', error);
-    showToast('Failed to export CSV', 'error');
-  }
-}
-
-window.exportLabReportPDF = async function(batchId) {
-  if(!window.jspdf) {
-    showToast('PDF Library not loaded', 'error');
-    return;
-  }
-  
-  try {
-    const doc = await db.collection('batches').doc(batchId).get();
-    if(!doc.exists) return showToast('Batch not found', 'error');
-    
-    const data = doc.data();
-    if(!data.labResults) return showToast('No lab results available for this batch', 'warning');
-    
-    // AutoTable isn't loaded by default, so we'll do manual drawing
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
-    
-    pdf.setFontSize(22);
-    pdf.setTextColor(16, 185, 129); // Green
-    pdf.text("Krishi - Certified Lab Report", 20, 20);
-    
-    pdf.setFontSize(12);
-    pdf.setTextColor(0,0,0);
-    pdf.text(`Batch ID: ${batchId}`, 20, 40);
-    pdf.text(`Herb Type: ${data.herbType}`, 20, 50);
-    pdf.text(`Testing Date: ${data.labResults.testedAt ? new Date(data.labResults.testedAt.toDate()).toLocaleString() : new Date().toLocaleString()}`, 20, 60);
-    pdf.text(`Overall Result: ${data.labResults.result}`, 20, 70);
-    
-    pdf.setFontSize(16);
-    pdf.text("Detailed Parameters", 20, 90);
-    pdf.setFontSize(12);
-    
-    let y = 100;
-    for(const [key, val] of Object.entries(data.labResults.parameters)) {
-      pdf.text(`${key}: ${val}`, 20, y);
-      y += 10;
-    }
-    
-    pdf.setFontSize(10);
-    pdf.setTextColor(150,150,150);
-    pdf.text("This report is cryptographically verified on the Krishi Blockchain.", 20, y+20);
-    
-    pdf.save(`Krishi-Lab-Report-${batchId}.pdf`);
-    showToast('Lab Report PDF downloaded', 'success');
-  } catch(error) {
-    console.error("PDF export error", error);
-    showToast('Failed to generate PDF', 'error');
-  }
-};
-
-window.exportBlockchainJSON = async function() {
-  try {
-    const chain = await blockchain.getChain();
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(chain, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href",     dataStr     );
-    dlAnchorElem.setAttribute("download", `krishi-blockchain-dump-${new Date().toISOString().slice(0,10)}.json`);
-    dlAnchorElem.click();
-    showToast('Blockchain ledger downloaded', 'success');
-  } catch (error) {
-    console.error('Blockchain JSON export error', error);
-    showToast('Failed to export blockchain', 'error');
-  }
-};
-// Blockchain Viewer
-function initBlockchainViewer() {
-  // Initialize blockchain visualization
-  const blockchainVisualization = document.getElementById('blockchain-visualization');
-  if (blockchainVisualization) {
-    renderBlockchainChain();
-  }
-  
-  // Initialize blockchain stats
-  updateBlockchainStats();
-  
-  // Search form
-  const searchForm = document.getElementById('blockchain-search-form');
-  if (searchForm) {
-    searchForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const batchId = document.getElementById('search-batch-id').value;
-      searchBlockchainByBatch(batchId);
-    });
-  }
-  
-  // Auto-refresh blockchain every 5 seconds
-  setInterval(() => {
-    renderBlockchainChain();
-    updateBlockchainStats();
-  }, 5000);
-}
-
-// Render blockchain chain visualization
-async function renderBlockchainChain() {
-  const blockchainVisualization = document.getElementById('blockchain-visualization');
-  if (!blockchainVisualization) return;
-  
-  try {
-    const chain = await blockchain.getChain();
-    
-    if (chain.length === 0) {
-      blockchainVisualization.innerHTML = `
-        <div class="blockchain-info">
-          <h4>⛓️ Blockchain Chain</h4>
-          <p>No blocks in the chain yet. Start by tagging a herb collection!</p>
-        </div>
-      `;
-      return;
-    }
-    
-    blockchainVisualization.innerHTML = chain.map((block, index) => {
-      const blockType = block.data.type || 'unknown';
-      const blockIcon = getBlockIcon(blockType);
-      const blockClass = getBlockClass(blockType);
-      const timestamp = new Date(block.timestamp).toLocaleString();
-      
-      return `
-        <div class="blockchain-block ${blockClass} ${index === 0 ? 'genesis' : ''}">
-          <div class="block-icon">${blockIcon}</div>
-          <div class="block-content">
-            <div class="block-header">
-              <span class="block-type">${blockType.replace('-', ' ')}</span>
-              <span class="block-timestamp">${timestamp}</span>
+// Farmer Dashboard
+function loadFarmerDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Farmer Dashboard</h2>
+            <div class="herb-card">
+                <h3>Tag New Herb Collection</h3>
+                <form id="herb-collection-form">
+                    <div class="form-group">
+                        <label for="farmer-name">Farmer Name:</label>
+                        <input type="text" id="farmer-name" required placeholder="Enter your name">
+                    </div>
+                    <div class="form-group">
+                        <label for="herb-type">Herb Type:</label>
+                        <select id="herb-type" required>
+                            <option value="" data-i18n="herbType">Select Herb</option>
+                            <option value="ashwagandha" data-i18n="herbAshwagandha">Ashwagandha</option>
+                            <option value="shatavari" data-i18n="herbShatavari">Shatavari</option>
+                            <option value="tulsi" data-i18n="herbTulsi">Tulsi</option>
+                            <option value="neem" data-i18n="herbNeem">Neem</option>
+                            <option value="amla" data-i18n="herbAmla">Amla</option>
+                            <option value="turmeric" data-i18n="herbTurmeric">Turmeric</option>
+                            <option value="brahmi" data-i18n="herbBrahmi">Brahmi</option>
+                            <option value="giloy" data-i18n="herbGiloy">Giloy</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity (kg):</label>
+                        <input type="number" id="quantity" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="collection-date">Harvest/Collection Date:</label>
+                        <input type="date" id="collection-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Farm Location:</label>
+                        <div id="farmer-map" class="map-container" style="height: 250px;">
+                            GPS Location will be captured automatically
+                        </div>
+                        <small>Note: Using Leaflet map to capture/display location</small>
+                    </div>
+                    <button type="submit" class="auth-btn">
+                        <i class="ph ph-fingerprint"></i> <span data-i18n="submit">Tag Location & Submit to Blockchain</span>
+                    </button>
+                </form>
             </div>
-            <div class="block-data">
-              ${renderBlockData(block.data)}
+
+            <!-- New Farmer Features Row -->
+            <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <!-- Weather Widget -->
+                <div class="herb-card" id="weather-widget">
+                    <h3 data-i18n="weatherAlerts">Weather Alerts</h3>
+                    <div id="weather-content" class="skeleton-container">
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text" style="width: 80%"></div>
+                    </div>
+                </div>
+
+                <!-- Price Discovery Widget -->
+                <div class="herb-card" id="price-discovery">
+                    <h3 data-i18n="priceDiscovery">Market Rates</h3>
+                    <div id="price-content" class="skeleton-container">
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text" style="width: 60%"></div>
+                    </div>
+                </div>
             </div>
-            <div class="block-hash">
-              Hash: ${block.hash.substring(0, 40)}...
+            
+            <div class="herb-card">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="action-btn" onclick="showDashboard('recent-collections')">
+                        <i class="ph ph-clock-counter-clockwise"></i> View Recent Collections
+                    </button>
+                    <button class="action-btn outline" onclick="if(window.DataExporter) window.DataExporter.exportTransactions('collection', 'collections')">
+                        <i class="ph ph-download-simple"></i> Export Collections CSV
+                    </button>
+                    <button class="action-btn" style="background: var(--accent)" onclick="showSmsVerification()">
+                        <i class="ph ph-chat-centered-dots"></i> <span data-i18n="smsVerification">SMS Verification</span>
+                    </button>
+                </div>
             </div>
-          </div>
         </div>
-      `;
-    }).join('');
-    
-    // Add pulsing animation to the latest block
-    const blocks = blockchainVisualization.querySelectorAll('.blockchain-block');
-    if (blocks.length > 0) {
-      blocks[blocks.length - 1].classList.add('pulsing');
-    }
-    
-  } catch (error) {
-    console.error('Error rendering blockchain:', error);
-    blockchainVisualization.innerHTML = `
-      <div class="blockchain-info">
-        <h4>❌ Error Loading Blockchain</h4>
-        <p>Unable to load blockchain data. Please try again.</p>
-      </div>
     `;
-  }
-}
 
-// Get block icon based on type
-function getBlockIcon(type) {
-  const icons = {
-    'genesis': '🌱',
-    'collection': '🌱',
-    'send-to-lab': '🧪',
-    'lab-test': '🧪',
-    'manufacturing': '🏭',
-    'smart-contract-event': '⚡',
-    'insurance-claim': '💰',
-    'dna-registration': '🧬'
-  };
-  return icons[type] || '📦';
-}
+    // Initialize Map after rendering DOM
+    setTimeout(() => {
+        const farmerMapEl = document.getElementById('farmer-map');
+        if (farmerMapEl && window.L && !farmerMapEl._leaflet_id) {
+            farmerMapEl.innerHTML = '';
+            const map = L.map('farmer-map').setView([23.2599, 77.4126], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-// Get block CSS class based on type
-function getBlockClass(type) {
-  const classes = {
-    'genesis': 'genesis',
-    'collection': 'collection',
-    'send-to-lab': 'lab-test',
-    'lab-test': 'lab-test',
-    'manufacturing': 'manufacturing',
-    'smart-contract-event': 'smart-contract',
-    'insurance-claim': 'insurance',
-    'dna-registration': 'dna'
-  };
-  return classes[type] || '';
-}
+            let marker;
 
-// Render block data in a structured format
-function renderBlockData(data) {
-  const fields = [];
-  
-  // Common fields
-  if (data.batchId) fields.push(`<div class="block-field"><strong>Batch ID:</strong> ${data.batchId}</div>`);
-  if (data.farmerId) fields.push(`<div class="block-field"><strong>Farmer:</strong> ${data.farmerId}</div>`);
-  if (data.herbType) fields.push(`<div class="block-field"><strong>Herb:</strong> ${data.herbType}</div>`);
-  if (data.quantity) fields.push(`<div class="block-field"><strong>Quantity:</strong> ${data.quantity}</div>`);
-  
-  // Lab test specific
-  if (data.testResult) fields.push(`<div class="block-field"><strong>Result:</strong> ${data.testResult}</div>`);
-  if (data.parameters) {
-    const params = data.parameters;
-    if (params.moisture) fields.push(`<div class="block-field"><strong>Moisture:</strong> ${params.moisture}%</div>`);
-    if (params.activeMarkers) fields.push(`<div class="block-field"><strong>Active Markers:</strong> ${params.activeMarkers}%</div>`);
-    if (params.pesticides) fields.push(`<div class="block-field"><strong>Pesticides:</strong> ${params.pesticides}</div>`);
-  }
-  
-  // Manufacturing specific
-  if (data.productId) fields.push(`<div class="block-field"><strong>Product ID:</strong> ${data.productId}</div>`);
-  if (data.productName) fields.push(`<div class="block-field"><strong>Product:</strong> ${data.productName}</div>`);
-  
-  // Smart contract specific
-  if (data.contract) fields.push(`<div class="block-field"><strong>Contract:</strong> ${data.contract}</div>`);
-  if (data.type) fields.push(`<div class="block-field"><strong>Event:</strong> ${data.type}</div>`);
-  
-  return fields.join('');
-}
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], 13);
+                    marker = L.marker([lat, lng]).addTo(map).bindPopup('Your Current Location').openPopup();
+                    document.getElementById('farmer-map').dataset.lat = lat;
+                    document.getElementById('farmer-map').dataset.lng = lng;
+                }, (err) => {
+                    const lat = 23.25 + (Math.random() - 0.5);
+                    const lng = 77.41 + (Math.random() - 0.5);
+                    marker = L.marker([lat, lng]).addTo(map).bindPopup('Simulated Farm Location').openPopup();
+                    document.getElementById('farmer-map').dataset.lat = lat;
+                    document.getElementById('farmer-map').dataset.lng = lng;
+                }, { timeout: 10000 });
+            }
+        }
+    }, 100);
 
-// Update blockchain statistics
-async function updateBlockchainStats() {
-  try {
-    const chainLength = await blockchain.getChainLength();
-    const chain = await blockchain.getChain();
-    
-    // Update stats in the admin dashboard
-    const totalBlocksElement = document.getElementById('total-blocks');
-    const chainLengthElement = document.getElementById('chain-length');
-    const lastBlockHashElement = document.getElementById('last-block-hash');
-    
-    if (totalBlocksElement) totalBlocksElement.textContent = chainLength;
-    if (chainLengthElement) chainLengthElement.textContent = chainLength;
-    
-    if (lastBlockHashElement && chain.length > 0) {
-      lastBlockHashElement.textContent = chain[chain.length - 1].hash.substring(0, 12) + '...';
-    }
-    
-    // Update blockchain info in viewer
-    const blockchainInfo = document.querySelector('.blockchain-info');
-    if (blockchainInfo) {
-      blockchainInfo.innerHTML = `
-        <h4>⛓️ Blockchain Chain</h4>
-        <p>Current chain length: <strong>${chainLength}</strong> blocks</p>
-        <p>Latest block: <strong>${chain.length > 0 ? chain[chain.length - 1].data.type : 'None'}</strong></p>
-      `;
-    }
-    
-  } catch (error) {
-    console.error('Error updating blockchain stats:', error);
-  }
-}
-
-async function searchBlockchainByBatch(batchId) {
-  if (!batchId) return;
-  
-  try {
-    const results = await blockchain.getBlocksByBatchId(batchId);
-    const searchResults = document.getElementById('search-results');
-    
-    if (results.length === 0) {
-      searchResults.innerHTML = `
-        <div class="block-result">
-          <h4>🔍 Search Results</h4>
-          <p>No blocks found for batch ID: <strong>${batchId}</strong></p>
-        </div>
-      `;
-      return;
-    }
-    
-    searchResults.innerHTML = `
-      <div class="block-result">
-        <h4>Found ${results.length} blocks for batch: ${batchId}</h4>
-        ${results.map(block => `
-          <div style="margin-top: ${results.length > 1 ? '10px' : '0'}; padding-top: ${results.length > 1 ? '10px' : '0'}; border-top: ${results.length > 1 ? '1px solid var(--color-border)' : 'none'};">
-            <strong>Type:</strong> <span style="text-transform: capitalize;">${block.data.type.replace('-', ' ')}</span><br>
-            <strong>Hash:</strong> ${block.hash.substring(0, 20)}...<br>
-            <strong>Timestamp:</strong> ${new Date(block.timestamp).toLocaleString()}
-          </div>
-        `).join('')}
-      </div>
-    `;
-    
-    // Add notification for successful search
-    addNotification(`Found ${results.length} blocks for batch ${batchId}`, 'info');
-    
-  } catch (error) {
-    console.error('Error searching blockchain:', error);
-    const searchResults = document.getElementById('search-results');
-    searchResults.innerHTML = `
-      <div class="block-result">
-        <h4>❌ Search Error</h4>
-        <p>Unable to search blockchain. Please try again.</p>
-      </div>
-    `;
-  }
-}
-
-// Enhanced blockchain block creation with smart contract integration
-async function createBlockchainBlock(type, data) {
-  try {
-    // Create the block
-    const block = await blockchain.addBlock(type, data);
-    
-    // Execute smart contracts based on block type
-    if (type === BLOCK_TYPES.LAB_TEST) {
-      const contractResult = await SmartContracts.ContractTriggers.onLabTest(data.batchData, data.testResult);
-      if (contractResult.success) {
-        addNotification(`Smart contract executed: ${contractResult.qualityResult.result}`, 
-                       contractResult.qualityResult.result === 'PASS' ? 'success' : 'warning');
-      }
-    } else if (type === BLOCK_TYPES.COLLECTION) {
-      await SmartContracts.ContractTriggers.onCollection(data);
-      addNotification('Herb collection recorded on blockchain', 'success');
-    } else if (type === BLOCK_TYPES.MANUFACTURING) {
-      await SmartContracts.ContractTriggers.onManufacturing(data);
-      addNotification('Product manufacturing recorded on blockchain', 'success');
-    }
-    
-    // Update visualization
-    renderBlockchainChain();
-    updateBlockchainStats();
-    
-    return block;
-    
-  } catch (error) {
-    console.error('Error creating blockchain block:', error);
-    addNotification('Error creating blockchain block', 'error');
-    throw error;
-  }
-}
-
-// Dashboard Initializers
-function initFarmerDashboard() {
-  // Farmer dashboard specific initialization
-  const herbForm = document.getElementById('herb-collection-form');
-  if (herbForm) {
-    herbForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await submitHerbCollection();
-    });
-  }
-  
-  // GPS location capture
-  const captureLocationBtn = document.getElementById('capture-location-btn');
-  if (captureLocationBtn) {
-    captureLocationBtn.addEventListener('click', captureLocation);
-  }
-  
-  // Initialize Leaflet map
-  initFarmerMap();
-  
-  // Initialize weather widget
-  initWeatherWidget();
-  
-  // Initialize market rates
-  initMarketRates();
-  
-  // Initialize recent collections
-  initRecentCollections();
-  
-  // Initialize SMS verification modal
-  initSMSVerification();
-  
-  // Load existing data
-  loadFarmerData();
-}
-
-// Initialize Leaflet Map for Farmer Dashboard
-function initFarmerMap() {
-  const mapContainer = document.getElementById('farmer-map');
-  if (!mapContainer) return;
-  
-  // Initialize map
-  const map = L.map('farmer-map').setView([20.5937, 78.9629], 5); // India center
-  
-  // Add tile layer
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19,
-  }).addTo(map);
-  
-  // Add current location marker
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      const marker = L.marker([latitude, longitude]).addTo(map);
-      marker.bindPopup("📍 Your Farm Location").openPopup();
-      map.setView([latitude, longitude], 13);
-      
-      // Store location in global variable
-      window.currentFarmerLocation = { latitude, longitude };
-    }, (error) => {
-      console.error('Error getting location for map:', error);
-    });
-  }
-  
-  // Add click event to set marker
-  map.on('click', (e) => {
-    const { lat, lng } = e.latlng;
-    const marker = L.marker([lat, lng]).addTo(map);
-    marker.bindPopup(`📍 Selected Location: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`).openPopup();
-    
-    // Store selected location
-    window.selectedFarmerLocation = { latitude: lat, longitude: lng };
-    
-    // Update location display
-    const locationDisplay = document.getElementById('location-display');
-    if (locationDisplay) {
-      locationDisplay.textContent = `Location selected: ${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`;
-    }
-  });
-  
-  // Store map reference
-  window.farmerMap = map;
-}
-
-// Initialize Weather Widget
-function initWeatherWidget() {
-  const weatherWidget = document.querySelector('.weather-widget');
-  if (!weatherWidget) return;
-  
-  // Simulate weather data (in real app, this would come from an API)
-  const weatherData = {
-    temperature: Math.floor(Math.random() * 15) + 25, // 25-40°C
-    condition: ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy'][Math.floor(Math.random() * 4)],
-    humidity: Math.floor(Math.random() * 30) + 40, // 40-70%
-    windSpeed: Math.floor(Math.random() * 15) + 5, // 5-20 km/h
-    alerts: [
-      'Rain expected in 2 days. Harvest Tulsi before Sunday.',
-      'High humidity detected. Monitor for fungal growth.',
-      'Strong winds forecasted. Secure your crops.',
-      'Clear skies ahead. Perfect for drying herbs.'
-    ]
-  };
-  
-  weatherWidget.innerHTML = `
-    <div class="weather-info">
-      <div class="weather-main">
-        <span class="weather-temp">${weatherData.temperature}°C</span>
-        <span class="weather-condition">${weatherData.condition}</span>
-      </div>
-      <div class="weather-details">
-        <span class="weather-detail">Humidity: ${weatherData.humidity}%</span>
-        <span class="weather-detail">Wind: ${weatherData.windSpeed} km/h</span>
-      </div>
-    </div>
-    <div class="weather-alert">
-      <span class="alert-icon">⚠️</span>
-      <span>${weatherData.alerts[Math.floor(Math.random() * weatherData.alerts.length)]}</span>
-    </div>
-  `;
-}
-
-// Initialize Market Rates Widget
-function initMarketRates() {
-  const marketRatesContainer = document.querySelector('.market-rates');
-  if (!marketRatesContainer) return;
-  
-  // Current market rates for different herbs
-  const marketRates = [
-    { herb: 'Ashwagandha', rate: 450, trend: 'up' },
-    { herb: 'Tulsi', rate: 200, trend: 'stable' },
-    { herb: 'Neem', rate: 150, trend: 'down' },
-    { herb: 'Turmeric', rate: 300, trend: 'up' },
-    { herb: 'Amla', rate: 250, trend: 'stable' },
-    { herb: 'Ginseng', rate: 800, trend: 'up' },
-    { herb: 'Brahmi', rate: 350, trend: 'stable' },
-    { herb: 'Shatavari', rate: 400, trend: 'down' }
-  ];
-  
-  marketRatesContainer.innerHTML = marketRates.map(item => `
-    <div class="rate-item">
-      <div class="rate-info">
-        <span class="herb-name">${item.herb}</span>
-        <span class="rate-trend ${item.trend}">
-          ${item.trend === 'up' ? '📈' : item.trend === 'down' ? '📉' : '➡️'}
-          ${item.trend}
-        </span>
-      </div>
-      <span class="rate-value">₹${item.rate}/kg</span>
-    </div>
-  `).join('');
-}
-
-// Initialize SMS Verification Modal
-function initSMSVerification() {
-  const verifyBtn = document.getElementById('verify-phone-btn');
-  const smsModal = document.getElementById('sms-verification-modal');
-  const phoneInput = document.getElementById('phone-input');
-  const otpInput = document.getElementById('otp-input');
-  const sendOtpBtn = document.getElementById('send-otp-btn');
-  const verifyOtpBtn = document.getElementById('verify-otp-btn');
-  
-  if (verifyBtn) {
-    verifyBtn.addEventListener('click', () => {
-      smsModal.style.display = 'flex';
-    });
-  }
-  
-  if (sendOtpBtn) {
-    sendOtpBtn.addEventListener('click', () => {
-      const phone = phoneInput.value;
-      if (phone && phone.length === 10) {
-        // Simulate OTP sending
-        const otp = Math.floor(100000 + Math.random() * 900000);
-        window.currentOTP = otp;
-        showToast(`OTP sent to ${phone}: ${otp}`, 'success');
-        
-        // Auto-fill OTP for demo purposes
-        setTimeout(() => {
-          otpInput.value = otp;
-        }, 1000);
-      } else {
-        showToast('Please enter a valid 10-digit phone number', 'error');
-      }
-    });
-  }
-  
-  if (verifyOtpBtn) {
-    verifyOtpBtn.addEventListener('click', () => {
-      const enteredOtp = otpInput.value;
-      if (enteredOtp == window.currentOTP) {
-        showToast('Phone number verified successfully!', 'success');
-        smsModal.style.display = 'none';
-        document.getElementById('phone-verified').style.display = 'inline';
-      } else {
-        showToast('Invalid OTP. Please try again.', 'error');
-      }
-    });
-  }
-  
-  // Close modal when clicking outside
-  if (smsModal) {
-    smsModal.addEventListener('click', (e) => {
-      if (e.target === smsModal) {
-        smsModal.style.display = 'none';
-      }
-    });
-  }
-}
-
-// Enhanced Herb Collection Submission
-async function submitHerbCollection() {
-  const farmerName = document.getElementById('farmer-name').value;
-  const herbType = document.getElementById('herb-type').value;
-  const quantity = document.getElementById('quantity').value;
-  const harvestDate = document.getElementById('harvest-date').value;
-  const locationDisplay = document.getElementById('location-display');
-  
-  // Validation
-  if (!farmerName || !herbType || !quantity || !harvestDate) {
-    showToast('Please fill in all required fields', 'error');
-    return;
-  }
-  
-  if (!window.selectedFarmerLocation && !window.currentFarmerLocation) {
-    showToast('Please capture or select your farm location', 'error');
-    return;
-  }
-  
-  // Generate batch ID
-  const batchId = `BATCH-${Date.now()}`;
-  
-  // Get location data
-  const location = window.selectedFarmerLocation || window.currentFarmerLocation;
-  const locationString = `${location.latitude.toFixed(4)}°N, ${location.longitude.toFixed(4)}°E`;
-  
-  try {
-    // Create blockchain block
-    const block = await blockchain.addBlock(BLOCK_TYPES.COLLECTION, {
-      batchId: batchId,
-      farmerName: farmerName,
-      herbType: herbType,
-      quantity: quantity,
-      harvestDate: harvestDate,
-      location: locationString,
-      coordinates: {
-        latitude: location.latitude,
-        longitude: location.longitude
-      },
-      timestamp: new Date().toISOString(),
-      status: 'pending'
-    });
-    
-    // Save to Firestore
-    await saveBatchToFirestore(batchId, {
-      farmerName: farmerName,
-      herbType: herbType,
-      quantity: quantity,
-      harvestDate: harvestDate,
-      location: locationString,
-      coordinates: location,
-      batchId: batchId,
-      status: 'pending',
-      timestamp: new Date().toISOString()
-    });
-    
-    showToast(`Herb collection tagged successfully! Batch ID: ${batchId}`, 'success');
-    addNotification(`New herb collection added: ${herbType} (${quantity}kg) - Batch ${batchId}`, 'success');
-    
-    // Update recent collections display
     updateRecentCollections();
-    
-    // Clear form
-    document.getElementById('herb-collection-form').reset();
-    if (locationDisplay) {
-      locationDisplay.textContent = '';
+    // Load Weather and Price Data
+    loadFarmerMarketData();
+
+    // Trigger i18n update for the dynamic content
+    if (window.i18next && typeof updateTranslations === 'function') {
+        updateTranslations();
     }
-    
-    // Show batch ID modal
-    showBatchIDModal(batchId, herbType, quantity);
-    
-  } catch (error) {
-    console.error('Error submitting herb collection:', error);
-    showToast('Error submitting collection. Please try again.', 'error');
-  }
 }
 
-// Save batch to Firestore
-async function saveBatchToFirestore(batchId, batchData) {
-  try {
-    await db.collection('batches').doc(batchId).set({
-      ...batchData,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    console.log('Batch saved to Firestore:', batchId);
-  } catch (error) {
-    console.error('Error saving batch to Firestore:', error);
-    throw error;
-  }
-}
+// Simulated Farmer Market Data (Weather & Price)
+function loadFarmerMarketData() {
+    const weatherContainer = document.getElementById('weather-content');
+    const priceContainer = document.getElementById('price-content');
 
-// Update Recent Collections with real data
-async function updateRecentCollections() {
-  const collectionsList = document.getElementById('recent-collections');
-  if (!collectionsList) return;
-  
-  try {
-    // Get recent collections from Firestore
-    const user = auth.currentUser;
-    if (!user) return;
-    
-    const batchesRef = db.collection('batches')
-      .where('farmerId', '==', user.uid)
-      .orderBy('createdAt', 'desc')
-      .limit(5);
-    
-    const snapshot = await batchesRef.get();
-    
-    if (snapshot.empty) {
-      collectionsList.innerHTML = `
-        <div class="empty-state">
-          <span class="empty-icon">🌱</span>
-          <p>No collections yet. Tag your first herb collection!</p>
-        </div>
-      `;
-      return;
-    }
-    
-    let html = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      const date = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : data.harvestDate;
-      
-      html += `
-        <div class="collection-item">
-          <div class="collection-info">
-            <div class="collection-header">
-              <strong>${data.batchId}</strong>
-              <span class="collection-status pending">Pending Lab Test</span>
-            </div>
-            <div class="collection-details">
-              <span class="herb-type">${data.herbType}</span>
-              <span class="quantity">${data.quantity}kg</span>
-              <span class="date">${date}</span>
-            </div>
-            <div class="collection-location">
-              <span class="ph ph-map-pin"></span>
-              <span>${data.location}</span>
-            </div>
-          </div>
-          <div class="collection-actions">
-            <button class="btn-icon view-details" onclick="viewCollectionDetails('${doc.id}')">
-              <span class="ph ph-eye"></span>
-            </button>
-            <button class="btn-icon export-csv" onclick="exportCollectionCSV('${doc.id}')">
-              <span class="ph ph-download"></span>
-            </button>
-          </div>
-        </div>
-      `;
-    });
-    
-    collectionsList.innerHTML = html;
-    
-  } catch (error) {
-    console.error('Error loading recent collections:', error);
-    collectionsList.innerHTML = `
-      <div class="error-state">
-        <p>Error loading collections. Please try again.</p>
-      </div>
-    `;
-  }
-}
+    // Show skeletons first
+    if (weatherContainer) weatherContainer.innerHTML = '<div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="width: 80%"></div>';
+    if (priceContainer) priceContainer.innerHTML = '<div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="width: 60%"></div>';
 
-// View Collection Details
-async function viewCollectionDetails(batchId) {
-  try {
-    const doc = await db.collection('batches').doc(batchId).get();
-    if (doc.exists) {
-      const data = doc.data();
-      const detailsHtml = `
-        <div class="collection-details-modal">
-          <h3>Collection Details</h3>
-          <div class="detail-row">
-            <span class="detail-label">Batch ID:</span>
-            <span class="detail-value">${data.batchId}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Herb Type:</span>
-            <span class="detail-value">${data.herbType}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Quantity:</span>
-            <span class="detail-value">${data.quantity}kg</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Harvest Date:</span>
-            <span class="detail-value">${data.harvestDate}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Location:</span>
-            <span class="detail-value">${data.location}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Status:</span>
-            <span class="detail-value status-${data.status}">${data.status}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Blockchain:</span>
-            <span class="detail-value">✓ Verified</span>
-          </div>
-        </div>
-      `;
-      
-      // Show modal (would need modal implementation)
-      showToast('Collection details loaded', 'info');
-      console.log('Collection details:', data);
-    }
-  } catch (error) {
-    console.error('Error viewing collection details:', error);
-    showToast('Error loading collection details', 'error');
-  }
-}
-
-// Export Collection to CSV
-function exportCollectionCSV(batchId) {
-  // This would export specific collection data to CSV
-  showToast('Exporting collection to CSV...', 'info');
-  // Implementation would be in exports.js
-}
-
-// Show Batch ID Modal
-function showBatchIDModal(batchId, herbType, quantity) {
-  const modal = document.getElementById('batch-id-modal');
-  const batchIdDisplay = document.getElementById('generated-batch-id');
-  const herbTypeDisplay = document.getElementById('batch-herb-type');
-  const quantityDisplay = document.getElementById('batch-quantity');
-  
-  if (modal && batchIdDisplay && herbTypeDisplay && quantityDisplay) {
-    batchIdDisplay.textContent = batchId;
-    herbTypeDisplay.textContent = herbType;
-    quantityDisplay.textContent = quantity;
-    modal.style.display = 'flex';
-  }
-}
-
-// Load Farmer Data
-async function loadFarmerData() {
-  // Load user info
-  const user = auth.currentUser;
-  if (user) {
-    document.getElementById('farmer-name').value = user.displayName || user.email.split('@')[0];
-  }
-  
-  // Load recent collections
-  await updateRecentCollections();
-  
-  // Load market rates
-  initMarketRates();
-  
-  // Load weather
-  initWeatherWidget();
-}
-
-// Enhanced GPS Location Capture
-function captureLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      const locationString = `${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`;
-      
-      const locationDisplay = document.getElementById('location-display');
-      if (locationDisplay) {
-        locationDisplay.innerHTML = `
-          <div class="location-capture">
-            <span class="location-icon">📍</span>
-            <span class="location-text">Location captured: ${locationString}</span>
-            <button type="button" class="btn-icon remove-location" onclick="removeLocation()">
-              <span class="ph ph-x"></span>
-            </button>
-          </div>
-        `;
-      }
-      
-      // Store location
-      window.currentFarmerLocation = { latitude, longitude };
-      
-      // Update map if exists
-      if (window.farmerMap) {
-        window.farmerMap.setView([latitude, longitude], 15);
-        L.marker([latitude, longitude]).addTo(window.farmerMap)
-          .bindPopup(`📍 Your Farm Location: ${locationString}`).openPopup();
-      }
-      
-      showToast('GPS location captured successfully!', 'success');
-    }, (error) => {
-      console.error('Error capturing location:', error);
-      let errorMessage = 'Unable to capture location.';
-      
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage = 'Location access denied. Please enable location services.';
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage = 'Location information unavailable.';
-          break;
-        case error.TIMEOUT:
-          errorMessage = 'Location request timed out.';
-          break;
-      }
-      
-      showToast(errorMessage, 'error');
-    }, {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 300000 // 5 minutes
-    });
-  } else {
-    showToast('Geolocation is not supported by this browser.', 'error');
-  }
-}
-
-// Remove Location
-function removeLocation() {
-  window.currentFarmerLocation = null;
-  window.selectedFarmerLocation = null;
-  
-  const locationDisplay = document.getElementById('location-display');
-  if (locationDisplay) {
-    locationDisplay.innerHTML = '';
-  }
-  
-  showToast('Location removed', 'info');
-}
-
-// Export functions for global use
-window.farmerDashboard = {
-  initFarmerDashboard,
-  submitHerbCollection,
-  captureLocation,
-  removeLocation,
-  viewCollectionDetails,
-  exportCollectionCSV,
-  showBatchIDModal
-};
-
-// Global state for pending batches
-let pendingBatches = {};
-
-function initLabDashboard() {
-  // Lab dashboard specific initialization
-  const checkBatchBtn = document.getElementById('check-batch-btn');
-  if (checkBatchBtn) {
-    checkBatchBtn.addEventListener('click', checkBatchDetails);
-  }
-  
-  const labTestForm = document.getElementById('lab-test-form');
-  if (labTestForm) {
-    labTestForm.addEventListener('submit', submitLabTest);
-  }
-
-  // Compare Batches Button
-  const compareBtn = document.getElementById('compare-batches-btn');
-  if(compareBtn) {
-    compareBtn.addEventListener('click', initBatchComparisonChart);
-  }
-
-  // Load pending batches into dropdown
-  loadPendingBatches();
-}
-
-async function loadPendingBatches() {
-  const batchSelect = document.getElementById('batch-select');
-  if(!batchSelect) return;
-
-  try {
-    const batchesRef = db.collection('batches').where('status', '==', 'pending').orderBy('createdAt', 'desc');
-    const snapshot = await batchesRef.get();
-    
-    batchSelect.innerHTML = '<option value="">Select a batch</option>';
-    pendingBatches = {};
-    
-    if (snapshot.empty) {
-      batchSelect.innerHTML += '<option value="" disabled>No pending batches available</option>';
-      return;
-    }
-    
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      pendingBatches[data.batchId] = data;
-      batchSelect.innerHTML += `<option value="${data.batchId}">${data.batchId} - ${data.herbType}</option>`;
-    });
-  } catch (error) {
-    console.error('Error loading pending batches:', error);
-    batchSelect.innerHTML = '<option value="">Error loading batches</option>';
-  }
-}
-
-function checkBatchDetails() {
-  const batchSelect = document.getElementById('batch-select');
-  const batchInfo = document.getElementById('batch-info');
-  const batchId = batchSelect.value;
-  
-  if (batchId && pendingBatches[batchId]) {
-    const batch = pendingBatches[batchId];
-    batchInfo.style.display = 'block';
-    // Update batch info with selected batch details
-    document.getElementById('batch-farmer').textContent = batch.farmerName || 'Unknown';
-    document.getElementById('batch-herb').textContent = batch.herbType || 'Unknown';
-    document.getElementById('batch-quantity').textContent = batch.quantity || '0';
-    document.getElementById('batch-location').textContent = batch.location || 'Unknown';
-
-    // Animate spectroscopy
-    simulateSpectroscopy();
-  } else {
-    showToast('Please select a batch first', 'error');
-  }
-}
-
-function simulateSpectroscopy() {
-  const purityValue = document.querySelector('.purity-value');
-  const wavelengthValue = document.querySelector('.wavelength-value');
-  
-  if(purityValue && wavelengthValue) {
-    purityValue.textContent = 'Analyzing...';
-    wavelengthValue.textContent = 'Scanning...';
-    
     setTimeout(() => {
-      const purity = (95 + Math.random() * 4.9).toFixed(1);
-      purityValue.textContent = purity + '%';
-      wavelengthValue.textContent = '540-700nm';
-      showToast('Spectroscopy analysis complete', 'info');
+        // Weather Simulation
+        if (weatherContainer) {
+            weatherContainer.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <i class="ph ph-sun" style="font-size: 2.5rem; color: #f59e0b;"></i>
+                    <div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">28°C</div>
+                        <div style="color: var(--muted-foreground)">Partly Cloudy • Haridwar</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding: 0.75rem; background: #fffbeb; border-radius: 8px; border-left: 4px solid #f59e0b; font-size: 0.85rem;">
+                    <strong>Alert:</strong> Scattered rain expected in 2 days. Ideal for harvesting Tulsi before Sunday.
+                </div>
+            `;
+        }
+
+        // Price Simulation
+        if (priceContainer) {
+            priceContainer.innerHTML = `
+                <div class="price-item" style="margin-bottom: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                        <span>Ashwagandha</span>
+                        <span style="color: #16a34a">₹450/kg <i class="ph ph-trend-up"></i></span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--muted-foreground)">National Average: ₹420/kg</div>
+                </div>
+                <div class="price-item">
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                        <span>Tulsi (Dry)</span>
+                        <span style="color: #f59e0b">₹120/kg <i class="ph ph-minus"></i></span>
+                    </div>
+                </div>
+            `;
+        }
     }, 1500);
-  }
 }
 
-async function submitLabTest(e) {
-  e.preventDefault();
-  
-  const batchId = document.getElementById('batch-select').value;
-  const moisture = document.getElementById('moisture').value;
-  const activeMarkers = document.getElementById('active-markers').value;
-  const pesticides = document.getElementById('pesticides').value;
-  const adulterants = document.getElementById('adulterants').value;
-  const heavyMetals = document.getElementById('heavy-metals').value;
-  const microbial = document.getElementById('microbial').value;
-  
-  // Determine result
-  const result = (pesticides === 'none' && adulterants === 'none' && 
-                 heavyMetals === 'within-limits' && microbial === 'within-limits') ? 'PASS' : 'FAIL';
-  
-  try {
-    // Determine batch data
-    const batchData = pendingBatches[batchId] || { batchId, herbType: 'Unknown', farmerName: 'Unknown' };
+// SMS Verification Simulation
+function showSmsVerification() {
+    const phoneNumber = prompt("Enter your mobile number to verify batch:", "+91 ");
+    if (!phoneNumber) return;
 
-    // Create blockchain block
-    const block = await blockchain.addBlock(BLOCK_TYPES.LAB_TEST, {
-      batchId: batchId,
-      testResult: result,
-      batchData: batchData,
-      parameters: {
-        moisture: moisture,
-        activeMarkers: activeMarkers,
-        pesticides: pesticides,
-        adulterants: adulterants,
-        heavyMetals: heavyMetals,
-        microbial: microbial
-      }
-    });
-
-    // Invoke smart contract integration if defined
-    if(window.SmartContracts && window.SmartContracts.ContractTriggers) {
-      await window.SmartContracts.ContractTriggers.onLabTest(batchData, {
-        result: result,
-        blockHash: block.hash,
-        parameters: { moisture, activeMarkers, pesticides, adulterants, heavyMetals, microbial }
-      });
+    if (window.showNotification) {
+        window.showNotification(`Verification SMS sent to ${phoneNumber}. Please enter OTP.`, 'info');
     }
 
-    // Update batch status in Firestore
-    await db.collection('batches').doc(batchId).update({
-      status: result === 'PASS' ? 'tested' : 'failed',
-      testResult: result,
-      testedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Generate PDF Certificate
-    generateLabCertificate(batchData, {
-      result: result,
-      blockHash: block.hash
-    });
-    
-    showToast(`Lab test completed! Result: ${result}`, result === 'PASS' ? 'success' : 'error');
-    addNotification(`Lab test for batch ${batchId}: ${result}`, result === 'PASS' ? 'success' : 'error');
-    
-    // Reload pending batches to remove the tested one
-    loadPendingBatches();
-    document.getElementById('lab-test-form').reset();
-    document.getElementById('batch-info').style.display = 'none';
-  } catch(error) {
-    console.error('Error submitting lab test:', error);
-    showToast('Error submitting lab test. Please try again.', 'error');
-  }
-}
-
-function generateLabCertificate(batchData, testResult) {
-  if(!window.jspdf) {
-    console.error('jsPDF not loaded');
-    return;
-  }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFontSize(20);
-  doc.text("🌿 KRISHI LAB CERTIFICATE", 105, 20, { align: "center" });
-  
-  doc.setFontSize(14);
-  doc.text("Batch Information", 20, 40);
-  
-  doc.setFontSize(12);
-  doc.text(`Batch ID: ${batchData.batchId}`, 20, 50);
-  doc.text(`Herb: ${batchData.herbType || 'Unknown'}`, 20, 60);
-  doc.text(`Farmer: ${batchData.farmerName || 'Unknown'}`, 20, 70);
-  doc.text(`Quantity: ${batchData.quantity || '0'} kg`, 20, 80);
-  
-  doc.setFontSize(14);
-  doc.text("Test Results", 20, 100);
-  doc.setFontSize(12);
-  doc.text(`Status: ${testResult.result}`, 20, 110);
-  if (testResult.blockHash) {
-    doc.text(`Blockchain Hash: ${testResult.blockHash.substring(0,20)}...`, 20, 120);
-  }
-
-  doc.text(`Date of Testing: ${new Date().toLocaleDateString()}`, 20, 140);
-  
-  doc.setFontSize(10);
-  doc.text(`ISO/IEC 17025:2017 Certified Lab`, 105, 280, { align: "center" });
-
-  doc.save(`Krishi-Certificate-${batchData.batchId}.pdf`);
-}
-
-function initBatchComparisonChart() {
-  const canvas = document.getElementById('batch-comparison-chart');
-  if(!canvas) return;
-  
-  // if chart exists, destroy before re-initializing
-  if(window.batchChart) {
-    window.batchChart.destroy();
-  }
-
-  const ctx = canvas.getContext('2d');
-  
-  const data = {
-    labels: ['Batch 1', 'Batch 2', 'Batch 3', 'Batch 4', 'Batch 5'],
-    datasets: [
-      {
-        label: 'Active Markers %',
-        data: [1.2, 1.5, 1.4, 0.9, 1.6],
-        borderColor: 'rgba(75, 192, 192, 1)',
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        tension: 0.4
-      },
-      {
-        label: 'Moisture %',
-        data: [8.5, 9.0, 7.8, 11.2, 8.1],
-        borderColor: 'rgba(255, 99, 132, 1)',
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        tension: 0.4
-      }
-    ]
-  };
-  
-  window.batchChart = new Chart(ctx, {
-    type: 'line',
-    data: data,
-    options: {
-      responsive: true,
-      plugins: {
-        legend: {
-          position: 'top',
-        },
-        title: {
-          display: true,
-          text: 'Recent Batches Quality Trends'
-        }
-      }
-    }
-  });
-  
-  showToast('Batch comparison updated', 'success');
-}
-
-let availableBatches = {};
-
-function initManufacturerDashboard() {
-  // Manufacturer dashboard specific initialization
-  const checkStatusBtn = document.getElementById('check-batch-status-btn');
-  if (checkStatusBtn) {
-    checkStatusBtn.addEventListener('click', checkBatchStatus);
-  }
-  
-  const productForm = document.getElementById('product-creation-form');
-  if (productForm) {
-    productForm.addEventListener('submit', createProduct);
-  }
-
-  const sendToLabBtn = document.getElementById('send-to-lab-btn');
-  if(sendToLabBtn) {
-    sendToLabBtn.addEventListener('click', sendToLab);
-  }
-
-  loadAvailableBatches();
-  initProductionAnalytics();
-}
-
-async function loadAvailableBatches() {
-  const batchesList = document.getElementById('available-batches');
-  if(!batchesList) return;
-
-  try {
-    const batchesRef = db.collection('batches').where('status', '==', 'tested').where('testResult', '==', 'PASS').orderBy('testedAt', 'desc');
-    const snapshot = await batchesRef.get();
-    
-    availableBatches = {};
-    
-    if (snapshot.empty) {
-      batchesList.innerHTML = '<div class="empty-state"><p>No passed batches available</p></div>';
-      return;
-    }
-    
-    let html = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      availableBatches[data.batchId] = data;
-      html += `
-        <div class="batch-item">
-          <div class="batch-info">
-            <h4>${data.batchId}</h4>
-            <p>${data.herbType} - ${data.quantity}kg</p>
-          </div>
-          <div class="batch-status text-success">✓ PASSED</div>
-        </div>
-      `;
-    });
-    batchesList.innerHTML = html;
-  } catch (error) {
-    console.error('Error loading available batches:', error);
-    batchesList.innerHTML = '<div class="error-state"><p>Error loading batches</p></div>';
-  }
-}
-
-async function sendToLab() {
-  const batchId = prompt("Enter Batch ID to send for re-testing:");
-  if(!batchId) return;
-
-  try {
-    await blockchain.addBlock(BLOCK_TYPES.SEND_TO_LAB, {
-      batchId: batchId,
-      timestamp: new Date().toISOString()
-    });
-    showToast(`Batch ${batchId} sent to lab successfully`, 'success');
-  } catch(error) {
-    console.error('Error sending to lab:', error);
-    showToast('Error sending to lab', 'error');
-  }
-}
-
-function checkBatchStatus() {
-  const batchId = document.getElementById('approved-batch-id').value;
-  const batchStatus = document.getElementById('batch-status');
-  
-  if (batchId && availableBatches[batchId]) {
-    const batch = availableBatches[batchId];
-    batchStatus.style.display = 'block';
-    batchStatus.innerHTML = `
-      <div class="status-item">
-        <span class="status-label">Batch Status:</span>
-        <span class="status-value text-success">✓ PASSED LAB TEST</span>
-      </div>
-      <div class="status-item">
-        <span class="status-label">Herb Type:</span>
-        <span class="status-value">${batch.herbType}</span>
-      </div>
-      <div class="status-item">
-        <span class="status-label">Quantity:</span>
-        <span class="status-value">${batch.quantity}kg</span>
-      </div>
-    `;
-    showToast('Batch verified as PASSED', 'success');
-  } else {
-    batchStatus.style.display = 'block';
-    batchStatus.innerHTML = `
-      <div class="status-item">
-        <span class="status-label">Batch Status:</span>
-        <span class="status-value text-danger">❌ INVALID OR NOT PASSED</span>
-      </div>
-    `;
-    showToast('Invalid Batch ID or Batch has not passed testing', 'error');
-  }
-}
-
-async function createProduct(e) {
-  e.preventDefault();
-  
-  const batchId = document.getElementById('approved-batch-id').value;
-  const productName = document.getElementById('product-name').value;
-  const productType = document.getElementById('product-type').value;
-  const mfgDate = document.getElementById('mfg-date').value;
-  const expiryDate = document.getElementById('expiry-date').value;
-
-  if(!availableBatches[batchId]) {
-    showToast('Cannot create product: Invalid or unverified Batch ID', 'error');
-    return;
-  }
-  
-  // Generate product ID
-  const productId = `PROD-${Date.now()}`;
-  
-  try {
-    // Create blockchain block
-    const block = await blockchain.addBlock(BLOCK_TYPES.MANUFACTURING, {
-      batchId: batchId,
-      productId: productId,
-      productName: productName,
-      productType: productType,
-      manufacturingDate: mfgDate,
-      expiryDate: expiryDate
-    });
-
-    // Invoke smart contract logic if defined
-    if(window.SmartContracts && window.SmartContracts.ContractTriggers) {
-      await window.SmartContracts.ContractTriggers.onManufacturing({
-        batchId, productId, productName, productType, manufacturingDate: mfgDate, expiryDate
-      });
-    }
-
-    // Update batch status in Firestore to 'manufactured'
-    await db.collection('batches').doc(batchId).update({
-      status: 'manufactured',
-      productId: productId,
-      manufacturedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // Generate QR code
-    const qrCodeContainer = document.getElementById('qr-section');
-    if (qrCodeContainer) {
-      qrCodeContainer.style.display = 'block';
-      const qrCodeImg = document.getElementById('qr-code-img');
-      if (qrCodeImg) {
-        qrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(productId)}`;
-      }
-    }
-    
-    showToast(`Product created successfully! Product ID: ${productId}`, 'success');
-    addNotification(`New product created: ${productName} (${productType})`, 'success');
-
-    // Reload available batches
-    loadAvailableBatches();
-    document.getElementById('batch-status').style.display = 'none';
-  } catch(error) {
-    console.error('Error creating product:', error);
-    showToast('Error creating product. Please try again.', 'error');
-  }
-}
-
-function initProductionAnalytics() {
-  const canvas = document.getElementById('production-chart');
-  if(!canvas) return;
-
-  if(window.productionChart) {
-    window.productionChart.destroy();
-  }
-
-  const ctx = canvas.getContext('2d');
-  
-  // Render Bar chart by default (Monthly Batches)
-  renderMonthlyBatchesChart(ctx);
-}
-
-function renderMonthlyBatchesChart(ctx) {
-  const data = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{
-      label: 'Products Manufactured',
-      data: [12, 19, 15, 25, 22, 30],
-      backgroundColor: 'rgba(54, 162, 235, 0.5)',
-      borderColor: 'rgba(54, 162, 235, 1)',
-      borderWidth: 1
-    }]
-  };
-
-  window.productionChart = new Chart(ctx, {
-    type: 'bar',
-    data: data,
-    options: {
-      responsive: true,
-      plugins: {
-        title: { display: true, text: 'Monthly Production Volume' }
-      }
-    }
-  });
-}
-
-function renderQualityRatioChart(ctx) {
-  const data = {
-    labels: ['Premium Quality', 'Standard Quality', 'Rejected'],
-    datasets: [{
-      data: [65, 25, 10],
-      backgroundColor: [
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(255, 99, 132, 0.7)'
-      ],
-      hoverOffset: 4
-    }]
-  };
-
-  window.productionChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: data,
-    options: {
-      responsive: true,
-      plugins: {
-        title: { display: true, text: 'Raw Material Quality Ratio' }
-      }
-    }
-  });
-}
-
-window.switchAnalyticsTab = function(tabName) {
-  // Update active button
-  const tabs = document.querySelectorAll('.analytics-tabs .tab-btn');
-  tabs.forEach(tab => tab.classList.remove('active'));
-  event.target.classList.add('active');
-
-  const canvas = document.getElementById('production-chart');
-  if(!canvas) return;
-
-  if(window.productionChart) {
-    window.productionChart.destroy();
-  }
-
-  const ctx = canvas.getContext('2d');
-  
-  if(tabName === 'monthly') {
-    renderMonthlyBatchesChart(ctx);
-  } else if (tabName === 'quality') {
-    renderQualityRatioChart(ctx);
-  }
-};
-
-function initConsumerPortal() {
-  // Consumer portal specific initialization
-  const productForm = document.getElementById('product-trace-form');
-  if (productForm) {
-    productForm.addEventListener('submit', traceProduct);
-  }
-  // QR scanner initialization
-  const startQrBtn = document.getElementById('start-qr-scan-btn');
-  const stopQrBtn = document.getElementById('stop-qr-scan-btn');
-  
-  if (startQrBtn) {
-    startQrBtn.addEventListener('click', startQrScanner);
-  }
-  
-  if (stopQrBtn) {
-    stopQrBtn.addEventListener('click', stopQrScanner);
-  }
-}
-
-async function traceProduct(e) {
-  if(e) e.preventDefault();
-  
-  const productIdInput = document.getElementById('product-id-input').value.trim();
-  if(!productIdInput) {
-    showToast('Please enter a Product or Batch ID', 'error');
-    return;
-  }
-
-  await loadProductTrace(productIdInput);
-}
-
-async function loadProductTrace(id) {
-  document.getElementById('product-id-input').value = id;
-  
-  const timeline = document.getElementById('supply-chain-timeline');
-  const verificationBadge = document.getElementById('verification-badge');
-  const productDetails = document.getElementById('product-details');
-  const labCertificate = document.getElementById('lab-certificate');
-  
-  timeline.innerHTML = '<div class="loading-spinner" style="margin:20px auto; display:block; width:30px; height:30px;"></div><p style="text-align:center;">Tracing product on blockchain...</p>';
-  verificationBadge.style.display = 'none';
-  productDetails.innerHTML = '';
-  labCertificate.innerHTML = '';
-  
-  try {
-    // Determine batchId if a productId was entered
-    let targetBatchId = id;
-    const mfgBlocks = await blockchain.getBlocksByType(BLOCK_TYPES.MANUFACTURING);
-    const matchedMfg = mfgBlocks.find(b => b.data && b.data.productId === id);
-    if(matchedMfg) {
-      targetBatchId = matchedMfg.data.batchId;
-    }
-
-    // Get all blocks
-    const chain = await blockchain.getChain();
-    const journey = chain.filter(b => b.data && b.data.batchId === targetBatchId);
-
-    if (journey.length === 0) {
-      timeline.innerHTML = '<div class="error-state"><p>No traceability records found for this ID.</p></div>';
-      return;
-    }
-
-    // Sort by timestamp
-    journey.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Build timeline HTML
-    let timelineHtml = '';
-    journey.forEach(block => {
-      const dateStr = new Date(block.timestamp).toLocaleString();
-      let icon = '🔗';
-      let title = block.data.type || 'Transaction';
-      let details = '';
-
-      if (block.data.type === BLOCK_TYPES.COLLECTION) {
-        icon = '🌱'; title = 'Herb Collection';
-        details = `<p>Farmer: ${block.data.farmerName}</p><p>Herb: ${block.data.herbType} (${block.data.quantity}kg)</p><p>Location: ${block.data.location}</p>`;
-      } else if (block.data.type === BLOCK_TYPES.LAB_TEST) {
-        icon = '🧪'; title = 'Lab Testing';
-        details = `<p>Result: <strong class="${block.data.testResult === 'PASS' ? 'text-success' : 'text-danger'}">${block.data.testResult}</strong></p>
-                   <p>Moisture: ${block.data.parameters?.moisture}% | Markers: ${block.data.parameters?.activeMarkers}%</p>`;
-      } else if (block.data.type === BLOCK_TYPES.SEND_TO_LAB) {
-        icon = '🚚'; title = 'Sent to Lab';
-      } else if (block.data.type === BLOCK_TYPES.MANUFACTURING) {
-        icon = '🏭'; title = 'Manufacturing';
-        details = `<p>Product: ${block.data.productName} (${block.data.productType})</p><p>Mfg Date: ${block.data.manufacturingDate}</p><p>Expiry: ${block.data.expiryDate}</p>`;
-      }
-      
-      timelineHtml += `
-        <div class="timeline-step ${block.data.type}">
-          <div class="step-icon">${icon}</div>
-          <div class="step-content">
-            <h4>${title}</h4>
-            ${details}
-            <p class="hash-preview" title="${block.hash}">Hash: #${block.hash.substring(0,16)}...</p>
-            <p class="timestamp">${dateStr}</p>
-          </div>
-        </div>
-      `;
-    });
-
-    timeline.innerHTML = timelineHtml;
-    verificationBadge.style.display = 'flex';
-    
-    // Populate Product Details and Lab Certificate
-    const mfgBlock = journey.find(b => b.data.type === BLOCK_TYPES.MANUFACTURING);
-    const labBlock = journey.find(b => b.data.type === BLOCK_TYPES.LAB_TEST);
-    const collBlock = journey.find(b => b.data.type === BLOCK_TYPES.COLLECTION);
-
-    if(mfgBlock) {
-      productDetails.innerHTML = `
-        <div class="detail-row"><span class="detail-label">Product Name:</span><span class="detail-value">${mfgBlock.data.productName}</span></div>
-        <div class="detail-row"><span class="detail-label">Product ID:</span><span class="detail-value">${mfgBlock.data.productId}</span></div>
-        <div class="detail-row"><span class="detail-label">Type:</span><span class="detail-value">${mfgBlock.data.productType}</span></div>
-        <div class="detail-row"><span class="detail-label">Origin:</span><span class="detail-value">${collBlock ? collBlock.data.location : 'Unknown'}</span></div>
-      `;
-    } else if (collBlock) {
-      productDetails.innerHTML = `
-        <div class="detail-row"><span class="detail-label">Herb Type:</span><span class="detail-value">${collBlock.data.herbType}</span></div>
-        <div class="detail-row"><span class="detail-label">Batch ID:</span><span class="detail-value">${collBlock.data.batchId}</span></div>
-        <div class="detail-row"><span class="detail-label">Farmer:</span><span class="detail-value">${collBlock.data.farmerName}</span></div>
-        <div class="detail-row"><span class="detail-label">Location:</span><span class="detail-value">${collBlock.data.location}</span></div>
-      `;
-    } else {
-      productDetails.innerHTML = '<p>No specific product details available.</p>';
-    }
-
-    if(labBlock && labBlock.data.testResult === 'PASS') {
-      labCertificate.innerHTML = `
-        <div class="certificate-preview" style="text-align: center; padding: 20px; border: 2px solid var(--success-color); border-radius: 8px; background: rgba(16, 185, 129, 0.05);">
-          <div style="font-size: 40px; margin-bottom: 10px;">📜</div>
-          <h4 style="color: var(--success-color); margin-bottom: 10px;">Verified Authentic & Safe</h4>
-          <p>This product has passed all required ayurvedic safety and quality tests.</p>
-          <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Cert. Hash: ${labBlock.hash.substring(0,20)}...</p>
-        </div>
-      `;
-    } else if (labBlock && labBlock.data.testResult === 'FAIL') {
-      labCertificate.innerHTML = `
-        <div class="certificate-preview" style="text-align: center; padding: 20px; border: 2px solid var(--danger-color); border-radius: 8px; background: rgba(239, 68, 68, 0.05);">
-          <div style="font-size: 40px; margin-bottom: 10px;">⚠️</div>
-          <h4 style="color: var(--danger-color); margin-bottom: 10px;">Testing Failed</h4>
-          <p>This batch did not pass safety parameters.</p>
-        </div>
-      `;
-    } else {
-      labCertificate.innerHTML = '<p>Laboratory testing records not found or pending.</p>';
-    }
-
-    showToast('Product trace completed successfully!', 'success');
-  } catch(error) {
-    console.error('Error tracing product:', error);
-    timeline.innerHTML = '<div class="error-state"><p>Error retrieving blockchain records.</p></div>';
-    showToast('Error tracing product', 'error');
-  }
-}
-
-let html5QrCode;
-
-function startQrScanner() {
-  const qrReader = document.getElementById('qr-reader');
-  if (qrReader) {
-    qrReader.style.display = 'block';
-    
-    document.getElementById('start-qr-scan-btn').style.display = 'none';
-    document.getElementById('stop-qr-scan-btn').style.display = 'inline-block';
-
-    if(!window.Html5Qrcode) {
-      showToast('QR Scanner library not loaded', 'error');
-      return;
-    }
-
-    html5QrCode = new Html5Qrcode("qr-reader");
-    html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      (decodedText) => {
-        // Stop scanning once we get a result
-        stopQrScanner();
-        showToast('QR Code scannned successfully', 'success');
-        
-        // Sometimes our QR code data was: URL?product=PROD-XXX
-        let idToTrace = decodedText;
-        if(decodedText.includes('?product=')) {
-          idToTrace = decodedText.split('?product=')[1];
-        } else if (decodedText.includes('?batch=')) {
-          idToTrace = decodedText.split('?batch=')[1];
-        }
-        
-        loadProductTrace(idToTrace);
-      },
-      (errorMessage) => {
-        // Ignored, continuous scanning
-      }
-    ).catch(err => {
-      console.error("Error starting QR scanner", err);
-      showToast('Camera access denied or unavailable', 'error');
-      stopQrScanner();
-    });
-  }
-}
-
-function stopQrScanner() {
-  const qrReader = document.getElementById('qr-reader');
-  if (html5QrCode && html5QrCode.isScanning) {
-    html5QrCode.stop().then(() => {
-      html5QrCode.clear();
-      resetQrUI();
-    }).catch(err => {
-      console.error("Error stopping QR scanner", err);
-      resetQrUI();
-    });
-  } else {
-    resetQrUI();
-  }
-
-  function resetQrUI() {
-    if (qrReader) qrReader.style.display = 'none';
-    document.getElementById('start-qr-scan-btn').style.display = 'inline-block';
-    document.getElementById('stop-qr-scan-btn').style.display = 'none';
-  }
-}
-
-function initAdminDashboard() {
-  // Admin dashboard specific initialization
-  // This would include system overview, user management, etc.
-}
-
-// Utility Functions
-function hideAllDashboards() {
-  const dashboards = [
-    'farmer-dashboard', 'lab-dashboard', 'manufacturer-dashboard', 
-    'consumer-portal', 'admin-dashboard', 'blockchain-viewer',
-    'waste-dashboard', 'sustainability-dashboard', 'inventory-dashboard',
-    'orders-dashboard', 'insurance-dashboard', 'dna-dashboard'
-  ];
-  dashboards.forEach(id => {
-    const element = document.getElementById(id);
-    if (element) element.style.display = 'none';
-  });
-}
-
-function showDashboard(dashboardId) {
-  const element = document.getElementById(dashboardId);
-  if (element) element.style.display = 'block';
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// Role-Based Navigation
-function initRoleBasedNavigation() {
-  // This function would be called after user authentication
-  // For now, we'll set up the basic structure
-  const userRole = getCurrentUserRole();
-  updateNavigationForRole(userRole);
-}
-
-function getCurrentUserRole() {
-  // This would get the role from Firebase auth or local storage
-  // For demo purposes, we'll use a default role
-  return localStorage.getItem('userRole') || 'consumer';
-}
-
-function updateNavigationForRole(userRole) {
-  const navItems = document.querySelectorAll('.nav-menu li');
-  
-  navItems.forEach(item => {
-    const roles = item.getAttribute('data-role');
-    if (!roles) return;
-    
-    const isVisible = checkRoleVisibility(roles, userRole);
-    item.style.display = isVisible ? 'block' : 'none';
-  });
-  
-  // Update user interface
-  updateUserInterface(userRole);
-}
-
-function checkRoleVisibility(roles, userRole) {
-  if (roles === 'all') return true;
-  if (roles === 'admin' && userRole === 'admin') return true;
-  if (roles.includes(userRole)) return true;
-  return false;
-}
-
-// User Interface Initialization
-function initUserInterface() {
-  // Update user info in sidebar
-  const userAvatar = document.getElementById('user-avatar');
-  const userName = document.getElementById('user-name');
-  const userRoleBadge = document.getElementById('user-role-badge');
-  
-  if (userAvatar) {
-    userAvatar.textContent = '👤'; // Would be user's actual avatar
-  }
-  
-  if (userName) {
-    userName.textContent = 'User Name'; // Would be actual user name
-  }
-  
-  if (userRoleBadge) {
-    userRoleBadge.textContent = 'Role'; // Would be actual role
-  }
-  
-  // Initialize language indicator
-  updateLanguageIndicator();
-  
-  // Initialize dashboard based on role
-  const userRole = getCurrentUserRole();
-  const defaultDashboard = getDefaultDashboard(userRole);
-  navigateToDashboard(defaultDashboard);
-}
-
-function updateUserInterface(userRole) {
-  const userRoleBadge = document.getElementById('user-role-badge');
-  const userRoleText = document.getElementById('user-role-text');
-  
-  if (userRoleBadge) {
-    userRoleBadge.textContent = userRole.toUpperCase();
-    userRoleBadge.className = `user-role-badge ${userRole}`;
-  }
-  
-  if (userRoleText) {
-    userRoleText.textContent = userRole.toUpperCase();
-  }
-  
-  // Update navigation visibility
-  updateNavigationForRole(userRole);
-}
-
-function getDefaultDashboard(userRole) {
-  const dashboardMap = {
-    'farmer': 'farmer-dashboard',
-    'lab': 'lab-dashboard',
-    'manufacturer': 'manufacturer-dashboard',
-    'consumer': 'consumer-portal',
-    'admin': 'admin-dashboard'
-  };
-  
-  return dashboardMap[userRole] || 'consumer-portal';
-}
-
-// Language Support
-function updateLanguageIndicator() {
-  const languageIndicator = document.getElementById('language-indicator');
-  const languageText = document.getElementById('language-text');
-  const languageFlag = document.querySelector('.language-flag');
-  
-  if (!languageIndicator || !languageText || !languageFlag) return;
-  
-  const currentLang = localStorage.getItem('language') || 'en';
-  
-  const languageConfig = {
-    'en': { text: 'English', flag: 'en' },
-    'hi': { text: 'हिन्दी', flag: 'hi' },
-    'gu': { text: 'ગુજરાતી', flag: 'gu' },
-    'mr': { text: 'मराठी', flag: 'mr' }
-  };
-  
-  const config = languageConfig[currentLang];
-  if (config) {
-    languageText.textContent = config.text;
-    languageFlag.className = `language-flag ${config.flag}`;
-  }
-}
-
-// Toast Notifications
-function showToast(message, type = 'info') {
-  const toastContainer = document.getElementById('toast-container');
-  if (!toastContainer) return;
-  
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  
-  toastContainer.appendChild(toast);
-  
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.add('fade-out');
     setTimeout(() => {
-      toast.remove();
-    }, 300);
-  }, 3000);
+        const otp = prompt("Enter 6-digit OTP received via SMS:");
+        if (otp === "123456" || otp.length === 6) {
+            if (window.showNotification) {
+                window.showNotification(`Batch verified successfully for ${phoneNumber}!`, 'success');
+            }
+        } else {
+            if (window.showNotification) {
+                window.showNotification(`Invalid OTP. Please try again.`, 'error');
+            }
+        }
+    }, 1000);
 }
 
-// Export for global use
-window.krishiApp = {
-  navigateToDashboard,
-  addNotification,
-  showToast,
-  formatTime,
-  initRoleBasedNavigation,
-  updateNavigationForRole,
-  getCurrentUserRole,
-  updateUserInterface,
-  getDefaultDashboard
-};
 
-// --- Secondary Dashboards Initialization ---
+function updateRecentCollections() {
+    const recentCollectionsContainer = document.getElementById('recent-collections');
+    if (!recentCollectionsContainer) return;
 
-function initWasteDashboard() {
-  const form = document.getElementById('waste-registration-form');
-  const batchSelect = document.getElementById('waste-batch-id');
-  
-  if(form && batchSelect) {
-    // Populate failed batches
-    db.collection('batches').where('status', '==', 'failed').get().then(snapshot => {
-      batchSelect.innerHTML = '<option value="">Select a failed batch</option>';
-      snapshot.forEach(doc => {
-        batchSelect.innerHTML += `<option value="${doc.id}">${doc.id} - ${doc.data().herbType}</option>`;
-      });
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    if (collectionTransactions.length === 0) {
+        recentCollectionsContainer.innerHTML = '<p>No collections recorded yet.</p>';
+        return;
+    }
+
+    let html = '';
+    collectionTransactions.slice(-5).reverse().forEach(tx => {
+        html += `
+            <div class="herb-card">
+                <h4>${tx.data.herbType} (Batch: ${tx.data.batchId})</h4>
+                <p><strong>Date:</strong> ${tx.data.collectionDate}</p>
+                <p><strong>Quantity:</strong> ${tx.data.quantity} kg</p>
+                <p><strong>Location:</strong> ${tx.data.location.latitude}, ${tx.data.location.longitude}</p>
+                <p><strong>Status:</strong> ${tx.data.status}</p>
+            </div>
+        `;
     });
 
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const batchId = document.getElementById('waste-batch-id').value;
-      const method = document.getElementById('disposal-method').value;
-      if(!batchId || !method) return showToast('Please select batch and method', 'error');
-      
-      showToast(`Waste registered for ${batchId} via ${method}`, 'success');
-      form.reset();
-    });
-  }
-
-  // Render Chart
-  const canvas = document.getElementById('waste-chart');
-  if(canvas) {
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Compost', 'Biogas', 'CPCB Disposal'],
-        datasets: [{
-          data: [45, 25, 30],
-          backgroundColor: ['#22c55e', '#3b82f6', '#ef4444']
-        }]
-      }
-    });
-  }
+    recentCollectionsContainer.innerHTML = html;
 }
 
-function initSustainabilityDashboard() {
-  const carbonEl = document.getElementById('total-carbon');
-  if(carbonEl) carbonEl.textContent = '124.5 kg CO₂';
+// Testing Lab Dashboard
+function loadLabDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+                <div class="herb-card">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                    <button class="action-btn" onclick="showDashboard('recent-tests')">
+                        <i class="ph ph-clock-counter-clockwise"></i> View Recent Tests
+                    </button>
+                    <button class="action-btn" style="background: var(--accent)" onclick="showBatchComparison()">
+                        <i class="ph ph-scales"></i> <span data-i18n="batchComparison">Batch Comparison</span>
+                    </button>
+                </div>
+            </div>
 
-  const canvas = document.getElementById('sustainability-chart');
-  if(canvas) {
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [{
-          label: 'Carbon Footprint Trend',
-          data: [150, 140, 135, 128, 120, 124.5],
-          borderColor: '#10b981',
-          tension: 0.1
-        }]
-      }
+            <!-- Enhanced Lab Features Row -->
+            <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <!-- Spectroscopy Simulation -->
+                <div class="herb-card" id="spectroscopy-analysis">
+                    <h3 data-i18n="spectroscopy">Spectroscopy Analysis</h3>
+                    <div id="spectroscopy-content" class="skeleton-container">
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text" style="width: 80%"></div>
+                    </div>
+                </div>
+
+                <!-- Lab Credentials -->
+                <div class="herb-card" id="lab-credentials">
+                    <h3 data-i18n="labCertification">Lab Credentials</h3>
+                    <div id="credentials-content">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <i class="ph ph-certificate" style="font-size: 2.5rem; color: var(--primary);"></i>
+                            <div>
+                                <div style="font-weight: 700;">ISO/IEC 17025:2017</div>
+                                <div style="font-size: 0.8rem; color: var(--muted-foreground)">Accredited Ayurvedic Testing Lab</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="herb-card">
+                <h3>🧪 Test Herb Batch</h3>
+                <form id="lab-test-form">
+                    <div class="form-group">
+                        <label for="batch-id">Batch ID:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="batch-id" required style="flex: 1;">
+                                <option value="">Select a Batch to Test</option>
+                            </select>
+                            <button type="button" id="check-batch-btn" class="action-btn">Check Batch</button>
+                        </div>
+                    </div>
+                    <div id="batch-info" style="display: none; margin: 15px 0; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <h4>Batch Information</h4>
+                        <div id="batch-details"></div>
+                    </div>
+                    
+                    <!-- Advanced Parameters -->
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                         <div class="form-group">
+                            <label for="moisture">Moisture Content (%):</label>
+                            <input type="number" id="moisture" step="0.1" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="active-markers" data-i18n="activeMarkers">Active Markers (mg/g):</label>
+                            <input type="number" id="active-markers" step="0.01" value="2.5">
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="pesticides">Pesticides:</label>
+                            <select id="pesticides" required>
+                                <option value="none">None Detected</option>
+                                <option value="detected">Detected</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="adulterants" data-i18n="adulterants">Adulterants:</label>
+                            <select id="adulterants">
+                                <option value="none">Pure / No Adulterants</option>
+                                <option value="starch">Starch Detected</option>
+                                <option value="dye">Synthetic Dye Detected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="heavy-metals">Heavy Metals:</label>
+                            <select id="heavy-metals" required>
+                                <option value="within-limits">Within Safe Limits</option>
+                                <option value="exceeded">Exceeded Limits</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="microbial">Microbial Count:</label>
+                            <select id="microbial" required>
+                                <option value="within-limits">Within Safe Limits</option>
+                                <option value="exceeded">Exceeded Limits</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lab-report">Upload Lab Report (PDF/Img):</label>
+                        <input type="file" id="lab-report" accept=".pdf,image/*">
+                    </div>
+                    <div class="form-group">
+                        <label for="lab-notes">Notes:</label>
+                        <textarea id="lab-notes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" id="verify-btn" disabled class="auth-btn">
+                        <i class="ph ph-shield-check"></i> Verify and Sign to Blockchain
+                    </button>
+                    <button type="button" id="generate-pdf-btn" class="action-btn outline" style="margin-top: 10px; width: 100%; display: none;">
+                        <i class="ph ph-file-pdf"></i> <span data-i18n="generatePDF">Generate PDF Report</span>
+                    </button>
+                </form>
+            </div>
+            
+            <div class="herb-card">
+                <h3 data-i18n="tagNewHerb">Batch Comparison History</h3>
+                <canvas id="lab-comparison-chart" height="150"></canvas>
+            </div>
+        </div>
+    `;
+
+    // Load batches received from manufacturer
+    loadBatchesReceivedFromManufacturer();
+
+    // Populate batch dropdown with available batches
+    loadLabBatchDropdown();
+
+    document.getElementById('check-batch-btn').addEventListener('click', function () {
+        const batchId = document.getElementById('batch-id').value;
+        if (!batchId) { alert('Please select a Batch ID'); return; }
+
+        if (doesBatchExist(batchId)) {
+            const batchInfo = document.getElementById('batch-info');
+            const batchDetails = document.getElementById('batch-details');
+            const transactions = getBatchHistory(batchId);
+            const collectionData = transactions.find(tx => tx.data.type === 'collection');
+            const sendToLabData = transactions.find(tx => tx.data.type === 'send-to-lab');
+
+            if (collectionData || sendToLabData) {
+                const data = collectionData ? collectionData.data : sendToLabData.data;
+                const location = data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A';
+                const farmerInfo = data.farmer || {};
+
+                batchDetails.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><strong>Batch ID:</strong></div>
+                        <div>${data.batchId}</div>
+                        
+                        <div><strong>Farmer Name:</strong></div>
+                        <div>${farmerInfo.name || 'N/A'}</div>
+                        
+                        <div><strong>Herb/Crop:</strong></div>
+                        <div>${data.herbType}</div>
+                        
+                        <div><strong>Quantity:</strong></div>
+                        <div>${data.quantity} kg</div>
+                        
+                        <div><strong>Harvest Date:</strong></div>
+                        <div>${data.collectionDate}</div>
+                        
+                        <div><strong>Farm Location:</strong></div>
+                        <div>${location}</div>
+                        
+                        ${sendToLabData ? `
+                        <div><strong>Sent by Manufacturer:</strong></div>
+                        <div>${sendToLabData.data.manufacturer ? sendToLabData.data.manufacturer.name : 'N/A'}</div>
+                        
+                        <div><strong>Sent Date:</strong></div>
+                        <div>${new Date(sendToLabData.data.sentDate).toLocaleString()}</div>
+                        ` : ''}
+                    </div>
+                `;
+                batchInfo.style.display = 'block';
+                document.getElementById('verify-btn').disabled = false;
+            }
+        } else {
+            const allTransactions = getAllHerbTransactions();
+            const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+            const availableBatchIds = collectionTransactions.map(tx => tx.data.batchId);
+            alert('Batch ID not found! Available batch IDs:\n' + availableBatchIds.join('\n'));
+        }
     });
-  }
+
+    document.getElementById('lab-test-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const batchId = document.getElementById('batch-id').value;
+        const moisture = document.getElementById('moisture').value;
+        const pesticides = document.getElementById('pesticides').value;
+        const heavyMetals = document.getElementById('heavy-metals').value;
+        const microbial = document.getElementById('microbial').value;
+        const notes = document.getElementById('lab-notes').value;
+
+        if (!doesBatchExist(batchId)) {
+            alert('Batch ID not found!');
+            return;
+        }
+
+        const passesTests = pesticides === 'none' && heavyMetals === 'within-limits' && microbial === 'within-limits' && parseFloat(moisture) <= 10;
+
+        const testData = {
+            type: 'lab-test',
+            batchId: batchId,
+            moisture: moisture,
+            pesticides: pesticides,
+            heavyMetals: heavyMetals,
+            microbial: microbial,
+            notes: notes,
+            testResult: passesTests ? 'pass' : 'fail',
+            status: passesTests ? 'lab-approved' : 'lab-rejected',
+            lab: { id: 'LAB-001', name: 'Ayurvedic Quality Control Lab', technician: 'Dr. Priya Sharma' }
+        };
+
+        addHerbTransaction(testData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        alert(`Lab test results recorded! Batch ${batchId} ${passesTests ? 'PASSED' : 'FAILED'}.`);
+
+        // Show PDF button after verification
+        document.getElementById('generate-pdf-btn').style.display = 'block';
+        document.getElementById('generate-pdf-btn').onclick = () => generateTestCertificate(testData);
+
+        this.reset();
+        document.getElementById('batch-info').style.display = 'none';
+        document.getElementById('verify-btn').disabled = true;
+        loadBatchesReceivedFromManufacturer();
+    });
+
+    // Load extra Lab features
+    loadLabVisualizations();
 }
 
-function initInventoryDashboard() {
-  const grid = document.getElementById('inventory-grid');
-  if(grid) {
-    const inventoryData = [
-      { name: 'Ashwagandha', stock: 450, total: 500, status: 'good' },
-      { name: 'Tulsi', stock: 80, total: 500, status: 'low' },
-      { name: 'Neem', stock: 320, total: 500, status: 'good' }
+// Simulated Spectroscopy Analysis
+function loadLabVisualizations() {
+    const spectroscopyContainer = document.getElementById('spectroscopy-content');
+    if (!spectroscopyContainer) return;
+
+    setTimeout(() => {
+        spectroscopyContainer.innerHTML = `
+            <div style="height: 100px; display: flex; align-items: flex-end; gap: 2px; background: #000; padding: 10px; border-radius: 4px; overflow: hidden; position: relative;">
+                ${Array.from({ length: 40 }).map((_, i) => `<div class="spectral-bar" style="flex: 1; background: #00ff00; height: ${Math.random() * 80 + 10}%; opacity: 0.7; animation: pulse 1s infinite alternate ${i * 0.05}s"></div>`).join('')}
+                <div style="position: absolute; top: 10px; right: 10px; color: #00ff00; font-family: monospace; font-size: 0.7rem;">REF: 540nm - 700nm</div>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Purity Level</span>
+                    <strong>98.4%</strong>
+                </div>
+                <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; margin-top: 4px;">
+                    <div style="width: 98.4%; height: 100%; background: var(--primary); border-radius: 3px;"></div>
+                </div>
+            </div>
+        `;
+    }, 1000);
+
+    // Initial Comparison Chart
+    const ctx = document.getElementById('lab-comparison-chart');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Batch 101', 'Batch 102', 'Batch 103', 'Batch 104', 'Batch 105'],
+                datasets: [{
+                    label: 'Moisture %',
+                    data: [8.5, 9.2, 7.8, 8.9, 8.1],
+                    borderColor: '#16a34a',
+                    tension: 0.4
+                }, {
+                    label: 'Active Markers (mg/g)',
+                    data: [2.1, 2.4, 2.8, 2.3, 2.6],
+                    borderColor: '#3b82f6',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+}
+
+// Generate PDF Test Certificate
+function generateTestCertificate(testData) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Add Logo or Header
+    doc.setFontSize(22);
+    doc.setTextColor(5, 150, 105);
+    doc.text("VaidyaChain Test Certificate", 105, 20, { align: "center" });
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Certificate ID: VC-LAB-${Date.now()}`, 105, 30, { align: "center" });
+
+    // Draw Line
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 35, 190, 35);
+
+    // Batch Info
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Batch Information", 20, 50);
+
+    doc.setFontSize(11);
+    doc.text(`Batch ID: ${testData.batchId}`, 20, 60);
+    doc.text(`Date of Test: ${new Date().toLocaleDateString()}`, 20, 70);
+    doc.text(`Lab: ${testData.lab.name}`, 20, 80);
+
+    // Test Results
+    doc.setFontSize(14);
+    doc.text("Test Parameters", 20, 100);
+
+    const results = [
+        ["Parameter", "Result", "Standard Limit"],
+        ["Moisture Content", `${testData.moisture}%`, "< 10.0%"],
+        ["Active Markers", "2.5 mg/g", "> 2.0 mg/g"],
+        ["Pesticides", testData.pesticides === 'none' ? "Not Detected" : "Detected", "Not Detected"],
+        ["Heavy Metals", testData.heavyMetals === 'within-limits' ? "Safe" : "Exceeded", "Within Limits"],
+        ["Microbial Load", testData.microbial === 'within-limits' ? "Safe" : "Exceeded", "Within Limits"]
     ];
 
-    grid.innerHTML = inventoryData.map(item => `
-      <div class="card ${item.status === 'low' ? 'border-danger' : ''}">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h3>${item.name}</h3>
-          ${item.status === 'low' ? '<span class="badge badge-danger">Low Stock</span>' : ''}
+    let yPos = 110;
+    results.forEach((row, i) => {
+        doc.setFontSize(i === 0 ? 11 : 10);
+        doc.setFont(undefined, i === 0 ? "bold" : "normal");
+        doc.text(row[0], 20, yPos);
+        doc.text(row[1], 80, yPos);
+        doc.text(row[2], 140, yPos);
+        yPos += 10;
+    });
+
+    // Verification Seal
+    doc.setDrawColor(16, 185, 129);
+    doc.rect(140, 170, 40, 40);
+    doc.setFontSize(8);
+    doc.text("BLOCKCHAIN VERIFIED", 142, 190);
+    doc.text(testData.batchId, 142, 195);
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text("This is a computer generated certificate secured by VaidyaChain Blockchain.", 105, 280, { align: "center" });
+
+    doc.save(`VaidyaChain_Certificate_${testData.batchId}.pdf`);
+}
+
+function showBatchComparison() {
+    if (window.showNotification) {
+        window.showNotification("Opening Batch Comparison Analysis...", 'info');
+    }
+    // Simulation of opening a more detailed comparison view
+}
+
+
+// Load batches received from manufacturer
+function loadBatchesReceivedFromManufacturer() {
+    const container = document.getElementById('batches-received-list');
+    if (!container) return;
+
+    const allTransactions = getAllHerbTransactions();
+    const sendToLabTransactions = allTransactions.filter(tx => tx.data.type === 'send-to-lab');
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    // Also get collection batches that haven't been sent to lab yet
+    const sentBatchIds = sendToLabTransactions.map(tx => tx.data.batchId);
+    const unsentCollections = collectionTransactions.filter(tx => !sentBatchIds.includes(tx.data.batchId));
+
+    if (sendToLabTransactions.length === 0 && unsentCollections.length === 0) {
+        container.innerHTML = '<p style="color: #666;">No batches received yet. Manufacturers will send batches here for testing.</p>';
+        return;
+    }
+
+    let html = '<div class="batch-grid">';
+
+    // First show batches sent by manufacturer
+    sendToLabTransactions.reverse().forEach(tx => {
+        const data = tx.data;
+        const location = data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A';
+
+        // Check if batch has been tested
+        const batchHistory = getBatchHistory(data.batchId);
+        const labTests = batchHistory.filter(t => t.data.type === 'lab-test');
+        const hasTest = labTests.length > 0;
+
+        let statusBadge = '';
+        let statusClass = 'pending';
+
+        if (hasTest) {
+            const latestTest = labTests[labTests.length - 1];
+            if (latestTest.data.testResult === 'pass') {
+                statusBadge = '<span class="status-badge status-success">✓ Approved</span>';
+                statusClass = 'tested-pass';
+            } else {
+                statusBadge = '<span class="status-badge status-danger">✗ Failed</span>';
+                statusClass = 'tested-fail';
+            }
+        } else {
+            statusBadge = '<span class="status-badge status-warning">⏳ Testing Pending</span>';
+        }
+
+        html += `
+            <div class="batch-card batch-card-received">
+                <div class="batch-header">
+                    <h4>${data.herbType}</h4>
+                    ${statusBadge}
+                </div>
+                <div class="batch-details">
+                    <p><strong>Batch ID:</strong> ${data.batchId}</p>
+                    <p><strong>From Manufacturer:</strong> ${data.manufacturer ? data.manufacturer.name : 'N/A'}</p>
+                    <p><strong>Farmer:</strong> ${data.farmer ? data.farmer.name : 'N/A'}</p>
+                    <p><strong>Quantity:</strong> ${data.quantity} kg</p>
+                    <p><strong>Harvest Date:</strong> ${data.collectionDate}</p>
+                    <p><strong>Location:</strong> ${location}</p>
+                    <p><strong>Sent Date:</strong> ${new Date(data.sentDate).toLocaleString()}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Load batch dropdown for lab
+function loadLabBatchDropdown() {
+    const select = document.getElementById('batch-id');
+    if (!select) return;
+
+    // Clear existing options except the first
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    const allTransactions = getAllHerbTransactions();
+
+    // Get batches sent to lab and collection batches
+    const sendToLabTransactions = allTransactions.filter(tx => tx.data.type === 'send-to-lab');
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    // Combine and deduplicate by batch ID
+    const allBatchIds = new Set();
+
+    // Add send-to-lab batches first (higher priority)
+    sendToLabTransactions.forEach(tx => {
+        if (!allBatchIds.has(tx.data.batchId)) {
+            allBatchIds.add(tx.data.batchId);
+            const option = document.createElement('option');
+            option.value = tx.data.batchId;
+            option.textContent = `📥 ${tx.data.batchId} - ${tx.data.herbType} (Sent by Manufacturer)`;
+            select.appendChild(option);
+        }
+    });
+
+    // Add collection batches that weren't sent to lab
+    collectionTransactions.forEach(tx => {
+        if (!allBatchIds.has(tx.data.batchId)) {
+            allBatchIds.add(tx.data.batchId);
+            const option = document.createElement('option');
+            option.value = tx.data.batchId;
+            option.textContent = `🌿 ${tx.data.batchId} - ${tx.data.herbType} (Direct from Farmer)`;
+            select.appendChild(option);
+        }
+    });
+}
+
+// Manufacturer Dashboard
+function loadManufacturerDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Manufacturer Dashboard</h2>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                <button class="action-btn" onclick="showDashboard('recent-manufactured')">
+                    <i class="ph ph-package"></i> View Recent Products
+                </button>
+                <button class="action-btn" style="background: var(--accent)" onclick="toggleSection('supplier-management-section')">
+                    <i class="ph ph-users-three"></i> <span data-i18n="supplierManagement">Supplier Management</span>
+                </button>
+                <button class="action-btn" style="background: var(--primary)" onclick="toggleSection('manufacturer-analytics-section'); if(document.getElementById('manufacturer-analytics-section').style.display !== 'none') loadManufacturerAnalytics();">
+                    <i class="ph ph-chart-line-up"></i> <span data-i18n="analyticsDashboard">Production Analytics</span>
+                </button>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="manufacturer-analytics-section" style="display: none; margin-bottom: 1.5rem;">
+                <div class="herb-card">
+                    <h3 data-i18n="analyticsDashboard">Production & Quality Trends</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <canvas id="production-trends-chart" height="200"></canvas>
+                        <canvas id="quality-metrics-chart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supplier Management Section -->
+            <div id="supplier-management-section" style="display: none; margin-bottom: 1.5rem;">
+                <div class="herb-card">
+                    <h3 data-i18n="supplierManagement">Verified Suppliers</h3>
+                    <div id="suppliers-list" class="batch-grid">
+                        <div class="skeleton-card">
+                            <div class="skeleton skeleton-title"></div>
+                            <div class="skeleton skeleton-text"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Batch History Section -->
+            <div class="herb-card">
+                <h3>📦 Available Batch History</h3>
+                <p class="dashboard-subtitle">Batches received from farmers - ready for quality testing</p>
+                <div id="batch-history-list"></div>
+            </div>
+            
+            <!-- Send to Testing Lab Section -->
+            <div class="herb-card">
+                <h3>🧪 Send to Testing Lab</h3>
+                <form id="send-to-lab-form">
+                    <div class="form-group">
+                        <label for="send-batch-id">Select Batch ID:</label>
+                        <select id="send-batch-id" required>
+                            <option value="">Select a Batch</option>
+                        </select>
+                    </div>
+                    <div id="selected-batch-info" style="display: none; margin: 15px 0; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #4caf50;">
+                        <h4>Batch Details</h4>
+                        <div id="send-batch-details"></div>
+                    </div>
+                    <button type="submit" id="send-to-lab-btn" class="lab-btn" disabled>Send to Testing Lab</button>
+                </form>
+            </div>
+            
+            <!-- Manufacturing Section -->
+            <div class="herb-card">
+                <h3>🏭 Create Product from Approved Batch</h3>
+                <form id="manufacturing-form">
+                    <div class="form-group">
+                        <label for="manufacturing-batch-id">Batch ID:</label>
+                        <input type="text" id="manufacturing-batch-id" required placeholder="Enter approved batch ID">
+                        <button type="button" id="check-batch-status">Check Batch Status</button>
+                    </div>
+                    <div id="batch-status-message" style="margin: 10px 0; padding: 10px; border-radius: 5px; display: none;"></div>
+                    <div class="form-group">
+                        <label for="product-name">Product Name:</label>
+                        <input type="text" id="product-name" required placeholder="e.g., Ashwagandha Premium Extract">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-type">Product Type:</label>
+                        <select id="product-type" required>
+                            <option value="">Select Type</option>
+                            <option value="powder">Powder</option>
+                            <option value="capsule">Capsule</option>
+                            <option value="tablet">Tablet</option>
+                            <option value="extract">Liquid Extract</option>
+                            <option value="oil">Oil</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="manufacturing-date">Manufacturing Date:</label>
+                        <input type="date" id="manufacturing-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiry-date">Expiry Date:</label>
+                        <input type="date" id="expiry-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="manufacturer-info">Manufacturer Info:</label>
+                        <textarea id="manufacturer-info" rows="2" required>Ayurveda Essentials Pvt. Ltd., Haridwar, India</textarea>
+                    </div>
+                    <button type="submit">Record Manufacturing & Generate QR Code</button>
+                </form>
+            </div>
+            
+            <div class="herb-card" id="qr-result" style="display: none;">
+                <h3>QR Code Generated</h3>
+                <div id="qr-code-container"></div>
+            </div>
+            
+            <div class="herb-card">
+                <button class="add-btn" onclick="showDashboard('recent-manufactured')">View Recent Products</button>
+            </div>
         </div>
-        <p>${item.stock} / ${item.total} kg available</p>
-        <div style="background:#e5e7eb; border-radius:4px; height:8px; width:100%; margin-top:10px;">
-          <div style="background:${item.status === 'low' ? '#ef4444' : '#10b981'}; height:100%; width:${(item.stock/item.total)*100}%; border-radius:4px;"></div>
+    `;
+
+    // Load batch history
+    loadBatchHistoryList();
+
+    // Populate send to lab dropdown
+    loadBatchesForSendToLab();
+
+    // Handle batch selection for send to lab
+    document.getElementById('send-batch-id').addEventListener('change', function () {
+        const batchId = this.value;
+        const batchInfo = document.getElementById('selected-batch-info');
+        const batchDetails = document.getElementById('send-batch-details');
+        const sendBtn = document.getElementById('send-to-lab-btn');
+
+        if (!batchId) {
+            batchInfo.style.display = 'none';
+            sendBtn.disabled = true;
+            return;
+        }
+
+        const transactions = getBatchHistory(batchId);
+        const collectionData = transactions.find(tx => tx.data.type === 'collection');
+
+        if (collectionData) {
+            const data = collectionData.data;
+            batchDetails.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div><strong>Farmer Name:</strong></div>
+                    <div>${data.farmer ? data.farmer.name : 'N/A'}</div>
+                    
+                    <div><strong>Herb/Crop:</strong></div>
+                    <div>${data.herbType}</div>
+                    
+                    <div><strong>Quantity:</strong></div>
+                    <div>${data.quantity} kg</div>
+                    
+                    <div><strong>Harvest Date:</strong></div>
+                    <div>${data.collectionDate}</div>
+                    
+                    <div><strong>Farm Location:</strong></div>
+                    <div>${data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A'}</div>
+                    
+                    <div><strong>Batch ID:</strong></div>
+                    <div>${data.batchId}</div>
+                </div>
+            `;
+            batchInfo.style.display = 'block';
+            sendBtn.disabled = false;
+        }
+    });
+
+    // Handle send to lab form submission
+    document.getElementById('send-to-lab-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const batchId = document.getElementById('send-batch-id').value;
+        const transactions = getBatchHistory(batchId);
+        const collectionData = transactions.find(tx => tx.data.type === 'collection');
+
+        if (!collectionData) {
+            alert('Batch data not found!');
+            return;
+        }
+
+        // Create a manufacturer-to-lab transfer record
+        const sendToLabData = {
+            type: 'send-to-lab',
+            batchId: batchId,
+            manufacturer: { id: 'MANU-001', name: 'Ayurveda Essentials Pvt. Ltd.', location: 'Haridwar, India' },
+            farmer: collectionData.data.farmer,
+            herbType: collectionData.data.herbType,
+            quantity: collectionData.data.quantity,
+            collectionDate: collectionData.data.collectionDate,
+            location: collectionData.data.location,
+            sentDate: new Date().toISOString(),
+            status: 'sent-to-lab'
+        };
+
+        addHerbTransaction(sendToLabData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        if (window.showNotification) {
+            window.showNotification(`Batch ${batchId} sent to Testing Lab!`, 'success');
+        } else {
+            alert(`Batch ${batchId} has been sent to Testing Lab for quality testing!\n\nThe Testing Lab will now be able to view and test this batch.`);
+        }
+
+        // Reset form and reload
+        this.reset();
+        document.getElementById('selected-batch-info').style.display = 'none';
+        document.getElementById('send-to-lab-btn').disabled = true;
+        loadBatchHistoryList();
+    });
+
+    document.getElementById('check-batch-status').addEventListener('click', function () {
+        const batchId = document.getElementById('manufacturing-batch-id').value;
+        const statusMessage = document.getElementById('batch-status-message');
+
+        if (!batchId) { alert('Please enter a Batch ID'); return; }
+
+        if (!doesBatchExist(batchId)) {
+            statusMessage.innerHTML = '<p style="color: red;">Batch ID not found!</p>';
+            statusMessage.style.display = 'block';
+            return;
+        }
+
+        const batchTransactions = getBatchHistory(batchId);
+        const labTests = batchTransactions.filter(tx => tx.data.type === 'lab-test');
+
+        if (labTests.length === 0) {
+            statusMessage.innerHTML = '<p style="color: orange;">This batch has not been tested yet.</p>';
+        } else {
+            const latestTest = labTests[labTests.length - 1];
+            if (latestTest.data.testResult === 'pass') {
+                statusMessage.innerHTML = '<p style="color: green;">This batch PASSED lab tests and can be used for manufacturing!</p>';
+            } else {
+                statusMessage.innerHTML = '<p style="color: red;">This batch FAILED lab tests.</p>';
+            }
+        }
+        statusMessage.style.display = 'block';
+    });
+
+    document.getElementById('manufacturing-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const batchId = document.getElementById('manufacturing-batch-id').value;
+        const productName = document.getElementById('product-name').value;
+        const productType = document.getElementById('product-type').value;
+        const manufacturingDate = document.getElementById('manufacturing-date').value;
+        const expiryDate = document.getElementById('expiry-date').value;
+        const manufacturerInfo = document.getElementById('manufacturer-info').value;
+
+        if (!doesBatchExist(batchId)) {
+            alert('Batch ID not found!');
+            return;
+        }
+
+        const batchTransactions = getBatchHistory(batchId);
+        const labTests = batchTransactions.filter(tx => tx.data.type === 'lab-test');
+        const hasPassingTest = labTests.some(test => test.data.testResult === 'pass');
+
+        if (labTests.length === 0 || !hasPassingTest) {
+            alert('This batch has not passed lab tests!');
+            return;
+        }
+
+        const productId = 'PROD-' + Date.now();
+
+        const manufacturingData = {
+            type: 'manufacturing',
+            batchId: batchId,
+            productId: productId,
+            productName: productName,
+            productType: productType,
+            manufacturingDate: manufacturingDate,
+            expiryDate: expiryDate,
+            manufacturerInfo: manufacturerInfo,
+            status: 'manufactured'
+        };
+
+        addHerbTransaction(manufacturingData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        const productUrl = `${window.location.origin}${window.location.pathname}?dashboard=consumer&product=${productId}`;
+
+        document.getElementById('qr-result').style.display = 'block';
+        document.getElementById('qr-code-container').innerHTML = `
+            <div style="text-align: center;">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(productUrl)}" alt="QR Code" style="max-width: 200px; border-radius: 8px;">
+                <p>Product ID: ${productId}</p>
+                <p><small>Scan this QR code to view the full history</small></p>
+            </div>
+        `;
+
+        alert(`Product manufactured! Product ID: ${productId}`);
+
+        // Initial load for extra sections
+        loadSuppliersList();
+    });
+}
+
+function toggleSection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+    } else {
+        el.style.display = 'none';
+    }
+}
+
+function loadManufacturerAnalytics() {
+    const ctx1 = document.getElementById('production-trends-chart');
+    const ctx2 = document.getElementById('quality-metrics-chart');
+
+    if (ctx1) {
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Batches Processed',
+                    data: [12, 19, 15, 22, 18, 25],
+                    backgroundColor: '#10b981'
+                }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Production' } } }
+        });
+    }
+
+    if (ctx2) {
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved', 'Rejected', 'Pending'],
+                datasets: [{
+                    data: [85, 10, 5],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Batch Quality Ratio' } } }
+        });
+    }
+}
+
+function loadSuppliersList() {
+    const container = document.getElementById('suppliers-list');
+    if (!container) return;
+
+    const suppliers = [
+        { name: "Haridwar Organic Farms", rating: 4.8, batches: 124, status: "Verified" },
+        { name: "Western Ghats Botanicals", rating: 4.5, batches: 86, status: "Verified" },
+        { name: "Siddha Herbals", rating: 4.9, batches: 210, status: "Preferred" }
+    ];
+
+    container.innerHTML = suppliers.map(s => `
+        <div class="batch-card" style="border-left: 4px solid var(--primary); background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow);">
+            <h4>${s.name}</h4>
+            <div class="batch-details" style="margin-top: 0.5rem;">
+                <p><strong>Rating:</strong> <span style="color: #f59e0b">${"★".repeat(Math.floor(s.rating))}</span> ${s.rating}</p>
+                <p><strong>Total Batches:</strong> ${s.batches}</p>
+                <p><strong>Status:</strong> <span class="status-badge status-success">${s.status}</span></p>
+            </div>
+            <button class="action-btn outline" style="width: 100%; margin-top: 1rem;">View All From Supplier</button>
         </div>
-      </div>
     `).join('');
-  }
 }
 
-function initOrdersDashboard() {
-  const tbody = document.getElementById('orders-list-body');
-  const filter = document.getElementById('order-status-filter');
-  
-  const dummyOrders = [
-    { id: 'ORD-001', product: 'Ashwagandha Roots', qty: 5, status: 'Pending', date: '2026-03-01' },
-    { id: 'ORD-002', product: 'Tulsi Extract', qty: 12, status: 'Shipped', date: '2026-03-03' },
-    { id: 'ORD-003', product: 'Neem Powder', qty: 20, status: 'Delivered', date: '2026-02-28' }
-  ];
 
-  function renderOrders(filterStatus = 'All') {
-    if(!tbody) return;
-    tbody.innerHTML = dummyOrders
-      .filter(o => filterStatus === 'All' || o.status === filterStatus)
-      .map(o => `
-      <tr>
-        <td>${o.id}</td>
-        <td>${o.product}</td>
-        <td>${o.qty} kg</td>
-        <td><span class="badge ${o.status === 'Delivered' ? 'badge-success' : 'badge-primary'}">${o.status}</span></td>
-        <td>${o.date}</td>
-        <td><button class="btn btn-sm btn-secondary">Manage</button></td>
-      </tr>
+// Load batch history list for manufacturer
+function loadBatchHistoryList() {
+    const container = document.getElementById('batch-history-list');
+    if (!container) return;
+
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    if (collectionTransactions.length === 0) {
+        container.innerHTML = '<p style="color: #666;">No batches received from farmers yet.</p>';
+        return;
+    }
+
+    let html = '<div class="batch-grid">';
+    collectionTransactions.reverse().forEach(tx => {
+        const data = tx.data;
+        const location = data.location ? (data.location.address || `${data.location.latitude}, ${data.location.longitude}`) : 'N/A';
+
+        // Check if batch has been tested
+        const batchHistory = getBatchHistory(data.batchId);
+        const labTests = batchHistory.filter(t => t.data.type === 'lab-test');
+        const hasTest = labTests.length > 0;
+        const latestTest = hasTest ? labTests[labTests.length - 1] : null;
+
+        let statusBadge = '';
+        let statusClass = 'pending';
+
+        if (hasTest) {
+            if (latestTest.data.testResult === 'pass') {
+                statusBadge = '<span class="status-badge status-success">✓ Lab Approved</span>';
+                statusClass = 'approved';
+            } else {
+                statusBadge = '<span class="status-badge status-danger">✗ Lab Failed</span>';
+                statusClass = 'failed';
+            }
+        } else {
+            statusBadge = '<span class="status-badge status-warning">⏳ Pending Test</span>';
+        }
+
+        html += `
+            <div class="batch-card batch-card-${statusClass}">
+                <div class="batch-header">
+                    <h4>${data.herbType}</h4>
+                    ${statusBadge}
+                </div>
+                <div class="batch-details">
+                    <p><strong>Batch ID:</strong> ${data.batchId}</p>
+                    <p><strong>Farmer:</strong> ${data.farmer ? data.farmer.name : 'N/A'}</p>
+                    <p><strong>Quantity:</strong> ${data.quantity} kg</p>
+                    <p><strong>Harvest Date:</strong> ${data.collectionDate}</p>
+                    <p><strong>Location:</strong> ${location}</p>
+                </div>
+                <div class="batch-actions">
+                    ${!hasTest ? `<button class="action-btn" onclick="quickSendToLab('${data.batchId}')">🧪 Send to Lab</button>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+// Quick send to lab function
+window.quickSendToLab = function (batchId) {
+    const transactions = getBatchHistory(batchId);
+    const collectionData = transactions.find(tx => tx.data.type === 'collection');
+
+    if (!collectionData) {
+        alert('Batch data not found!');
+        return;
+    }
+
+    const sendToLabData = {
+        type: 'send-to-lab',
+        batchId: batchId,
+        manufacturer: { id: 'MANU-001', name: 'Ayurveda Essentials Pvt. Ltd.', location: 'Haridwar, India' },
+        farmer: collectionData.data.farmer,
+        herbType: collectionData.data.herbType,
+        quantity: collectionData.data.quantity,
+        collectionDate: collectionData.data.collectionDate,
+        location: collectionData.data.location,
+        sentDate: new Date().toISOString(),
+        status: 'sent-to-lab'
+    };
+
+    addHerbTransaction(sendToLabData);
+    if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+    alert(`Batch ${batchId} sent to Testing Lab!`);
+    loadBatchHistoryList();
+    loadBatchesForSendToLab();
+};
+
+// Load batches available for send to lab
+function loadBatchesForSendToLab() {
+    const select = document.getElementById('send-batch-id');
+    if (!select) return;
+
+    // Clear existing options except the first
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    collectionTransactions.forEach(tx => {
+        const option = document.createElement('option');
+        option.value = tx.data.batchId;
+        option.textContent = `${tx.data.batchId} - ${tx.data.herbType} (${tx.data.quantity}kg)`;
+        select.appendChild(option);
+    });
+}
+
+// Recent Collections Page
+function loadRecentCollections() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard shadcn-style">
+            <div class="page-header">
+                <button class="back-btn" onclick="showDashboard('farmer')">← Back to Farmer Dashboard</button>
+                <h1>Recent Collections</h1>
+            </div>
+            <div class="collections-grid" id="collections-grid"></div>
+        </div>
+    `;
+
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+    const grid = document.getElementById('collections-grid');
+
+    if (collectionTransactions.length === 0) {
+        grid.innerHTML = '<div class="empty-state"><h3>No Collections Yet</h3></div>';
+        return;
+    }
+
+    let html = '';
+    collectionTransactions.reverse().forEach(tx => {
+        const location = tx.data.location ? `${tx.data.location.latitude}, ${tx.data.location.longitude}` : 'Not recorded';
+        html += `
+            <div class="collection-card">
+                <h4>${tx.data.herbType} (Batch: ${tx.data.batchId})</h4>
+                <p><strong>Date:</strong> ${tx.data.collectionDate}</p>
+                <p><strong>Quantity:</strong> ${tx.data.quantity} kg</p>
+                <p><strong>Location:</strong> ${location}</p>
+                <p><strong>Status:</strong> ${tx.data.status}</p>
+            </div>
+        `;
+    });
+    grid.innerHTML = html;
+}
+
+// Recent Tests Page
+function loadRecentTests() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Recent Tests</h2>
+            <button class="back-btn" onclick="showDashboard('lab')">← Back to Testing Lab</button>
+            <div id="tests-grid"></div>
+        </div>
+    `;
+
+    const allTransactions = getAllHerbTransactions();
+    const testTransactions = allTransactions.filter(tx => tx.data.type === 'lab-test');
+    const grid = document.getElementById('tests-grid');
+
+    if (testTransactions.length === 0) {
+        grid.innerHTML = '<p>No tests recorded yet.</p>';
+        return;
+    }
+
+    let html = '';
+    testTransactions.reverse().forEach(tx => {
+        html += `
+            <div class="herb-card">
+                <h4>Batch: ${tx.data.batchId}</h4>
+                <p><strong>Result:</strong> ${tx.data.testResult.toUpperCase()}</p>
+                <p><strong>Moisture:</strong> ${tx.data.moisture}%</p>
+            </div>
+        `;
+    });
+    grid.innerHTML = html;
+}
+
+// Recent Manufactured Page
+function loadRecentManufactured() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Recently Manufactured Products</h2>
+            <button class="back-btn" onclick="showDashboard('manufacturer')">← Back to Manufacturer</button>
+            <div id="products-grid"></div>
+        </div>
+    `;
+
+    const allTransactions = getAllHerbTransactions();
+    const manufacturingTransactions = allTransactions.filter(tx => tx.data.type === 'manufacturing');
+    const grid = document.getElementById('products-grid');
+
+    if (manufacturingTransactions.length === 0) {
+        grid.innerHTML = '<p>No products manufactured yet.</p>';
+        return;
+    }
+
+    let html = '';
+    manufacturingTransactions.reverse().forEach(tx => {
+        html += `
+            <div class="herb-card">
+                <h4>${tx.data.productName}</h4>
+                <p><strong>Product ID:</strong> ${tx.data.productId}</p>
+                <p><strong>Type:</strong> ${tx.data.productType}</p>
+                <p><strong>Manufactured:</strong> ${tx.data.manufacturingDate}</p>
+            </div>
+        `;
+    });
+    grid.innerHTML = html;
+}
+
+// Sustainability Dashboard
+function loadSustainabilityDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Sustainability Dashboard</h2>
+            <div class="herb-card">
+                <h3>Environmental Impact Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="total-herbs">0</div>
+                        <div class="metric-label">Herbs Tracked</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="success-rate">100%</div>
+                        <div class="metric-label">Quality Pass Rate</div>
+                    </div>
+                </div>
+            </div>
+            <div class="herb-card">
+                <h3>Source Locations</h3>
+                <div id="sustainability-map" class="map-container" style="height: 350px;"></div>
+            </div>
+        </div>
+    `;
+
+    updateSustainabilityMetrics();
+    setTimeout(() => initSustainabilityMap(), 100);
+}
+
+function updateSustainabilityMetrics() {
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+    const labTransactions = allTransactions.filter(tx => tx.data.type === 'lab-test');
+
+    if (document.getElementById('total-herbs')) {
+        document.getElementById('total-herbs').textContent = collectionTransactions.length;
+    }
+
+    if (labTransactions.length > 0 && document.getElementById('success-rate')) {
+        const passCount = labTransactions.filter(tx => tx.data.testResult === 'pass').length;
+        const passRate = Math.round((passCount / labTransactions.length) * 100);
+        document.getElementById('success-rate').textContent = `${passRate}%`;
+    }
+}
+
+function initSustainabilityMap() {
+    const mapEl = document.getElementById('sustainability-map');
+    if (!mapEl || !window.L) return;
+
+    mapEl.innerHTML = '';
+    const map = L.map('sustainability-map').setView([23.2599, 77.4126], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const allTransactions = getAllHerbTransactions();
+    const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
+
+    collectionTransactions.forEach(tx => {
+        const lat = parseFloat(tx.data.location.latitude);
+        const lng = parseFloat(tx.data.location.longitude);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            L.marker([lat, lng]).addTo(map).bindPopup(`${tx.data.herbType} - ${tx.data.quantity}kg`);
+        }
+    });
+}
+
+// Waste Management Dashboard
+function loadWasteManagementDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Waste Management Dashboard</h2>
+            <div class="herb-card">
+                <h3>Waste-to-Product Conversion</h3>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value" id="total-waste">0</div>
+                        <div class="metric-label">Waste Recorded (kg)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="carbon-saved">0</div>
+                        <div class="metric-label">Carbon Saved (kg CO₂)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="herb-card">
+                <h3>Record Agricultural Waste</h3>
+                <form id="waste-collection-form">
+                    <div class="form-group">
+                        <label for="waste-source">Waste Source:</label>
+                        <select id="waste-source" required>
+                            <option value="">Select Source</option>
+                            <option value="corn-leaves">Corn Leaves</option>
+                            <option value="corn-stems">Corn Stems</option>
+                            <option value="wheat-straw">Wheat Straw</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="waste-quantity">Quantity (kg):</label>
+                        <input type="number" id="waste-quantity" min="1" required>
+                    </div>
+                    <button type="submit">Record Waste</button>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('waste-collection-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const wasteSource = document.getElementById('waste-source').value;
+        const wasteQuantity = document.getElementById('waste-quantity').value;
+        const wasteBatchId = 'WASTE-' + Date.now();
+
+        const wasteData = {
+            type: 'waste-collection',
+            wasteSource: wasteSource,
+            quantity: wasteQuantity,
+            wasteBatchId: wasteBatchId,
+            status: 'collected',
+            availableForConversion: true
+        };
+
+        addHerbTransaction(wasteData);
+        alert(`Waste recorded! Batch ID: ${wasteBatchId}`);
+        this.reset();
+        updateWasteMetrics();
+    });
+
+    updateWasteMetrics();
+}
+
+function updateWasteMetrics() {
+    const allTransactions = getAllHerbTransactions();
+    const wasteCollections = allTransactions.filter(tx => tx.data.type === 'waste-collection');
+
+    if (document.getElementById('total-waste')) {
+        const totalWaste = wasteCollections.reduce((sum, tx) => sum + parseFloat(tx.data.quantity || 0), 0);
+        document.getElementById('total-waste').textContent = totalWaste.toFixed(1);
+    }
+}
+
+// Consumer Portal
+function loadConsumerPortal() {
+    const container = document.getElementById('dashboard-container');
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('product');
+
+    if (productId) {
+        renderProductTraceability(productId);
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Consumer Portal</h2>
+            
+            <!-- Quick Scan -->
+            <div class="herb-card" style="text-align: center; background: linear-gradient(135deg, var(--primary) 0%, var(--herb-green-dark) 100%); color: white;">
+                <i class="ph ph-qr-code" style="font-size: 4rem;"></i>
+                <h3 style="color: white; margin-top: 1rem;">Verify Your Product</h3>
+                <p style="opacity: 0.9; margin-bottom: 1.5rem;">Scan the QR code on your VaidyaChain certified product to see its complete journey.</p>
+                <button class="auth-btn" style="background: white; color: var(--primary); max-width: 300px; margin: 0 auto;" onclick="startQRScanner()">
+                    <i class="ph ph-camera"></i> Start Scanner
+                </button>
+            </div>
+
+            <!-- Manual Trace -->
+            <div class="herb-card">
+                <h3>Trace Your Product Manually</h3>
+                <form id="trace-product-form">
+                    <div class="form-group">
+                        <input type="text" id="trace-input" required placeholder="Enter Product ID (e.g., PROD-123)">
+                    </div>
+                    <button type="submit" class="action-btn" style="width: 100%">Trace Journey</button>
+                </form>
+            </div>
+
+            <!-- Product Gallery -->
+            <div class="herb-card">
+                <h3 data-i18n="productGallery">Premium Ayurvedic Catalog</h3>
+                <div class="batch-grid" id="consumer-product-gallery">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+            </div>
+
+            <!-- Store Locator -->
+            <div class="herb-card">
+                <h3 data-i18n="storeLocator">Find Certified Retailers</h3>
+                <div id="consumer-map" class="map-container" style="height: 300px; border-radius: 12px;"></div>
+            </div>
+        </div>
+    `;
+
+    loadConsumerVisuals();
+
+    document.getElementById('trace-product-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const inputVal = document.getElementById('trace-input').value;
+        renderProductTraceability(inputVal);
+    });
+}
+
+function loadConsumerVisuals() {
+    // Populate Gallery
+    const gallery = document.getElementById('consumer-product-gallery');
+    if (gallery) {
+        gallery.innerHTML = `
+            <div class="product-card" style="background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);">
+                <img src="https://images.unsplash.com/photo-1611073221787-5178e3096c6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" style="width: 100%; height: 150px; object-fit: cover;">
+                <div style="padding: 1rem;">
+                    <h4>Premium Ashwagandha</h4>
+                    <p style="font-size: 0.8rem; color: var(--muted-foreground)">Energy & Stress Relief</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                        <span style="font-weight: 700;">₹899</span>
+                        <span class="status-badge status-success" style="font-size: 0.7rem;"><i class="ph ph-seal-check"></i> Verified</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product-card" style="background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);">
+                <img src="https://images.unsplash.com/photo-1628102421711-bba6d997d925?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80" style="width: 100%; height: 150px; object-fit: cover;">
+                <div style="padding: 1rem;">
+                    <h4>Authentic Turmeric</h4>
+                    <p style="font-size: 0.8rem; color: var(--muted-foreground)">Immunity Booster</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                        <span style="font-weight: 700;">₹450</span>
+                        <span class="status-badge status-success" style="font-size: 0.7rem;"><i class="ph ph-seal-check"></i> Verified</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Initialize Map
+    setTimeout(() => {
+        const mapEl = document.getElementById('consumer-map');
+        if (mapEl && window.L && !mapEl._leaflet_id) {
+            const map = L.map('consumer-map').setView([23.2599, 77.4126], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.marker([23.2599, 77.4126]).addTo(map).bindPopup('VaidyaChain Certified Store - Bhopal');
+        }
+    }, 500);
+}
+
+function startQRScanner() {
+    if (window.showNotification) window.showNotification("Initializing Camera...", 'info');
+    const code = prompt("Simulating QR Scan. Enter Product ID:");
+    if (code) renderProductTraceability(code);
+}
+
+function renderProductTraceability(productId) {
+    const container = document.getElementById('dashboard-container');
+    const allTransactions = getAllHerbTransactions();
+    const productRecord = allTransactions.find(tx =>
+        (tx.data.type === 'manufacturing' || tx.data.type === 'waste-conversion') &&
+        (tx.data.productId === productId || tx.data.batchId === productId)
+    );
+
+    if (!productRecord) {
+        alert("Product not found in blockchain registry.");
+        return;
+    }
+
+    const batchId = productRecord.data.batchId;
+    const batchHistory = getBatchHistory(batchId);
+
+    // Extract key steps
+    const collection = batchHistory.find(tx => tx.data.type === 'collection');
+    const labTest = batchHistory.find(tx => tx.data.type === 'lab-test');
+
+    container.innerHTML = `
+        <div class="dashboard">
+            <button class="action-btn outline" onclick="showDashboard('consumer')" style="margin-bottom: 1.5rem;">
+                <i class="ph ph-arrow-left"></i> Back to Portal
+            </button>
+            
+            <div class="herb-card" style="border-left: 6px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="margin: 0;">Traceability Report</h2>
+                        <p style="color: var(--muted-foreground)">Product: ${productRecord.data.productName} (${productId})</p>
+                    </div>
+                    <span class="status-badge status-success" style="padding: 10px 20px; font-size: 1.1rem; font-weight: 700;">
+                        <i class="ph ph-seal-check"></i> BLOCKCHAIN VERIFIED
+                    </span>
+                </div>
+            </div>
+            
+            <div class="blockchain-timeline" style="margin-top: 2rem; position: relative; padding-left: 40px;">
+                <div style="position: absolute; left: 19px; top: 0; bottom: 0; width: 2px; background: var(--border); z-index: 0;"></div>
+                
+                <!-- 1. Farm -->
+                <div class="timeline-item" style="margin-bottom: 2rem; position: relative;">
+                    <div class="timeline-marker" style="position: absolute; left: -30px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); z-index: 1; border: 4px solid white; box-shadow: 0 0 0 2px var(--primary);"></div>
+                    <div class="timeline-content herb-card" style="margin: 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h4>🌿 Farm Collection</h4>
+                            <small>${collection ? collection.data.collectionDate : 'N/A'}</small>
+                        </div>
+                        <p><strong>Farmer:</strong> ${collection ? collection.data.farmer.name : 'N/A'}</p>
+                        <p><strong>Location:</strong> ${collection ? (collection.data.location.address || 'Verified Farm') : 'N/A'}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-success">Harvest Verified</span></p>
+                    </div>
+                </div>
+
+                <!-- 2. Lab -->
+                <div class="timeline-item" style="margin-bottom: 2rem; position: relative;">
+                    <div class="timeline-marker" style="position: absolute; left: -30px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); z-index: 1; border: 4px solid white; box-shadow: 0 0 0 2px var(--accent);"></div>
+                    <div class="timeline-content herb-card" style="margin: 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h4>🔬 Quality Certification</h4>
+                            <small>${labTest ? 'Jan 20, 2026' : 'Pending'}</small>
+                        </div>
+                        <p><strong>Lab:</strong> ${labTest ? labTest.data.lab.name : 'VaidyaChain Central Lab'}</p>
+                        <p><strong>Purity:</strong> ${labTest ? '98.4%' : 'N/A'}</p>
+                        <p><strong>Result:</strong> <span class="status-badge status-success">PASSED</span></p>
+                    </div>
+                </div>
+
+                <!-- 3. Mfg -->
+                <div class="timeline-item" style="position: relative;">
+                    <div class="timeline-marker" style="position: absolute; left: -30px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--herb-green-dark); z-index: 1; border: 4px solid white; box-shadow: 0 0 0 2px var(--herb-green-dark);"></div>
+                    <div class="timeline-content herb-card" style="margin: 0;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h4>🏭 Manufacturing</h4>
+                            <small>${productRecord.data.manufacturingDate}</small>
+                        </div>
+                        <p><strong>Manufacturer:</strong> ${productRecord.data.manufacturerInfo || 'Ayurveda Essentials'}</p>
+                        <p><strong>Batch ID:</strong> ${batchId}</p>
+                        <p><strong>Expiry:</strong> ${productRecord.data.expiryDate}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="herb-card" style="margin-top: 2rem; background: #f8fafc; border: 1px solid var(--border);">
+                 <p style="font-size: 0.9rem; color: var(--muted-foreground); text-align: center;">
+                    <i class="ph ph-shield-check"></i> This data is cryptographically signed and stored on the VaidyaChain Blockchain.
+                 </p>
+            </div>
+        </div>
+    `;
+}
+
+// Smart Contracts Dashboard
+function loadSmartContractsDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Smart Contracts Dashboard</h2>
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-number" id="active-contracts">4</div>
+                    <div class="stat-label">Active Contracts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="auto-payments">0</div>
+                    <div class="stat-label">Auto-Payments</div>
+                </div>
+            </div>
+            <div class="herb-card">
+                <h3>Real-Time Contract Events</h3>
+                <div id="events-list"></div>
+            </div>
+        </div>
+    `;
+
+    loadSmartContractData();
+}
+
+function loadSmartContractData() {
+    const eventsList = document.getElementById('events-list');
+    if (!eventsList) return;
+
+    const allEvents = [];
+    ['paymentContract', 'insuranceContract'].forEach(contractName => {
+        const events = getContractEvents(contractName);
+        allEvents.push(...events);
+    });
+
+    if (allEvents.length === 0) {
+        eventsList.innerHTML = '<p>Waiting for smart contract events...</p>';
+    } else {
+        let html = '';
+        allEvents.slice(-5).forEach(event => {
+            html += `<p>${event.event}: ${event.timestamp}</p>`;
+        });
+        eventsList.innerHTML = html;
+    }
+}
+
+// DNA Banking Dashboard
+function loadDNABankingDashboard() {
+    const container = document.getElementById('dashboard-container');
+    const allTransactions = getAllHerbTransactions();
+    const dnaSamples = allTransactions.filter(tx => tx.data.type === 'dna-sequencing');
+
+    // Get batches that HAVEN'T been sequenced yet
+    const sequencedBatchIds = dnaSamples.map(tx => tx.data.batchId);
+    const availableBatches = allTransactions.filter(tx =>
+        tx.data.type === 'collection' && !sequencedBatchIds.includes(tx.data.batchId)
+    );
+
+    container.innerHTML = `
+        <div class="dashboard">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div>
+                    <h2>Genomic Traceability Lab</h2>
+                    <p class="dashboard-subtitle">Register and verify the genetic blueprint of Ayurvedic herbs</p>
+                </div>
+                <div class="stats-cards" style="margin: 0; gap: 1rem;">
+                    <div class="stat-card" style="padding: 10px 25px;">
+                        <div class="stat-number" id="dna-samples-stored">${dnaSamples.length}</div>
+                        <div class="stat-label">Samples Banked</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dna-lab-container">
+                <!-- Main Sequencer Interface -->
+                <div class="dna-main-panel">
+                    <div class="visualizer-card" id="dna-lab-visualizer">
+                        <canvas id="dna-canvas"></canvas>
+                        <div class="sequencing-overlay" id="sequencing-overlay">
+                            <div class="scan-line"></div>
+                            <div class="loading-spinner" style="border-top-color: var(--accent);"></div>
+                            <div class="sequencing-status-text" id="sequencing-status">INITIALIZING GENOMIC SCAN...</div>
+                        </div>
+                        
+                        <div class="genomic-data-grid" id="genomic-data-display" style="display: none;">
+                            <div class="genomic-stat-card">
+                                <div class="genomic-stat-label">Genetic Purity</div>
+                                <div class="genomic-stat-value" id="purity-val">--</div>
+                                <div id="purity-tag" class="dna-purity-tag">PENDING</div>
+                            </div>
+                            <div class="genomic-stat-card">
+                                <div class="genomic-stat-label">Terpene Profile</div>
+                                <div class="genomic-stat-value" id="terpene-val">--</div>
+                            </div>
+                            <div class="genomic-stat-card">
+                                <div class="genomic-stat-label">Alkaloid Match</div>
+                                <div class="genomic-stat-value" id="alkaloid-val">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="herb-card" style="margin-top: 1.5rem;">
+                        <h3>Sequence New Herb Batch</h3>
+                        <form id="dna-sequencing-form">
+                            <div class="form-group">
+                                <label for="dna-batch-select">Select Herb Batch for Sequencing:</label>
+                                <select id="dna-batch-select" required>
+                                    <option value="">-- Select a Batch --</option>
+                                    ${availableBatches.map(b => `<option value="${b.data.batchId}">${b.data.herbType} - ${b.data.batchId}</option>`).join('')}
+                                </select>
+                            </div>
+                            <button type="submit" class="hero-primary-btn" id="start-sequencing-btn" style="width: 100%; justify-content: center;">
+                                <i class="ph ph-dna"></i> Start Genomic Sequencing
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- History & Ancestry Sidebar -->
+                <div class="dna-sidebar">
+                    <div class="herb-card" style="max-height: 500px; overflow-y: auto; padding: 1rem;">
+                        <h3 style="margin-bottom: 1rem;">Banked Samples</h3>
+                        <div id="dna-records-list">
+                            ${dnaSamples.length === 0 ? '<p style="text-align: center; color: var(--muted-foreground); padding: 2rem;">No genomic records found on blockchain.</p>' : ''}
+                        </div>
+                    </div>
+
+                    <div id="ancestry-panel" class="herb-card" style="margin-top: 1.5rem; display: none;">
+                        <h3>Genetic Ancestry Trace</h3>
+                        <div class="ancestry-tree-view" id="ancestry-tree-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Initialize the visualizer
+    setTimeout(() => initDNAVisualizer(), 100);
+
+    // Populate records
+    populateDNARecords(dnaSamples);
+
+    // Form submission
+    document.getElementById('dna-sequencing-form')?.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const batchId = document.getElementById('dna-batch-select').value;
+        if (batchId) startDNASequencing(batchId);
+    });
+}
+
+function updateDNAMetrics() {
+    const allTransactions = getAllHerbTransactions();
+    const dnaSamples = allTransactions.filter(tx => tx.data.type === 'dna-sequencing');
+    const display = document.getElementById('dna-samples-stored');
+    if (display) display.textContent = dnaSamples.length;
+}
+
+// --- DNA Visualization Logic ---
+let dnaAnimationId = null;
+function initDNAVisualizer() {
+    const canvas = document.getElementById('dna-canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = canvas.offsetWidth;
+    let height = canvas.height = canvas.offsetHeight;
+
+    const particles = [];
+    const particleCount = 20;
+    const helixRadius = 60;
+    const strandWidth = 120;
+    let angle = 0;
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.2)';
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i < particleCount; i++) {
+            const y = (height / particleCount) * i;
+            const currentAngle = angle + (i * 0.5);
+
+            // Strand 1
+            const x1 = (width / 2) + Math.sin(currentAngle) * strandWidth;
+
+            // Strand 2
+            const x2 = (width / 2) + Math.sin(currentAngle + Math.PI) * strandWidth;
+
+            // Connecting line
+            ctx.beginPath();
+            ctx.moveTo(x1, y);
+            ctx.lineTo(x2, y);
+            ctx.stroke();
+
+            // Node 1
+            ctx.fillStyle = '#10b981';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#10b981';
+            ctx.beginPath();
+            ctx.arc(x1, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Node 2
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(x2, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        angle += 0.02;
+        dnaAnimationId = requestAnimationFrame(draw);
+    }
+
+    if (dnaAnimationId) cancelAnimationFrame(dnaAnimationId);
+    draw();
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = canvas.offsetWidth;
+        height = canvas.height = canvas.offsetHeight;
+    });
+}
+
+async function startDNASequencing(batchId) {
+    const overlay = document.getElementById('sequencing-overlay');
+    const statusText = document.getElementById('sequencing-status');
+    const formBtn = document.getElementById('start-sequencing-btn');
+
+    overlay.classList.add('active');
+    formBtn.disabled = true;
+
+    const steps = [
+        "CALIBRATING SPECTROMETER...",
+        "EXTRACTING GENOMIC MATERIAL...",
+        "AMPLIFYING DNA STRANDS (PCR)...",
+        "MAPPING ALKALOID SIGNATURES...",
+        "VERIFYING GENETIC PURITY...",
+        "SIGNING GENOMIC RECORD ON BLOCKCHAIN..."
+    ];
+
+    for (const step of steps) {
+        statusText.textContent = step;
+        await new Promise(r => setTimeout(r, 800));
+    }
+
+    // Generate random genomic data
+    const purity = 95 + Math.random() * 4.9;
+    const terpeneProfile = (Math.random() * 5).toFixed(2) + "%";
+    const alkaloidMatch = (97 + Math.random() * 2.5).toFixed(1) + "%";
+    const signature = Array.from({ length: 32 }, () => "ATCG"[Math.floor(Math.random() * 4)]).join('');
+
+    const dnaData = {
+        type: 'dna-sequencing',
+        batchId: batchId,
+        purity: purity.toFixed(2),
+        terpeneProfile: terpeneProfile,
+        alkaloidMatch: alkaloidMatch,
+        dnaSignature: signature,
+        timestamp: new Date().toISOString()
+    };
+
+    addHerbTransaction(dnaData);
+
+    overlay.classList.remove('active');
+
+    // Show results in visualizer
+    document.getElementById('genomic-data-display').style.display = 'grid';
+    document.getElementById('purity-val').textContent = purity.toFixed(1) + "%";
+    document.getElementById('terpene-val').textContent = terpeneProfile;
+    document.getElementById('alkaloid-val').textContent = alkaloidMatch;
+
+    const tag = document.getElementById('purity-tag');
+    tag.textContent = "VERIFIED PURE";
+    tag.className = "dna-purity-tag purity-high";
+
+    if (window.showNotification) window.showNotification("Genomic record successfully secured on VaidyaChain.", 'success');
+
+    setTimeout(() => loadDNABankingDashboard(), 2500);
+}
+
+function populateDNARecords(samples) {
+    const list = document.getElementById('dna-records-list');
+    if (!list) return;
+
+    samples.reverse().forEach(tx => {
+        const div = document.createElement('div');
+        div.className = 'dna-record-card';
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                <strong>Batch: ${tx.data.batchId}</strong>
+                <span class="dna-purity-tag purity-high">${tx.data.purity}% Pure</span>
+            </div>
+            <div class="dna-signature-code">${tx.data.dnaSignature.substring(0, 16)}...</div>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground);">
+                Registered: ${new Date(tx.data.timestamp).toLocaleDateString()}
+            </div>
+        `;
+        div.onclick = () => showAncestryTrace(tx.data);
+        list.appendChild(div);
+    });
+}
+
+function showAncestryTrace(data) {
+    const panel = document.getElementById('ancestry-panel');
+    const tree = document.getElementById('ancestry-tree-content');
+    panel.style.display = 'block';
+
+    // Simulate finding ancestors
+    const transactions = getAllHerbTransactions();
+    const batchTx = transactions.find(tx => tx.data.batchId === data.batchId && tx.data.type === 'collection');
+    const herbType = batchTx ? batchTx.data.herbType : "Ayurvedic Specimen";
+
+    tree.innerHTML = `
+        <div class="ancestry-point">
+            <strong>Current Sample</strong><br>
+            <small>${herbType} (Batch: ${data.batchId})</small>
+        </div>
+        <div class="ancestry-point">
+            <strong>Regional Progenitor</strong><br>
+            <small>Wild-harvested ${herbType} - Himalayan Foothills</small>
+        </div>
+        <div class="ancestry-point">
+            <strong>Wild Heritage Genotype</strong><br>
+            <small>Botanical Origin: Western Ghats Cluster</small>
+        </div>
+    `;
+
+    // Scroll to panel
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Glow the selected card in the list
+    document.querySelectorAll('.dna-record-card').forEach(c => c.classList.remove('active'));
+    // (This is a simplified highlight logic)
+}
+
+
+// Insurance Dashboard
+function loadInsuranceDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Crop Insurance Dashboard</h2>
+            <p class="dashboard-subtitle">Protect your crops with blockchain-based parametric insurance</p>
+            
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-number" id="active-policies">0</div>
+                    <div class="stat-label">Active Policies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-coverage">₹0</div>
+                    <div class="stat-label">Total Coverage</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="claims-processed">0</div>
+                    <div class="stat-label">Claims Processed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-payouts">₹0</div>
+                    <div class="stat-label">Total Payouts</div>
+                </div>
+            </div>
+
+            <div class="herb-card">
+                <h3>Purchase Insurance Policy</h3>
+                <form id="insurance-purchase-form">
+                    <div class="form-group">
+                        <label for="insurance-batch-id">Batch ID to Insure:</label>
+                        <input type="text" id="insurance-batch-id" required placeholder="Enter batch ID">
+                        <button type="button" id="check-insurance-batch">Check Batch</button>
+                    </div>
+                    <div id="insurance-batch-info" style="display: none; margin: 15px 0; padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                        <h4>Batch Details</h4>
+                        <p id="insurance-batch-details"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="insurance-type">Insurance Type:</label>
+                        <select id="insurance-type" required>
+                            <option value="">Select Type</option>
+                            <option value="weather">Weather-Based (Parametric)</option>
+                            <option value="quality">Quality Failure Coverage</option>
+                            <option value="comprehensive">Comprehensive Coverage</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="coverage-amount">Coverage Amount (₹):</label>
+                        <input type="number" id="coverage-amount" min="1000" step="500" required placeholder="e.g., 50000">
+                    </div>
+                    <div class="form-group">
+                        <label for="premium-display">Premium (Auto-calculated):</label>
+                        <input type="text" id="premium-display" readonly value="₹0">
+                    </div>
+                    <div id="policy-terms" style="display: none; margin: 15px 0; padding: 10px; background: #fff3e0; border-radius: 5px;">
+                        <h4>Policy Terms</h4>
+                        <div id="policy-terms-content"></div>
+                    </div>
+                    <button type="submit" id="purchase-insurance-btn" disabled>Purchase Insurance Policy</button>
+                </form>
+            </div>
+
+            <div class="herb-card">
+                <h3>File Insurance Claim</h3>
+                <form id="insurance-claim-form">
+                    <div class="form-group">
+                        <label for="claim-policy-id">Policy ID:</label>
+                        <input type="text" id="claim-policy-id" required placeholder="Enter policy ID">
+                        <button type="button" id="check-policy-btn">Check Policy</button>
+                    </div>
+                    <div id="policy-info" style="display: none; margin: 15px 0; padding: 10px; background: #e3f2fd; border-radius: 5px;">
+                        <h4>Policy Information</h4>
+                        <p id="policy-details"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="claim-type">Claim Type:</label>
+                        <select id="claim-type" required>
+                            <option value="">Select Claim Type</option>
+                            <option value="weather">Weather Damage</option>
+                            <option value="quality">Quality Test Failure</option>
+                            <option value="crop-failure">Crop Failure</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="claim-description">Description:</label>
+                        <textarea id="claim-description" rows="3" required placeholder="Describe the loss/damage"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="claim-amount">Claimed Amount (₹):</label>
+                        <input type="number" id="claim-amount" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="claim-evidence">Upload Evidence:</label>
+                        <input type="file" id="claim-evidence" accept="image/*,.pdf" multiple>
+                    </div>
+                    <button type="submit" id="file-claim-btn" disabled>File Insurance Claim</button>
+                </form>
+            </div>
+
+            <div class="herb-card">
+                <h3>Your Insurance Policies</h3>
+                <div id="policies-list"></div>
+            </div>
+
+            <div class="herb-card">
+                <h3>Recent Claims</h3>
+                <div id="claims-list"></div>
+            </div>
+        </div>
+    `;
+
+    // Initialize insurance data
+    loadInsuranceData();
+
+    // Check batch for insurance
+    document.getElementById('check-insurance-batch').addEventListener('click', function () {
+        const batchId = document.getElementById('insurance-batch-id').value;
+        if (!batchId) {
+            alert('Please enter a Batch ID');
+            return;
+        }
+
+        if (doesBatchExist(batchId)) {
+            const transactions = getBatchHistory(batchId);
+            const collectionData = transactions.find(tx => tx.data.type === 'collection');
+            const batchInfo = document.getElementById('insurance-batch-info');
+            const batchDetails = document.getElementById('insurance-batch-details');
+
+            if (collectionData) {
+                batchDetails.innerHTML = `
+                    <strong>Herb Type:</strong> ${collectionData.data.herbType}<br>
+                    <strong>Quantity:</strong> ${collectionData.data.quantity} kg<br>
+                    <strong>Collection Date:</strong> ${collectionData.data.collectionDate}<br>
+                    <strong>Estimated Value:</strong> ₹${(collectionData.data.quantity * 500).toLocaleString()}
+                `;
+                batchInfo.style.display = 'block';
+                document.getElementById('purchase-insurance-btn').disabled = false;
+
+                // Set default coverage amount based on quantity
+                document.getElementById('coverage-amount').value = Math.round(collectionData.data.quantity * 500);
+                calculatePremium();
+            }
+        } else {
+            alert('Batch ID not found! Please create a collection first.');
+        }
+    });
+
+    // Calculate premium based on coverage amount
+    document.getElementById('coverage-amount').addEventListener('input', calculatePremium);
+    document.getElementById('insurance-type').addEventListener('change', function () {
+        calculatePremium();
+        showPolicyTerms();
+    });
+
+    function calculatePremium() {
+        const coverageAmount = parseFloat(document.getElementById('coverage-amount').value) || 0;
+        const insuranceType = document.getElementById('insurance-type').value;
+
+        let premiumRate = 0.05; // 5% default
+        if (insuranceType === 'weather') premiumRate = 0.03;
+        else if (insuranceType === 'quality') premiumRate = 0.04;
+        else if (insuranceType === 'comprehensive') premiumRate = 0.08;
+
+        const premium = Math.round(coverageAmount * premiumRate);
+        document.getElementById('premium-display').value = `₹${premium.toLocaleString()}`;
+    }
+
+    function showPolicyTerms() {
+        const insuranceType = document.getElementById('insurance-type').value;
+        const termsDiv = document.getElementById('policy-terms');
+        const termsContent = document.getElementById('policy-terms-content');
+
+        if (!insuranceType) {
+            termsDiv.style.display = 'none';
+            return;
+        }
+
+        const terms = {
+            'weather': `
+                <ul>
+                    <li>Covers crop damage due to adverse weather conditions</li>
+                    <li>Automatic payout triggers:
+                        <ul>
+                            <li>Temperature exceeds 45°C for 3+ consecutive days</li>
+                            <li>Rainfall below 20% of normal for the season</li>
+                            <li>Excessive rainfall (>300mm in 24 hours)</li>
+                        </ul>
+                    </li>
+                    <li>Payout: 80% of sum insured for total loss, 40% for partial</li>
+                    <li>Claim settlement: 7 working days after verification</li>
+                </ul>
+            `,
+            'quality': `
+                <ul>
+                    <li>Covers financial loss due to quality test failures</li>
+                    <li>Trigger: Lab test shows batch rejection</li>
+                    <li>Payout: 60% of sum insured</li>
+                    <li>Additional coverage for re-testing costs up to ₹5,000</li>
+                    <li>Claim settlement: Immediate upon test result recording</li>
+                </ul>
+            `,
+            'comprehensive': `
+                <ul>
+                    <li>All-in-one coverage for weather, quality, and crop failure</li>
+                    <li>Includes:
+                        <ul>
+                            <li>Weather-based damage coverage</li>
+                            <li>Quality test failure protection</li>
+                            <li>Pest/disease outbreak coverage</li>
+                            <li>Market price fluctuation protection (up to 20%)</li>
+                        </ul>
+                    </li>
+                    <li>Payout: Up to 100% of sum insured</li>
+                    <li>Free crop advisory services included</li>
+                </ul>
+            `
+        };
+
+        termsContent.innerHTML = terms[insuranceType] || '';
+        termsDiv.style.display = 'block';
+    }
+
+    // Purchase insurance form
+    document.getElementById('insurance-purchase-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const batchId = document.getElementById('insurance-batch-id').value;
+        const insuranceType = document.getElementById('insurance-type').value;
+        const coverageAmount = parseFloat(document.getElementById('coverage-amount').value);
+        const premiumText = document.getElementById('premium-display').value;
+        const premium = parseInt(premiumText.replace(/[^0-9]/g, ''));
+
+        const policyId = 'POL-' + Date.now();
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setFullYear(endDate.getFullYear() + 1);
+
+        const policyData = {
+            type: 'insurance-policy',
+            policyId: policyId,
+            batchId: batchId,
+            insuranceType: insuranceType,
+            coverageAmount: coverageAmount,
+            premium: premium,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            status: 'active',
+            farmer: { id: 'FARMER-001', name: 'Rajesh Kumar' }
+        };
+
+        addHerbTransaction(policyData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        alert(`Insurance policy purchased successfully!\n\nPolicy ID: ${policyId}\nCoverage: ₹${coverageAmount.toLocaleString()}\nPremium: ₹${premium.toLocaleString()}\nValid Until: ${endDate.toLocaleDateString()}`);
+
+        this.reset();
+        document.getElementById('insurance-batch-info').style.display = 'none';
+        document.getElementById('policy-terms').style.display = 'none';
+        document.getElementById('purchase-insurance-btn').disabled = true;
+        loadInsuranceData();
+    });
+
+    // Check policy for claim
+    document.getElementById('check-policy-btn').addEventListener('click', function () {
+        const policyId = document.getElementById('claim-policy-id').value;
+        const policyInfo = document.getElementById('policy-info');
+        const policyDetails = document.getElementById('policy-details');
+
+        const allTransactions = getAllHerbTransactions();
+        const policy = allTransactions.find(tx => tx.data.type === 'insurance-policy' && tx.data.policyId === policyId);
+
+        if (policy) {
+            policyDetails.innerHTML = `
+                <strong>Policy ID:</strong> ${policy.data.policyId}<br>
+                <strong>Type:</strong> ${policy.data.insuranceType}<br>
+                <strong>Coverage:</strong> ₹${policy.data.coverageAmount.toLocaleString()}<br>
+                <strong>Status:</strong> ${policy.data.status.toUpperCase()}<br>
+                <strong>Valid Until:</strong> ${new Date(policy.data.endDate).toLocaleDateString()}
+            `;
+            policyInfo.style.display = 'block';
+            document.getElementById('file-claim-btn').disabled = policy.data.status !== 'active';
+            document.getElementById('claim-amount').max = policy.data.coverageAmount;
+        } else {
+            alert('Policy not found!');
+        }
+    });
+
+    // File claim form
+    document.getElementById('insurance-claim-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const policyId = document.getElementById('claim-policy-id').value;
+        const claimType = document.getElementById('claim-type').value;
+        const description = document.getElementById('claim-description').value;
+        const claimAmount = parseFloat(document.getElementById('claim-amount').value);
+
+        const claimId = 'CLAIM-' + Date.now();
+
+        // Determine if claim should be auto-approved (parametric insurance)
+        const allTransactions = getAllHerbTransactions();
+        const policy = allTransactions.find(tx => tx.data.type === 'insurance-policy' && tx.data.policyId === policyId);
+
+        let claimStatus = 'pending';
+        let approvedAmount = 0;
+
+        // Auto-approve quality-based claims if there's a failed test
+        if (claimType === 'quality' && policy) {
+            const batchTests = getBatchHistory(policy.data.batchId).filter(tx => tx.data.type === 'lab-test');
+            const failedTests = batchTests.filter(tx => tx.data.testResult === 'fail');
+            if (failedTests.length > 0) {
+                claimStatus = 'approved';
+                approvedAmount = Math.min(claimAmount, policy.data.coverageAmount * 0.6);
+            }
+        }
+
+        const claimData = {
+            type: 'insurance-claim',
+            claimId: claimId,
+            policyId: policyId,
+            claimType: claimType,
+            description: description,
+            claimedAmount: claimAmount,
+            approvedAmount: approvedAmount,
+            status: claimStatus,
+            filedDate: new Date().toISOString()
+        };
+
+        addHerbTransaction(claimData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        if (claimStatus === 'approved') {
+            alert(`Claim auto-approved!\n\nClaim ID: ${claimId}\nApproved Amount: ₹${approvedAmount.toLocaleString()}\n\nPayout will be processed within 24 hours.`);
+        } else {
+            alert(`Claim filed successfully!\n\nClaim ID: ${claimId}\nStatus: Pending Review\n\nOur team will verify and process your claim within 7 working days.`);
+        }
+
+        this.reset();
+        document.getElementById('policy-info').style.display = 'none';
+        document.getElementById('file-claim-btn').disabled = true;
+        loadInsuranceData();
+    });
+}
+
+function loadInsuranceData() {
+    const allTransactions = getAllHerbTransactions();
+    const policies = allTransactions.filter(tx => tx.data.type === 'insurance-policy');
+    const claims = allTransactions.filter(tx => tx.data.type === 'insurance-claim');
+
+    // Update stats
+    const activePolicies = policies.filter(p => p.data.status === 'active');
+    const totalCoverage = activePolicies.reduce((sum, p) => sum + (p.data.coverageAmount || 0), 0);
+    const processedClaims = claims.filter(c => c.data.status !== 'pending');
+    const totalPayouts = processedClaims.reduce((sum, c) => sum + (c.data.approvedAmount || 0), 0);
+
+    document.getElementById('active-policies').textContent = activePolicies.length;
+    document.getElementById('total-coverage').textContent = `₹${totalCoverage.toLocaleString()}`;
+    document.getElementById('claims-processed').textContent = processedClaims.length;
+    document.getElementById('total-payouts').textContent = `₹${totalPayouts.toLocaleString()}`;
+
+    // Load policies list
+    const policiesList = document.getElementById('policies-list');
+    if (policies.length === 0) {
+        policiesList.innerHTML = '<p>No insurance policies purchased yet.</p>';
+    } else {
+        let html = '';
+        policies.reverse().forEach(tx => {
+            const statusClass = tx.data.status === 'active' ? 'success' : (tx.data.status === 'claimed' ? 'warning' : 'danger');
+            html += `
+                <div class="herb-card" style="margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="margin: 0;">Policy: ${tx.data.policyId}</h4>
+                            <p style="margin: 5px 0;"><strong>Batch:</strong> ${tx.data.batchId}</p>
+                            <p style="margin: 5px 0;"><strong>Type:</strong> ${tx.data.insuranceType}</p>
+                            <p style="margin: 5px 0;"><strong>Coverage:</strong> ₹${tx.data.coverageAmount.toLocaleString()}</p>
+                            <p style="margin: 5px 0;"><strong>Premium:</strong> ₹${tx.data.premium.toLocaleString()}</p>
+                        </div>
+                        <span class="status-badge status-${statusClass}">${tx.data.status.toUpperCase()}</span>
+                    </div>
+                </div>
+            `;
+        });
+        policiesList.innerHTML = html;
+    }
+
+    // Load claims list
+    const claimsList = document.getElementById('claims-list');
+    if (claims.length === 0) {
+        claimsList.innerHTML = '<p>No claims filed yet.</p>';
+    } else {
+        let html = '';
+        claims.reverse().forEach(tx => {
+            const statusClass = tx.data.status === 'approved' ? 'success' : (tx.data.status === 'pending' ? 'warning' : 'danger');
+            html += `
+                <div class="herb-card" style="margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h4 style="margin: 0;">Claim: ${tx.data.claimId}</h4>
+                            <p style="margin: 5px 0;"><strong>Policy:</strong> ${tx.data.policyId}</p>
+                            <p style="margin: 5px 0;"><strong>Type:</strong> ${tx.data.claimType}</p>
+                            <p style="margin: 5px 0;"><strong>Claimed:</strong> ₹${tx.data.claimedAmount.toLocaleString()}</p>
+                            ${tx.data.approvedAmount > 0 ? `<p style="margin: 5px 0;"><strong>Approved:</strong> ₹${tx.data.approvedAmount.toLocaleString()}</p>` : ''}
+                        </div>
+                        <span class="status-badge status-${statusClass}">${tx.data.status.toUpperCase()}</span>
+                    </div>
+                </div>
+            `;
+        });
+        claimsList.innerHTML = html;
+    }
+}
+
+// --- Phase 3 Features: Inventory & Orders ---
+
+function getProductIcon(type) {
+    const icons = {
+        'powder': '🌿',
+        'capsule': '💊',
+        'tablet': '🔵',
+        'extract': '🧴',
+        'oil': '🫒'
+    };
+    return icons[type] || '📦';
+}
+
+function loadInventoryDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard shadcn-style">
+            <div class="page-header">
+                <h1>Inventory Management</h1>
+                <p class="page-description">Track real-time stock levels of manufactured products</p>
+            </div>
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-number" id="inv-total-products">0</div>
+                    <div class="stat-label">Total SKUs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="inv-low-stock">0</div>
+                    <div class="stat-label">Low Stock Alerts</div>
+                </div>
+            </div>
+            <div class="products-grid" id="inventory-grid"></div>
+        </div>
+    `;
+
+    loadInventoryData();
+}
+
+function loadInventoryData() {
+    const allTransactions = getAllHerbTransactions();
+    const manufacturingTransactions = allTransactions.filter(tx => tx.data.type === 'manufacturing');
+    const orderTransactions = allTransactions.filter(tx => tx.data.type === 'order');
+
+    const inventory = {};
+
+    manufacturingTransactions.forEach(tx => {
+        const prodId = tx.data.productId;
+        if (!inventory[prodId]) {
+            inventory[prodId] = {
+                id: prodId,
+                name: tx.data.productName,
+                type: tx.data.productType,
+                expiry: tx.data.expiryDate,
+                stock: 100
+            };
+        }
+    });
+
+    orderTransactions.forEach(tx => {
+        const prodId = tx.data.productId;
+        if (inventory[prodId]) {
+            inventory[prodId].stock -= parseInt(tx.data.quantity || 0);
+        }
+    });
+
+    const grid = document.getElementById('inventory-grid');
+    const invArray = Object.values(inventory);
+
+    document.getElementById('inv-total-products').textContent = invArray.length;
+    document.getElementById('inv-low-stock').textContent = invArray.filter(i => i.stock < 20).length;
+
+    if (invArray.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📦</div>
+                <h3>No Inventory Yet</h3>
+                <p>Manufacture products first to see them in inventory.</p>
+                <button class="primary-btn" onclick="showDashboard('manufacturer')">Go to Manufacturer Dashboard</button>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    invArray.forEach(item => {
+        const stockStatus = item.stock > 50 ? 'success' : (item.stock > 20 ? 'warning' : 'danger');
+        html += `
+            <div class="product-card">
+                <div class="card-header">
+                    <div class="product-icon">${getProductIcon(item.type)}</div>
+                    <div class="card-title">
+                        <h3>${item.name}</h3>
+                        <span class="product-id">${item.id}</span>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="detail-row">
+                        <span class="label">Current Stock:</span>
+                        <span class="status-badge status-${stockStatus}">${item.stock} Units</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Type:</span>
+                        <span class="value">${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Expiry Date:</span>
+                        <span class="value">${item.expiry}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="secondary-btn" onclick="showDashboard('orders')">Create Order</button>
+                </div>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
+
+function loadOrdersDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>B2B Order Management</h2>
+            <div class="herb-card">
+                <h3>Create New Order</h3>
+                <form id="order-form">
+                    <div class="form-group">
+                        <label for="order-product-id">Product ID:</label>
+                        <select id="order-product-id" required>
+                            <option value="">Select a Product</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="order-quantity">Quantity (Units):</label>
+                        <input type="number" id="order-quantity" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="order-distributor">Distributor Name:</label>
+                        <input type="text" id="order-distributor" required placeholder="e.g., Wellness Retailers Inc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="order-destination">Destination:</label>
+                        <input type="text" id="order-destination" required placeholder="e.g., Mumbai Central Warehouse">
+                    </div>
+                    <button type="submit">Create Order & Submit to Blockchain</button>
+                </form>
+            </div>
+            <div class="herb-card">
+                <h3>Recent Orders & Fulfillment</h3>
+                <div id="orders-list"></div>
+            </div>
+        </div>
+    `;
+
+    const allTransactions = getAllHerbTransactions();
+    const manufacturingTransactions = allTransactions.filter(tx => tx.data.type === 'manufacturing');
+    const productSelect = document.getElementById('order-product-id');
+
+    const uniqueProducts = {};
+    manufacturingTransactions.forEach(tx => {
+        uniqueProducts[tx.data.productId] = tx.data.productName;
+    });
+
+    Object.keys(uniqueProducts).forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = `${uniqueProducts[id]} (${id})`;
+        productSelect.appendChild(opt);
+    });
+
+    document.getElementById('order-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const prodId = document.getElementById('order-product-id').value;
+        const qty = document.getElementById('order-quantity').value;
+        const distributor = document.getElementById('order-distributor').value;
+        const destination = document.getElementById('order-destination').value;
+        const orderId = 'ORD-' + Date.now();
+
+        const orderData = {
+            type: 'order',
+            orderId: orderId,
+            productId: prodId,
+            quantity: qty,
+            distributor: distributor,
+            destination: destination,
+            status: 'pending',
+            date: new Date().toISOString()
+        };
+
+        addHerbTransaction(orderData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        if (window.showNotification) {
+            window.showNotification(`Order ${orderId} created successfully!`, 'success');
+        } else {
+            alert(`Order created! ID: ${orderId}`);
+        }
+
+        this.reset();
+        loadOrdersList();
+    });
+
+    loadOrdersList();
+}
+
+function loadOrdersList() {
+    const listContainer = document.getElementById('orders-list');
+    if (!listContainer) return;
+
+    const allTransactions = getAllHerbTransactions();
+    const orders = allTransactions.filter(tx => tx.data.type === 'order');
+
+    if (orders.length === 0) {
+        listContainer.innerHTML = '<p>No orders created yet.</p>';
+        return;
+    }
+
+    let html = '';
+    orders.reverse().forEach(tx => {
+        html += `
+            <div class="order-item" style="border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h4>Order: ${tx.data.orderId}</h4>
+                        <p><strong>Product ID:</strong> ${tx.data.productId} | <strong>Qty:</strong> ${tx.data.quantity}</p>
+                        <p><strong>To:</strong> ${tx.data.distributor} (${tx.data.destination})</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-${tx.data.status === 'pending' ? 'warning' : 'success'}">${tx.data.status.toUpperCase()}</span></p>
+                    </div>
+                    <div>
+                        ${tx.data.status === 'pending' ?
+                `<button class="secondary-btn" onclick="shipOrder('${tx.data.orderId}')">Mark as Shipped</button>`
+                : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    listContainer.innerHTML = html;
+}
+
+window.shipOrder = function (orderId) {
+    const allTransactions = getAllHerbTransactions();
+    const originalOrderTx = allTransactions.find(tx => tx.data.type === 'order' && tx.data.orderId === orderId);
+
+    if (originalOrderTx) {
+        const updateData = { ...originalOrderTx.data, status: 'shipped', updateDate: new Date().toISOString() };
+        addHerbTransaction(updateData);
+        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+        if (window.showNotification) window.showNotification(`Order ${orderId} marked as shipped.`, 'success');
+        loadOrdersList();
+    }
+};
+
+// Blockchain visualization update
+function updateBlockchainVisualization() {
+    const blockCounter = document.getElementById('block-counter');
+    const transactionCounter = document.getElementById('transaction-counter');
+
+    if (blockCounter && transactionCounter && typeof vaidyaChain !== 'undefined') {
+        const totalBlocks = vaidyaChain.chain.length;
+        const totalTransactions = totalBlocks - 1;
+        blockCounter.textContent = `Blocks: ${totalBlocks}`;
+        transactionCounter.textContent = `Transactions: ${totalTransactions}`;
+    }
+}
+
+// Auto-refresh smart contract data every 10 seconds
+setInterval(() => {
+    if (document.getElementById('smart-contracts')) {
+        loadSmartContractData();
+    }
+}, 10000);
+
+// --- Supporting Functions for Dashboards ---
+
+function toggleSection(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+}
+
+function loadManufacturerAnalytics() {
+    const ctx1 = document.getElementById('production-trends-chart');
+    const ctx2 = document.getElementById('quality-metrics-chart');
+
+    if (ctx1 && window.Chart) {
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Batches Processed',
+                    data: [12, 19, 15, 22, 18, 25],
+                    backgroundColor: '#10b981'
+                }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Production' } } }
+        });
+    }
+
+    if (ctx2 && window.Chart) {
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved', 'Rejected', 'Pending'],
+                datasets: [{
+                    data: [85, 10, 5],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                }]
+            },
+            options: { responsive: true, plugins: { title: { display: true, text: 'Batch Quality Ratio' } } }
+        });
+    }
+}
+
+function loadSuppliersList() {
+    const container = document.getElementById('suppliers-list');
+    if (!container) return;
+
+    const suppliers = [
+        { name: "Haridwar Organic Farms", rating: 4.8, batches: 124, status: "Verified" },
+        { name: "Western Ghats Botanicals", rating: 4.5, batches: 86, status: "Verified" },
+        { name: "Siddha Herbals", rating: 4.9, batches: 210, status: "Preferred" }
+    ];
+
+    container.innerHTML = suppliers.map(s => `
+        <div class="batch-card" style="border-left: 4px solid var(--primary); background: white; padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 1rem;">
+            <h4>${s.name}</h4>
+            <div class="batch-details" style="margin-top: 0.5rem;">
+                <p><strong>Rating:</strong> <span style="color: #f59e0b">${"★".repeat(Math.floor(s.rating))}</span> ${s.rating}</p>
+                <p><strong>Total Batches:</strong> ${s.batches}</p>
+                <p><strong>Status:</strong> <span class="status-badge status-success">${s.status}</span></p>
+            </div>
+            <button class="action-btn outline" style="width: 100%; margin-top: 1rem;">View All From Supplier</button>
+        </div>
     `).join('');
-  }
-
-  if(filter) {
-    filter.addEventListener('change', (e) => renderOrders(e.target.value));
-    renderOrders();
-  }
 }
 
-function initInsuranceDashboard() {
-  const form = document.getElementById('insurance-form');
-  const list = document.getElementById('insurance-list');
-  const claimBtn = document.getElementById('file-claim-btn');
+function generateTestCertificate(testData) {
+    if (!window.jspdf) {
+        alert("PDF Library not loaded.");
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-  if(form) {
-    form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      showToast('Insurance policy purchased successfully!', 'success');
-      form.reset();
-    });
-  }
+    // Header
+    doc.setFillColor(5, 150, 105);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text("VaidyaChain Quality Certificate", 105, 25, { align: "center" });
 
-  if(claimBtn) {
-    claimBtn.addEventListener('click', () => {
-      showToast('Auto-claim initiated for all eligible failed batches.', 'info');
-    });
-  }
+    // Body
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(14);
+    doc.text(`Batch ID: ${testData.batchId}`, 20, 60);
+    doc.text(`Herb Type: ${testData.herbType || 'Ayurvedic Herb'}`, 20, 70);
+    doc.text(`Test Date: ${new Date().toLocaleDateString()}`, 20, 80);
+    doc.text(`Purity: ${testData.purity || '98.4%'}`, 20, 90);
+    doc.text(`Status: ${testData.testResult.toUpperCase()}`, 20, 100);
 
-  if(list) {
-    list.innerHTML = `
-      <div style="padding:10px; border-left:4px solid #3b82f6; background:#f3f4f6; margin-bottom:10px;">
-        <strong>Policy #POL-1029</strong> - Batch BATCH-123 (Active)
-      </div>
-      <div style="padding:10px; border-left:4px solid #ef4444; background:#fef2f2;">
-        <strong>Claim #CLM-9281</strong> - Batch BATCH-091 (Processing)
-      </div>
-    `;
-  }
+    // Blockchain Seal
+    doc.setDrawColor(16, 185, 129);
+    doc.setLineWidth(1);
+    doc.rect(140, 60, 50, 50);
+    doc.setFontSize(10);
+    doc.text("BLOCKCHAIN", 165, 80, { align: "center" });
+    doc.text("VERIFIED", 165, 90, { align: "center" });
+
+    doc.save(`VaidyaChain_Certificate_${testData.batchId}.pdf`);
 }
 
-function initDnaDashboard() {
-  const regForm = document.getElementById('dna-register-form');
-  const chkForm = document.getElementById('dna-check-form');
-  const resultDiv = document.getElementById('dna-result');
-  const list = document.getElementById('dna-profiles-list');
-
-  if(regForm) {
-    regForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      showToast('DNA profile registered on blockchain!', 'success');
-      regForm.reset();
-    });
-  }
-
-  if(chkForm) {
-    chkForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      resultDiv.innerHTML = '<span style="color:#10b981;">✅ DNA Match Confirmed! Botanical authenticity verified.</span>';
-    });
-  }
-
-  if(list) {
-    list.innerHTML = `
-      <div style="padding:10px; border:1px solid #e5e7eb; margin-bottom:10px; border-radius:4px;">
-        <strong>Ashwagandha Premium Root</strong><br>
-        <small class="text-muted">Markers: GTGAC...GCT</small>
-        <span style="float:right; color:#10b981;">Verified ✨</span>
-      </div>
-    `;
-  }
+function showBatchComparison() {
+    if (window.showNotification) window.showNotification("Loading batch analytics...", "info");
 }
+
+function startQRScanner() {
+    if (window.showNotification) window.showNotification("Initializing Camera...", 'info');
+    const code = prompt("Simulating QR Scan. Enter Product ID:");
+    if (code) renderProductTraceability(code);
+}
+
+function loadLabVisualizations() {
+    const spec = document.getElementById('spectroscopy-content');
+    if (spec) {
+        setTimeout(() => {
+            spec.innerHTML = `
+                <div style="height: 100px; display: flex; align-items: flex-end; gap: 4px; padding-top: 10px;">
+                    ${Array.from({ length: 20 }).map(() => `
+                        <div style="flex: 1; background: var(--primary); height: ${Math.random() * 100}%"></div>
+                    `).join('')}
+                </div>
+                <p style="font-size: 0.8rem; margin-top: 10px; color: var(--muted-foreground)">Spectrum Analysis: Active compounds detected within target range.</p>
+            `;
+        }, 1500);
+    }
+}
+
+// Auto-initialize charts if they exist on load
+document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('production-trends-chart')) loadManufacturerAnalytics();
+    if (document.getElementById('spectroscopy-content')) loadLabVisualizations();
+});

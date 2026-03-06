@@ -1,395 +1,249 @@
-// Smart Contracts System
-// Enhanced smart contracts for Krishi blockchain platform
+// Enhanced Smart Contracts Dashboard Functions
 
-// Smart Contract Base Class
-class SmartContract {
-  constructor(name, description) {
-    this.name = name;
-    this.description = description;
-    this.events = [];
-  }
+// Generate deterministic contract address from batch/policy ID
+function generateContractAddress(id) {
+    if (!id) return '0x0000...0000';
+    const hash = id.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
+    const addr = '0x' + Math.abs(hash).toString(16).padStart(8, '0') + Math.abs(hash).toString(16).padStart(8, '0').slice(-8);
+    return addr.substring(0, 10) + '...' + addr.substring(addr.length - 6);
+}
 
-  async execute(data) {
-    throw new Error('Execute method must be implemented by subclass');
-  }
-
-  logEvent(eventType, data) {
-    const event = {
-      contract: this.name,
-      type: eventType,
-      data: data,
-      timestamp: Date.now()
-    };
-    this.events.push(event);
+// Override the original loadSmartContractsDashboard with enhanced version
+function loadSmartContractsDashboard() {
+    const container = document.getElementById('dashboard-container');
     
-    // Add to blockchain
-    return blockchain.addBlock(BLOCK_TYPES.SMART_CONTRACT_EVENT, event);
-  }
-}
-
-// 1. Payment Contract
-class PaymentContract extends SmartContract {
-  constructor() {
-    super('PaymentContract', 'Auto-pays farmers when products pass quality tests');
-  }
-
-  async execute(batchData, testResult) {
-    if (testResult.result === 'PASS') {
-      const paymentData = {
-        type: 'payment_release',
-        batchId: batchData.batchId,
-        farmerId: batchData.farmerId,
-        amount: this.calculatePayment(batchData),
-        timestamp: Date.now()
-      };
-      
-      await this.logEvent('payment_released', paymentData);
-      return { success: true, message: `Payment of ₹${paymentData.amount} released to farmer` };
-    }
+    // Get real data from blockchain
+    const allTransactions = getAllHerbTransactions();
+    const collections = allTransactions.filter(tx => tx.data.type === 'collection');
+    const labTests = allTransactions.filter(tx => tx.data.type === 'lab-test');
+    const passedTests = labTests.filter(tx => tx.data.testResult === 'pass');
+    const policies = allTransactions.filter(tx => tx.data.type === 'insurance-policy');
+    const activePolicies = policies.filter(p => p.data.status === 'active');
+    const claims = allTransactions.filter(tx => tx.data.type === 'insurance-claim');
+    const approvedClaims = claims.filter(c => c.data.status === 'approved');
+    const manufacturing = allTransactions.filter(tx => tx.data.type === 'manufacturing');
     
-    return { success: false, message: 'Batch failed quality test, payment withheld' };
-  }
-
-  calculatePayment(batchData) {
-    // Simple payment calculation based on herb type and quantity
-    const herbRates = {
-      'Ashwagandha': 450,
-      'Tulsi': 200,
-      'Neem': 150,
-      'Turmeric': 300,
-      'Amla': 250,
-      'Ginseng': 800,
-      'Brahmi': 350,
-      'Shatavari': 400
-    };
+    // Calculate real stats
+    const totalEarnings = passedTests.length * 5000;
+    const pendingPayments = collections.filter(c => {
+        return !labTests.some(l => l.data.batchId === c.data.batchId);
+    }).length;
     
-    const rate = herbRates[batchData.herbType] || 200;
-    return batchData.quantity * rate;
-  }
-}
+    // Generate dynamic contract addresses based on actual data
+    const paymentContractAddress = collections.length > 0 ? generateContractAddress(collections[0].data.batchId || 'PAYMENT') : '0x1a2b...3c4d';
+    const insuranceContractAddress = activePolicies.length > 0 ? generateContractAddress(activePolicies[0].data.policyId || 'INSURANCE') : '0x5e6f...7g8h';
+    const qualityContractAddress = labTests.length > 0 ? generateContractAddress(labTests[0].data.batchId || 'QUALITY') : '0x9i0j...1k2l';
+    const supplyChainContractAddress = manufacturing.length > 0 ? generateContractAddress(manufacturing[0].data.productId || 'SUPPLY') : '0x3m4n...5o6p';
 
-// 2. Insurance Contract
-class InsuranceContract extends SmartContract {
-  constructor() {
-    super('InsuranceContract', 'Auto-files claims when batches fail lab tests');
-  }
+    // Count unique entities
+    const uniqueFarmers = new Set(collections.map(c => c.data.farmer?.id).filter(Boolean)).size;
+    const uniqueLabs = new Set(labTests.map(l => l.data.lab?.id).filter(Boolean)).size;
 
-  async execute(batchData, testResult) {
-    if (testResult.result === 'FAIL') {
-      const claimData = {
-        type: 'insurance_claim',
-        batchId: batchData.batchId,
-        farmerId: batchData.farmerId,
-        reason: this.getFailureReason(testResult),
-        amount: this.calculateClaimAmount(batchData),
-        timestamp: Date.now()
-      };
-      
-      await this.logEvent('claim_submitted', claimData);
-      return { success: true, message: `Insurance claim of ₹${claimData.amount} submitted` };
-    }
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Smart Contracts Dashboard</h2>
+            <p class="dashboard-subtitle">Real-time blockchain contract monitoring</p>
+            
+            <!-- Stats Overview -->
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-number" id="active-contracts">${4 + activePolicies.length}</div>
+                    <div class="stat-label">Active Contracts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-earnings">₹${totalEarnings.toLocaleString()}</div>
+                    <div class="stat-label">Total Earnings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pending-payments">${pendingPayments}</div>
+                    <div class="stat-label">Pending Payments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="insurance-policies">${activePolicies.length}</div>
+                    <div class="stat-label">Insurance Policies</div>
+                </div>
+            </div>
+
+            <!-- Farmer's Payment Contract Section -->
+            <div class="herb-card">
+                <h3><i class="ph ph-currency-inr"></i> Payment Contract</h3>
+                <p>Automatic payments triggered by quality approvals</p>
+                <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Contract Address:</span>
+                        <span style="font-family: monospace;">${paymentContractAddress}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Status:</span>
+                        <span style="color: #22c55e; font-weight: bold;">Active</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Trigger:</span>
+                        <span>Lab test approval</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Total Batches:</span>
+                        <span>${collections.length}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #666;">Approved:</span>
+                        <span style="color: #22c55e;">${passedTests.length}</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="add-btn" onclick="viewPaymentHistory()">View Payment History</button>
+                    <button class="add-btn outline" onclick="checkPendingPayments()">Check Pending Payments</button>
+                </div>
+            </div>
+
+            <!-- Insurance Contract Section -->
+            <div class="herb-card">
+                <h3><i class="ph ph-shield-check"></i> Insurance Contract</h3>
+                <p>Parametric insurance for weather and quality risks</p>
+                <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Contract Address:</span>
+                        <span style="font-family: monospace;">${insuranceContractAddress}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Status:</span>
+                        <span style="color: #22c55e; font-weight: bold;">Active</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Active Policies:</span>
+                        <span>${activePolicies.length}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Claims Filed:</span>
+                        <span>${claims.length}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #666;">Approved Claims:</span>
+                        <span style="color: #22c55e;">${approvedClaims.length}</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="add-btn" onclick="showDashboard('insurance')">Manage Insurance</button>
+                    <button class="add-btn outline" onclick="viewInsuranceClaims()">View Claims</button>
+                </div>
+            </div>
+
+            <!-- Quality Assurance Contract Section -->
+            <div class="herb-card">
+                <h3><i class="ph ph-flask"></i> Quality Assurance Contract</h3>
+                <p>Automated quality verification and certification</p>
+                <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Contract Address:</span>
+                        <span style="font-family: monospace;">${qualityContractAddress}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Status:</span>
+                        <span style="color: #22c55e; font-weight: bold;">Active</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Total Tests:</span>
+                        <span>${labTests.length}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Passed:</span>
+                        <span style="color: #22c55e;">${passedTests.length}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #666;">Standards:</span>
+                        <span>Ayush, FSSAI, WHO-GMP</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="add-btn" onclick="viewQualityEvents()">View Quality Events</button>
+                </div>
+            </div>
+
+            <!-- Supply Chain Contract Section -->
+            <div class="herb-card">
+                <h3><i class="ph ph-truck"></i> Supply Chain Contract</h3>
+                <p>Track and automate transfers along the supply chain</p>
+                <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Contract Address:</span>
+                        <span style="font-family: monospace;">${supplyChainContractAddress}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Status:</span>
+                        <span style="color: #22c55e; font-weight: bold;">Active</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Farmers:</span>
+                        <span>${uniqueFarmers}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #666;">Labs:</span>
+                        <span>${uniqueLabs}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #666;">Manufacturers:</span>
+                        <span>${manufacturing.length}</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="add-btn" onclick="viewTransferHistory()">View Transfers</button>
+                </div>
+            </div>
+
+            <!-- Real-Time Events -->
+            <div class="herb-card">
+                <h3>Real-Time Contract Events</h3>
+                <div id="events-list"></div>
+            </div>
+
+            <!-- Quick Stats for Farmers -->
+            <div class="herb-card">
+                <h3>Your Smart Contract Benefits</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">⏱️</div>
+                        <h4 style="margin: 0 0 8px 0;">Instant Payments</h4>
+                        <p style="margin: 0; opacity: 0.9; font-size: 14px;">Get paid automatically within 24 hours of quality approval</p>
+                    </div>
+                    <div style="padding: 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; color: white;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">🛡️</div>
+                        <h4 style="margin: 0 0 8px 0;">Risk Protection</h4>
+                        <p style="margin: 0; opacity: 0.9; font-size: 14px;">Automatic insurance claims when conditions are met</p>
+                    </div>
+                    <div style="padding: 20px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 12px; color: white;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">✅</div>
+                        <h4 style="margin: 0 0 8px 0;">Quality Certification</h4>
+                        <p style="margin: 0; opacity: 0.9; font-size: 14px;">Blockchain-verified quality certificates for better prices</p>
+                    </div>
+                    <div style="padding: 20px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border-radius: 12px; color: white;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">📈</div>
+                        <h4 style="margin: 0 0 8px 0;">Market Access</h4>
+                        <p style="margin: 0; opacity: 0.9; font-size: 14px;">Direct access to manufacturers without middlemen</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    loadSmartContractData();
     
-    return { success: false, message: 'No claim needed, batch passed quality test' };
-  }
-
-  getFailureReason(testResult) {
-    const params = testResult.parameters;
-    if (params.pesticides !== 'none') return 'Pesticide contamination';
-    if (params.adulterants !== 'none') return 'Adulteration detected';
-    if (params.heavyMetals !== 'within-limits') return 'Heavy metal contamination';
-    if (params.microbial !== 'within-limits') return 'Microbial contamination';
-    return 'Unknown quality issue';
-  }
-
-  calculateClaimAmount(batchData) {
-    // Calculate 70% of potential payment as insurance
-    const paymentContract = new PaymentContract();
-    const fullPayment = paymentContract.calculatePayment(batchData);
-    return Math.floor(fullPayment * 0.7);
-  }
+    // Auto-refresh every 5 seconds
+    window.smartContractsRefreshInterval = setInterval(loadSmartContractsDashboard, 5000);
 }
 
-// 3. Quality Contract
-class QualityContract extends SmartContract {
-  constructor() {
-    super('QualityContract', 'Sets herb-specific quality thresholds and auto-approves/rejects');
-  }
-
-  // Herb-specific quality thresholds
-  THRESHOLDS = {
-    Ashwagandha: {
-      maxMoisture: 10,
-      minActiveMarkers: 1.5,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Tulsi: {
-      maxMoisture: 12,
-      minActiveMarkers: 0.8,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Neem: {
-      maxMoisture: 15,
-      minActiveMarkers: 0.5,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Turmeric: {
-      maxMoisture: 12,
-      minActiveMarkers: 2.0,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Amla: {
-      maxMoisture: 10,
-      minActiveMarkers: 1.0,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Ginseng: {
-      maxMoisture: 8,
-      minActiveMarkers: 3.0,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Brahmi: {
-      maxMoisture: 10,
-      minActiveMarkers: 0.5,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    },
-    Shatavari: {
-      maxMoisture: 10,
-      minActiveMarkers: 1.0,
-      maxPesticides: 0,
-      maxHeavyMetals: 0,
-      maxMicrobial: 0
-    }
-  };
-
-  async execute(herbType, testParams) {
-    const thresholds = this.THRESHOLDS[herbType];
-    if (!thresholds) {
-      return { result: 'FAIL', reason: 'Unknown herb type' };
-    }
-
-    // Check each parameter
-    const checks = {
-      moisture: testParams.moisture <= thresholds.maxMoisture,
-      activeMarkers: testParams.activeMarkers >= thresholds.minActiveMarkers,
-      pesticides: testParams.pesticides === 'none',
-      heavyMetals: testParams.heavyMetals === 'within-limits',
-      microbial: testParams.microbial === 'within-limits'
-    };
-
-    const allPassed = Object.values(checks).every(check => check);
-
-    const result = {
-      result: allPassed ? 'PASS' : 'FAIL',
-      herbType: herbType,
-      parameters: testParams,
-      thresholds: thresholds,
-      checks: checks,
-      timestamp: Date.now()
-    };
-
-    await this.logEvent('quality_evaluation', result);
-    return result;
-  }
+// Function to update contract statistics
+function updateContractStats() {
+    // This is now handled in loadSmartContractsDashboard directly
+    loadSmartContractsDashboard();
 }
 
-// 4. Supply Chain Contract
-class SupplyChainContract extends SmartContract {
-  constructor() {
-    super('SupplyChainContract', 'Manages stakeholder reputation scores');
-  }
-
-  // Reputation scores for stakeholders
-  reputationScores = new Map();
-
-  async execute(stakeholderId, event) {
-    const currentScore = this.reputationScores.get(stakeholderId) || 100;
-    let newScore = currentScore;
-
-    // Update score based on event type
-    switch (event.type) {
-      case 'collection':
-        newScore += 5; // Positive for contributing to supply chain
-        break;
-      case 'lab_test_pass':
-        newScore += 10; // Positive for quality assurance
-        break;
-      case 'lab_test_fail':
-        newScore -= 20; // Negative for quality issues
-        break;
-      case 'manufacturing':
-        newScore += 8; // Positive for processing
-        break;
-      case 'payment_released':
-        newScore += 3; // Positive for financial transactions
-        break;
-      case 'claim_submitted':
-        newScore -= 5; // Slight negative for claims
-        break;
-      default:
-        newScore += 0; // No change for unknown events
+// Cleanup on dashboard change
+const originalShowDashboard = window.showDashboard;
+window.showDashboard = function(type) {
+    if (window.smartContractsRefreshInterval) {
+        clearInterval(window.smartContractsRefreshInterval);
     }
-
-    // Ensure score stays within bounds
-    newScore = Math.max(0, Math.min(100, newScore));
-    this.reputationScores.set(stakeholderId, newScore);
-
-    const reputationData = {
-      stakeholderId: stakeholderId,
-      previousScore: currentScore,
-      newScore: newScore,
-      event: event,
-      timestamp: Date.now()
-    };
-
-    await this.logEvent('reputation_updated', reputationData);
-    return { stakeholderId, previousScore: currentScore, newScore };
-  }
-
-  getReputationScore(stakeholderId) {
-    return this.reputationScores.get(stakeholderId) || 100;
-  }
-
-  getReputationStatus(score) {
-    if (score >= 90) return 'Excellent';
-    if (score >= 80) return 'Good';
-    if (score >= 70) return 'Fair';
-    if (score >= 60) return 'Poor';
-    return 'Very Poor';
-  }
-}
-
-// Contract Registry
-class ContractRegistry {
-  constructor() {
-    this.contracts = new Map();
-    this.registerContracts();
-  }
-
-  registerContracts() {
-    this.register('PaymentContract', new PaymentContract());
-    this.register('InsuranceContract', new InsuranceContract());
-    this.register('QualityContract', new QualityContract());
-    this.register('SupplyChainContract', new SupplyChainContract());
-  }
-
-  register(name, contract) {
-    this.contracts.set(name, contract);
-  }
-
-  async executeContract(name, data) {
-    const contract = this.contracts.get(name);
-    if (!contract) {
-      throw new Error(`Contract ${name} not found`);
+    if (originalShowDashboard) {
+        originalShowDashboard(type);
     }
-    
-    return await contract.execute(data);
-  }
-
-  getContract(name) {
-    return this.contracts.get(name);
-  }
-
-  getAllContracts() {
-    return Array.from(this.contracts.values());
-  }
-}
-
-// Initialize contracts
-const contractRegistry = new ContractRegistry();
-
-// Auto-execution triggers
-class ContractTriggers {
-  static async onLabTest(batchData, testResult) {
-    try {
-      // Execute Quality Contract
-      const qualityContract = contractRegistry.getContract('QualityContract');
-      const qualityResult = await qualityContract.execute(batchData.herbType, testResult.parameters);
-      
-      // Update test result with quality evaluation
-      testResult.qualityEvaluation = qualityResult;
-      
-      // Execute Payment Contract if quality passes
-      if (qualityResult.result === 'PASS') {
-        const paymentContract = contractRegistry.getContract('PaymentContract');
-        await paymentContract.execute(batchData, testResult);
-      }
-      
-      // Execute Insurance Contract if quality fails
-      if (qualityResult.result === 'FAIL') {
-        const insuranceContract = contractRegistry.getContract('InsuranceContract');
-        await insuranceContract.execute(batchData, testResult);
-      }
-      
-      // Update Supply Chain Contract
-      const supplyChainContract = contractRegistry.getContract('SupplyChainContract');
-      await supplyChainContract.execute(batchData.farmerId, {
-        type: qualityResult.result === 'PASS' ? 'lab_test_pass' : 'lab_test_fail',
-        batchId: batchData.batchId,
-        result: qualityResult.result
-      });
-      
-      return { success: true, qualityResult };
-    } catch (error) {
-      console.error('Contract execution error:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  static async onCollection(batchData) {
-    try {
-      const supplyChainContract = contractRegistry.getContract('SupplyChainContract');
-      await supplyChainContract.execute(batchData.farmerId, {
-        type: 'collection',
-        batchId: batchData.batchId,
-        herbType: batchData.herbType
-      });
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Collection trigger error:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  static async onManufacturing(batchData) {
-    try {
-      const supplyChainContract = contractRegistry.getContract('SupplyChainContract');
-      await supplyChainContract.execute(batchData.manufacturerId, {
-        type: 'manufacturing',
-        batchId: batchData.batchId,
-        productId: batchData.productId
-      });
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Manufacturing trigger error:', error);
-      return { success: false, error: error.message };
-    }
-  }
-}
-
-// Export for global use
-window.SmartContracts = {
-  PaymentContract,
-  InsuranceContract,
-  QualityContract,
-  SupplyChainContract,
-  ContractRegistry,
-  ContractTriggers
 };
-
-window.contractRegistry = contractRegistry;
