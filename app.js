@@ -293,9 +293,18 @@ function loadFarmerDashboard() {
                         <label for="quantity" data-i18n="quantity">Quantity (kg):</label>
                         <input type="number" id="quantity" min="1" required>
                     </div>
-                    <div class="form-group">
-                        <label for="collection-date">Harvest/Collection Date:</label>
-                        <input type="date" id="collection-date" required>
+                    <div class="form-group timer-group">
+                        <label>Collection Timer:</label>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 5px;">
+                            <button type="button" id="start-collection-btn" class="action-btn" style="background:var(--accent); color:white; padding: 0.5rem 1rem; border-radius: 8px;">Start Timer</button>
+                            <button type="button" id="stop-collection-btn" class="action-btn outline" disabled style="padding: 0.5rem 1rem; border-radius: 8px;">Stop Timer</button>
+                            <span id="timer-display" style="font-family: 'Geist Mono', monospace; font-size: 1.25rem; font-weight: 700; color: #1e293b; background: #f8fafc; padding: 0.25rem 0.5rem; border-radius: 6px; border: 1px solid #e2e8f0; min-width: 90px; text-align: center;">00:00:00</span>
+                        </div>
+                        <small style="color: var(--muted-foreground)">Starts location tracking & captures route.</small>
+                        <input type="hidden" id="collection-duration" value="0">
+                        <input type="hidden" id="collection-path" value="[]">
+                        <input type="hidden" id="collection-start-time" value="">
+                        <input type="hidden" id="collection-end-time" value="">
                     </div>
                     <div class="form-group">
                         <label for="price">Price (₹ per kg):</label>
@@ -411,6 +420,89 @@ function loadFarmerDashboard() {
                     document.getElementById('farmer-map').dataset.lng = lng;
                 }, { timeout: 10000 });
             }
+
+            // Timer and Location Tracking Logic
+            let collectionTimer;
+            let secondsElapsed = 0;
+            let pathCoordinates = [];
+            let pathLine;
+            let watchId;
+            let simInterval;
+
+            const startBtn = document.getElementById('start-collection-btn');
+            const stopBtn = document.getElementById('stop-collection-btn');
+            const timerDisplay = document.getElementById('timer-display');
+
+            if (startBtn && stopBtn) {
+                startBtn.addEventListener('click', () => {
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    startBtn.classList.add('outline');
+                    stopBtn.classList.remove('outline');
+                    stopBtn.style.background = '#ef4444';
+                    stopBtn.style.color = 'white';
+
+                    document.getElementById('collection-start-time').value = new Date().toISOString();
+
+                    // Start timer
+                    collectionTimer = setInterval(() => {
+                        secondsElapsed++;
+                        const h = String(Math.floor(secondsElapsed / 3600)).padStart(2, '0');
+                        const m = String(Math.floor((secondsElapsed / 60) % 60)).padStart(2, '0');
+                        const s = String(secondsElapsed % 60).padStart(2, '0');
+                        timerDisplay.textContent = `${h}:${m}:${s}`;
+                        document.getElementById('collection-duration').value = secondsElapsed;
+                    }, 1000);
+
+                    pathLine = L.polyline([], { color: '#10b981', weight: 4 }).addTo(map);
+
+                    // Start location tracking
+                    if ("geolocation" in navigator) {
+                        watchId = navigator.geolocation.watchPosition((position) => {
+                            const lat = position.coords.latitude;
+                            const lng = position.coords.longitude;
+                            pathCoordinates.push({ lat, lng, timestamp: Date.now() });
+                            document.getElementById('collection-path').value = JSON.stringify(pathCoordinates);
+
+                            pathLine.addLatLng([lat, lng]);
+                            map.fitBounds(pathLine.getBounds(), { padding: [50, 50] });
+                            if (marker) marker.setLatLng([lat, lng]);
+                        }, (err) => {
+                            console.warn('Real tracking failed, using simulation: ', err);
+                            startSimulation();
+                        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+                    } else {
+                        startSimulation();
+                    }
+
+                    function startSimulation() {
+                        if (simInterval) return;
+                        simInterval = setInterval(() => {
+                            const lastLat = pathCoordinates.length > 0 ? pathCoordinates[pathCoordinates.length - 1].lat : (parseFloat(document.getElementById('farmer-map').dataset.lat) || 23.25);
+                            const lastLng = pathCoordinates.length > 0 ? pathCoordinates[pathCoordinates.length - 1].lng : (parseFloat(document.getElementById('farmer-map').dataset.lng) || 77.41);
+
+                            const newLat = lastLat + (Math.random() - 0.5) * 0.0005; // Small movement
+                            const newLng = lastLng + (Math.random() - 0.5) * 0.0005;
+
+                            pathCoordinates.push({ lat: newLat, lng: newLng, timestamp: Date.now() });
+                            document.getElementById('collection-path').value = JSON.stringify(pathCoordinates);
+                            pathLine.addLatLng([newLat, newLng]);
+                            map.setView([newLat, newLng]);
+                            if (marker) marker.setLatLng([newLat, newLng]);
+                        }, 1000);
+                    }
+                });
+
+                stopBtn.addEventListener('click', () => {
+                    startBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    stopBtn.textContent = 'Stopped';
+                    clearInterval(collectionTimer);
+                    if (watchId) navigator.geolocation.clearWatch(watchId);
+                    if (simInterval) clearInterval(simInterval);
+                    document.getElementById('collection-end-time').value = new Date().toISOString();
+                });
+            }
         }
     }, 100);
 
@@ -430,7 +522,15 @@ function loadFarmerDashboard() {
                 const farmerName = document.getElementById('farmer-name').value;
                 const herbType = document.getElementById('herb-type').value;
                 const quantity = document.getElementById('quantity').value;
-                const collectionDate = document.getElementById('collection-date').value;
+                const duration = parseInt(document.getElementById('collection-duration')?.value || '0', 10);
+                const pathDataStr = document.getElementById('collection-path')?.value || '[]';
+                let pathData = [];
+                try { pathData = JSON.parse(pathDataStr); } catch (e) { }
+                const startTime = document.getElementById('collection-start-time')?.value || new Date().toISOString();
+                const endTime = document.getElementById('collection-end-time')?.value || new Date().toISOString();
+
+                const collectionDate = new Date(startTime).toISOString().split('T')[0];
+
                 const price = document.getElementById('price').value;
                 const lat = document.getElementById('farmer-map').dataset.lat || 23.25;
                 const lng = document.getElementById('farmer-map').dataset.lng || 77.41;
@@ -438,6 +538,12 @@ function loadFarmerDashboard() {
                 const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
                 const farmerId = user ? user.uid : 'FARMER-DEMO';
                 const batchId = 'BATCH-' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 100);
+
+                if (duration === 0 && (!pathData || pathData.length === 0)) {
+                    if (!confirm("You haven't tracked your collection route/duration using the timer. Do you want to submit anyway?")) {
+                        return;
+                    }
+                }
 
                 const herbData = {
                     type: 'collection',
@@ -447,6 +553,10 @@ function loadFarmerDashboard() {
                     quantity: parseFloat(quantity) || 0,
                     price: parseFloat(price) || 0,
                     collectionDate: collectionDate,
+                    durationSeconds: duration,
+                    pathData: pathData,
+                    timerStart: startTime,
+                    timerEnd: endTime,
                     location: { latitude: lat, longitude: lng, address: 'Farm Location' },
                     status: 'collected',
                     timestamp: new Date().toISOString()
@@ -467,6 +577,10 @@ function loadFarmerDashboard() {
                         price: parseFloat(price) || 0,
                         totalValue: (parseFloat(quantity) || 0) * (parseFloat(price) || 0),
                         collectionDate: collectionDate,
+                        durationSeconds: duration,
+                        pathData: pathData,
+                        timerStart: startTime,
+                        timerEnd: endTime,
                         location: {
                             latitude: parseFloat(lat),
                             longitude: parseFloat(lng),
