@@ -3,36 +3,73 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('global-search');
+    const searchIcon = document.querySelector('.search-icon'); // The "search button"
 
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim();
+        // Core search logic grouped into a function
+        const performSearch = () => {
+            const query = searchInput.value.toLowerCase().trim();
 
-            if (query.length > 2) {
-                // In a real app, you would debounce this call and filter actual data here.
-                // For demonstration, we'll just log it and potentially filter visible cards.
+            // Typical item containers across all dashboards
+            const searchSelectors = [
+                '.herb-card',
+                '.batch-card',
+                '.market-record-card',
+                '.product-card',
+                '.supplier-card',
+                '.transaction-card',
+                '.consumer-timeline-item',
+                'table tbody tr'
+            ];
 
-                console.log("Searching for:", query);
+            // Only search inside dashboard elements if available, else entire document
+            const searchContext = document.getElementById('dashboard-container') || document;
+            const elements = searchContext.querySelectorAll(searchSelectors.join(', '));
 
-                const cards = document.querySelectorAll('.herb-card');
-                let foundAny = false;
+            if (query.length > 0) {
+                elements.forEach(el => {
+                    // Skip elements that contain a <form> (usually dashboard input areas)
+                    if (el.querySelector('form')) {
+                        return;
+                    }
 
-                cards.forEach(card => {
-                    if (card.textContent.toLowerCase().includes(query)) {
-                        card.style.display = 'block';
-                        foundAny = true;
+                    // For table rows, skip headers just in case
+                    if (el.tagName === 'TR' && el.querySelector('th')) {
+                        return;
+                    }
+
+                    // Check if the text matches
+                    if (el.textContent.toLowerCase().includes(query)) {
+                        el.style.display = ''; // revert to CSS default
                     } else {
-                        // Don't hide the main dashboard forms, just the lists
-                        if (!card.querySelector('form')) {
-                            card.style.display = 'none';
-                        }
+                        el.style.display = 'none'; // hide it
                     }
                 });
-            } else if (query.length === 0) {
-                // Reset search
-                const cards = document.querySelectorAll('.herb-card');
-                cards.forEach(card => card.style.display = 'block');
+            } else {
+                // Reset search when input is empty
+                elements.forEach(el => {
+                    if (el.querySelector('form')) return;
+                    if (el.tagName === 'TR' && el.querySelector('th')) return;
+
+                    el.style.display = ''; // Reset to original display
+                });
+            }
+        };
+
+        // Trigger on input
+        searchInput.addEventListener('input', performSearch);
+
+        // Trigger on enter key
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
             }
         });
+
+        // Trigger when clicking the search icon
+        if (searchIcon) {
+            searchIcon.style.cursor = 'pointer';
+            searchIcon.addEventListener('click', performSearch);
+        }
     }
 });
