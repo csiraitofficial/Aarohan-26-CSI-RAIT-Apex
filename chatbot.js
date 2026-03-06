@@ -1,228 +1,351 @@
-// AI Chatbot System
-// Provides conversational assistance for Krishi platform users
+// chatbot.js - OpenRouter AI Chatbot Integration for VaidyaChain
+// API Key: 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
 
-// Chatbot configuration
-const CHATBOT_CONFIG = {
-  name: 'Krishi Assistant',
-  version: '1.0.0',
-  maxMessages: 50,
-  typingDelay: 600
-};
+const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-// Chatbot responses database
-const CHATBOT_RESPONSES = {
-  // Greetings
-  greetings: [
-    "Hello! I'm Krishi Assistant, here to help you with herb traceability and blockchain features.",
-    "Hi there! How can I assist you with the Krishi platform today?",
-    "Welcome! I can help you with herb collection, lab testing, product creation, and more."
-  ],
-  
-  // Herb collection help
-  herbCollection: [
-    "To tag a new herb collection:\n1. Go to Farmer Dashboard\n2. Fill in the collection form\n3. Capture GPS location\n4. Submit to blockchain\n\nEach batch gets a unique ID and is permanently recorded!",
-    "Herb collection process:\n• Enter farmer name and herb type\n• Specify quantity and harvest date\n• Capture GPS coordinates\n• Submit to create blockchain record\n\nThis ensures traceability from farm to formula.",
-    "For herb collection, you'll need:\n- Farmer details\n- Herb type (Ashwagandha, Tulsi, Neem, etc.)\n- Quantity in kg\n- Harvest date\n- GPS location\n\nAll data is stored immutably on the blockchain."
-  ],
-  
-  // Lab testing help
-  labTesting: [
-    "Lab testing process:\n1. Select a batch from the dropdown\n2. Check batch details\n3. Enter test parameters\n4. Upload lab report\n5. Submit result\n\nResults are stored immutably on the blockchain.",
-    "For lab testing, you'll assess:\n• Moisture content\n• Active markers percentage\n• Pesticide residues\n• Adulterant presence\n• Heavy metal levels\n• Microbial count\n\nQuality thresholds are herb-specific.",
-    "Lab test parameters:\n• Moisture: Should be within herb-specific limits\n• Active Markers: Minimum percentage required\n• Pesticides: Should be 'None Detected'\n• Adulterants: Should be 'None Detected'\n• Heavy Metals: Should be 'Within Limits'\n• Microbial: Should be 'Within Limits'"
-  ],
-  
-  // Product creation help
-  productCreation: [
-    "To create a product:\n1. Go to Manufacturer Dashboard\n2. Check batch status (must pass lab test)\n3. Fill product details\n4. Generate QR code\n5. Product is ready for consumers to trace!",
-    "Product creation requirements:\n• Approved batch ID (must pass lab test)\n• Product name and type\n• Manufacturing and expiry dates\n• QR code generation for traceability\n\nEach product gets a unique QR code linking to its blockchain history.",
-    "Product types available:\n• Powder\n• Capsule\n• Tablet\n• Extract\n• Oil\n\nEnsure the batch has passed quality testing before creating products."
-  ],
-  
-  // Supply chain tracing help
-  supplyChain: [
-    "To trace a product:\n1. Go to Consumer Portal\n2. Enter product ID or scan QR code\n3. View complete supply chain journey\n4. See blockchain verification\n\nEvery step is transparent and verifiable!",
-    "Supply chain journey includes:\n• Herb collection (farm details, GPS location)\n• Lab testing (quality results, certificates)\n• Manufacturing (product creation, QR code)\n• All steps are recorded on the blockchain\n\nThis ensures complete transparency.",
-    "Traceability benefits:\n• Verify product authenticity\n• Check quality test results\n• View farm-to-formula journey\n• Confirm blockchain verification\n• Make informed purchasing decisions"
-  ],
-  
-  // Blockchain help
-  blockchain: [
-    "Our blockchain:\n• Records every transaction permanently\n• Uses cryptographic hashing\n• Links blocks together securely\n• Provides full transparency\n• Cannot be altered or deleted\n\nEach block contains a unique hash that links to the previous block.",
-    "Blockchain features:\n• Immutable records\n• Cryptographic security\n• Transparent transactions\n• Timestamp verification\n• Tamper-proof history\n\nEvery herb batch, test result, and product is recorded.",
-    "Blockchain verification:\n• Each transaction gets a unique hash\n• Blocks are linked chronologically\n• Data cannot be modified\n• Full audit trail available\n• Cryptographic proof of integrity"
-  ],
-  
-  // Smart contracts help
-  smartContracts: [
-    "Smart contracts automate processes:\n• Payment contracts auto-pay farmers when quality passes\n• Insurance contracts auto-file claims when quality fails\n• Quality contracts set herb-specific thresholds\n• Supply chain contracts track reputation scores",
-    "Payment automation:\n• When lab tests pass, payments release automatically\n• No middlemen required\n• Transparent payment tracking\n• Instant farmer compensation\n• Blockchain-verified transactions",
-    "Quality assurance:\n• Herb-specific quality thresholds\n• Automatic pass/fail determination\n• Smart contract execution\n• Quality-based payment triggers\n• Immutable quality records"
-  ],
-  
-  // General help
-  general: [
-    "I can help you with:\n• Herb collection process\n• Lab testing procedures\n• Product creation workflow\n• Supply chain tracing\n• Blockchain basics\n• Smart contract features\n\nWhat would you like to know more about?",
-    "Available dashboards:\n• Farmer Dashboard - Tag herb collections\n• Lab Dashboard - Quality testing\n• Manufacturer Dashboard - Product creation\n• Consumer Portal - Product tracing\n• Admin Dashboard - System management\n• Blockchain Explorer - View chain data",
-    "Platform features:\n• Role-based access (Farmer, Lab, Manufacturer, Consumer, Admin)\n• Multilingual support (English, Hindi, Gujarati, Marathi)\n• PWA offline capability\n• QR code traceability\n• Blockchain verification\n• Smart contract automation"
-  ],
-  
-  // Error responses
-  errors: [
-    "I'm still learning about Krishi. For now, I can help with:\n• Herb collection process\n• Lab testing\n• Product creation\n• Supply chain tracing\n• Blockchain basics\n\nPlease ask about one of these topics!",
-    "I don't have information about that yet. Try asking about:\n• How to tag herb collections\n• Lab testing procedures\n• Creating products\n• Tracing supply chain\n• Blockchain features",
-    "Let me help you with something I know:\n• Herb collection workflow\n• Quality testing process\n• Product creation steps\n• Supply chain transparency\n• Blockchain verification"
-  ]
-};
+// System prompt for the chatbot
+const SYSTEM_PROMPT = `You are a helpful AI assistant for VaidyaChain - a blockchain-based Ayurvedic herb traceability system. 
 
-// Chatbot state
-let chatbotState = {
-  messages: [],
-  isTyping: false,
-  isActive: false
-};
+Your role is to help users with:
+1. Understanding how the blockchain traceability system works
+2. Guiding farmers through herb collection and registration
+3. Explaining the quality testing process at laboratories
+4. Helping manufacturers with product creation and QR code generation
+5. Assisting consumers in tracing product authenticity
+6. Answering questions about blockchain technology in simple terms
+7. Providing information about insurance, sustainability, and DNA banking features
+
+Key features of VaidyaChain:
+- Blockchain-powered tracking from farm to consumer
+- QR code scanning for product verification
+- Quality assurance through lab testing
+- Multi-stakeholder platform (farmers, labs, manufacturers, consumers)
+- Sustainability monitoring
+- Crop insurance with parametric triggers
+- DNA banking for herb preservation
+
+Always be friendly, helpful, and provide clear explanations. If you don't know something, admit it and suggest where the user might find more information.
+
+Language: Respond in the same language as the user's query. If the user writes in Hindi or Gujarati, respond in Hindi or Gujarati respectively.`;
+
+let chatHistory = [];
+let isChatOpen = false;
 
 // Initialize chatbot
-function initChatbot() {
-  // Add welcome message
-  addBotMessage("Hello! I'm Krishi Assistant. How can I help you with herb traceability and blockchain features today?");
+document.addEventListener('DOMContentLoaded', function() {
+    createChatbotUI();
+    setupChatbotEventListeners();
+});
+
+// Create the chatbot UI
+function createChatbotUI() {
+    const chatbotContainer = document.createElement('div');
+    chatbotContainer.id = 'chatbot-container';
+    chatbotContainer.className = 'chatbot-container';
+    chatbotContainer.innerHTML = `
+        <!-- Chatbot Toggle Button -->
+        <button id="chatbot-toggle" class="chatbot-toggle" title="Chat with AI Assistant">
+            <i class="ph ph-robot"></i>
+            <span class="chatbot-badge">AI</span>
+        </button>
+        
+        <!-- Chatbot Window -->
+        <div id="chatbot-window" class="chatbot-window">
+            <div class="chatbot-header">
+                <div class="chatbot-header-info">
+                    <div class="chatbot-avatar">
+                        <i class="ph ph-robot"></i>
+                    </div>
+                    <div>
+                        <h3 data-i18n="chatbotTitle">VaidyaChain Assistant</h3>
+                        <span class="chatbot-status">
+                            <span class="status-dot"></span>
+                            Online
+                        </span>
+                    </div>
+                </div>
+                <button id="chatbot-close" class="chatbot-close">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            
+            <div id="chatbot-messages" class="chatbot-messages">
+                <div class="chatbot-message bot-message">
+                    <div class="message-avatar">
+                        <i class="ph ph-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <p data-i18n="chatbotWelcome">Hello! I'm your VaidyaChain assistant. How can I help you today?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chatbot-input-area">
+                <input 
+                    type="text" 
+                    id="chatbot-input" 
+                    data-i18n-placeholder="chatbotPlaceholder"
+                    placeholder="Ask me anything about VaidyaChain..."
+                >
+                <button id="chatbot-send" class="chatbot-send">
+                    <i class="ph ph-paper-plane-tilt"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(chatbotContainer);
+}
+
+// Setup event listeners
+function setupChatbotEventListeners() {
+    const toggle = document.getElementById('chatbot-toggle');
+    const close = document.getElementById('chatbot-close');
+    const sendBtn = document.getElementById('chatbot-send');
+    const input = document.getElementById('chatbot-input');
+    const window = document.getElementById('chatbot-window');
+    
+    if (toggle) {
+        toggle.addEventListener('click', toggleChatbot);
+    }
+    
+    if (close) {
+        close.addEventListener('click', closeChatbot);
+    }
+    
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendMessage);
+    }
+    
+    if (input) {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+}
+
+// Toggle chatbot visibility
+function toggleChatbot() {
+    const window = document.getElementById('chatbot-window');
+    const toggle = document.getElementById('chatbot-toggle');
+    
+    isChatOpen = !isChatOpen;
+    
+    if (isChatOpen) {
+        window.classList.add('chatbot-open');
+        toggle.classList.add('chatbot-hidden');
+    } else {
+        window.classList.remove('chatbot-open');
+        toggle.classList.remove('chatbot-hidden');
+    }
+}
+
+// Close chatbot
+function closeChatbot() {
+    const window = document.getElementById('chatbot-window');
+    const toggle = document.getElementById('chatbot-toggle');
+    
+    isChatOpen = false;
+    window.classList.remove('chatbot-open');
+    toggle.classList.remove('chatbot-hidden');
+}
+
+// Send message to OpenRouter
+async function sendMessage() {
+    const input = document.getElementById('chatbot-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to UI
+    addMessage(message, 'user');
+    input.value = '';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    try {
+        // Send to OpenRouter API
+        const response = await getAIResponse(message);
+        
+        // Remove typing indicator
+        removeTypingIndicator();
+        
+        // Add bot response
+        addMessage(response, 'bot');
+    } catch (error) {
+        removeTypingIndicator();
+        console.error('Chatbot error:', error);
+        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+    }
+}
+
+// Get AI response from OpenRouter
+async function getAIResponse(userMessage) {
+    // Add current message to history
+    chatHistory.push({
+        role: 'user',
+        content: userMessage
+    });
+    
+    // Keep only last 10 messages
+    if (chatHistory.length > 10) {
+        chatHistory = chatHistory.slice(-10);
+    }
+    
+    try {
+        const response = await fetch(OPENROUTER_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'VaidyaChain AI Assistant'
+            },
+            body: JSON.stringify({
+                model: 'openai/gpt-3.5-turbo',
+                messages: [
+                    { role: 'system', content: SYSTEM_PROMPT },
+                    ...chatHistory
+                ],
+                temperature: 0.7,
+                max_tokens: 500
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.choices && data.choices[0]) {
+            const botResponse = data.choices[0].message.content;
+            
+            // Add bot response to history
+            chatHistory.push({
+                role: 'assistant',
+                content: botResponse
+            });
+            
+            return botResponse;
+        } else {
+            throw new Error('Invalid response format');
+        }
+    } catch (error) {
+        console.error('OpenRouter API error:', error);
+        
+        // Fallback to a simple response if API fails
+        return getFallbackResponse(userMessage);
+    }
+}
+
+// Fallback responses when API is unavailable
+function getFallbackResponse(message) {
+    const lowerMessage = message.toLowerCase();
+    
+    // Check for common questions
+    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('namaste')) {
+        return "Hello! Namaste! Welcome to VaidyaChain. How can I help you today?";
+    }
+    
+    if (lowerMessage.includes('trace') || lowerMessage.includes('track')) {
+        return "VaidyaChain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
+    }
+    
+    if (lowerMessage.includes('farmer') || lowerMessage.includes('farm')) {
+        return "As a farmer, you can use the Farmer Dashboard to register your herb collections with GPS location. Simply select the herb type, enter the quantity, and the system will create a blockchain record with a unique batch ID.";
+    }
+    
+    if (lowerMessage.includes('lab') || lowerMessage.includes('test') || lowerMessage.includes('quality')) {
+        return "The Testing Lab dashboard allows quality testers to verify herb batches. They can check moisture content, pesticides, heavy metals, and microbial count. Approved batches can then be used for manufacturing.";
+    }
+    
+    if (lowerMessage.includes('manufacturer') || lowerMessage.includes('product')) {
+        return "Manufacturers can create products from approved herb batches. After entering batch details and product information, the system generates a unique QR code that consumers can scan to verify authenticity.";
+    }
+    
+    if (lowerMessage.includes('consumer') || lowerMessage.includes('verify')) {
+        return "Consumers can verify product authenticity by scanning the QR code or entering the Product ID in the Consumer Portal. This shows the complete journey from farm collection through lab testing to manufacturing.";
+    }
+    
+    if (lowerMessage.includes('blockchain')) {
+        return "Blockchain technology creates an immutable, transparent record of every transaction. In VaidyaChain, each step (collection, testing, manufacturing) is recorded on the blockchain, ensuring complete traceability and trust.";
+    }
+    
+    if (lowerMessage.includes('insurance')) {
+        return "VaidyaChain offers blockchain-based crop insurance with automatic claim processing. Parametric triggers like weather conditions or quality test failures can automatically initiate claim approvals.";
+    }
+    
+    if (lowerMessage.includes('sustainability')) {
+        return "The Sustainability Dashboard tracks environmental impact metrics like herbs tracked and quality pass rates. It also shows source locations on a map to monitor sustainable sourcing practices.";
+    }
+    
+    if (lowerMessage.includes('dna') || lowerMessage.includes('genetic')) {
+        return "DNA Banking allows preservation of Ayurvedic herb genetics for future regeneration. DNA samples can be stored indefinitely and used to regenerate rare or endangered herb species.";
+    }
+    
+    return "Thank you for your question! For detailed information, please explore the different dashboards in VaidyaChain. Each section - Farmer, Lab, Manufacturer, and Consumer - has specific tools and features to help you.";
 }
 
 // Add message to chat
-function addMessage(text, sender) {
-  const messagesContainer = document.getElementById('chatbot-messages');
-  if (!messagesContainer) return;
-  
-  const messageDiv = document.createElement('div');
-  messageDiv.className = `chat-message ${sender}`;
-  messageDiv.innerHTML = `
-    <div class="message-bubble">
-      <span class="message-text">${text}</span>
-      <span class="message-time">${formatTime(new Date())}</span>
-    </div>
-  `;
-  
-  messagesContainer.appendChild(messageDiv);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  
-  // Store message
-  chatbotState.messages.push({ text, sender, timestamp: Date.now() });
-  
-  // Limit messages
-  if (chatbotState.messages.length > CHATBOT_CONFIG.maxMessages) {
-    chatbotState.messages.shift();
-    // Remove oldest message from DOM
-    const oldestMessage = messagesContainer.querySelector('.chat-message');
-    if (oldestMessage) oldestMessage.remove();
-  }
+function addMessage(content, sender) {
+    const messagesContainer = document.getElementById('chatbot-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chatbot-message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
+    
+    const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
+    
+    messageDiv.innerHTML = `
+        ${sender === 'bot' ? `
+            <div class="message-avatar">
+                <i class="ph ph-robot"></i>
+            </div>
+        ` : ''}
+        <div class="message-content">
+            <p>${content}</p>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Add bot message with typing effect
-function addBotMessage(text) {
-  chatbotState.isTyping = true;
-  
-  // Show typing indicator
-  const messagesContainer = document.getElementById('chatbot-messages');
-  const typingIndicator = document.createElement('div');
-  typingIndicator.className = 'chat-message bot typing-indicator';
-  typingIndicator.innerHTML = `
-    <div class="message-bubble">
-      <span class="typing-dots">
-        <span></span><span></span><span></span>
-      </span>
-    </div>
-  `;
-  messagesContainer.appendChild(typingIndicator);
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  
-  // Remove typing indicator and show message after delay
-  setTimeout(() => {
-    typingIndicator.remove();
-    addMessage(text, 'bot');
-    chatbotState.isTyping = false;
-  }, CHATBOT_CONFIG.typingDelay);
+// Show typing indicator
+function showTypingIndicator() {
+    const messagesContainer = document.getElementById('chatbot-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'chatbot-message bot-message';
+    typingDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="ph ph-robot"></i>
+        </div>
+        <div class="message-content typing">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-// Process user message
-function processUserMessage(message) {
-  const msg = message.toLowerCase().trim();
-  
-  // Add user message
-  addMessage(message, 'user');
-  
-  // Generate response
-  const response = generateResponse(msg);
-  addBotMessage(response);
+// Remove typing indicator
+function removeTypingIndicator() {
+    const typing = document.getElementById('typing-indicator');
+    if (typing) {
+        typing.remove();
+    }
 }
 
-// Generate response based on message content
-function generateResponse(message) {
-  // Check for greetings
-  if (isGreeting(message)) {
-    return getRandomResponse(CHATBOT_RESPONSES.greetings);
-  }
-  
-  // Check for herb collection keywords
-  if (hasKeywords(message, ['collection', 'tag', 'batch', 'farmer', 'herb'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.herbCollection);
-  }
-  
-  // Check for lab testing keywords
-  if (hasKeywords(message, ['lab', 'test', 'quality', 'moisture', 'pesticide', 'certificate'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.labTesting);
-  }
-  
-  // Check for product creation keywords
-  if (hasKeywords(message, ['product', 'manufactur', 'create', 'qr', 'batch'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.productCreation);
-  }
-  
-  // Check for supply chain keywords
-  if (hasKeywords(message, ['trace', 'supply', 'chain', 'journey', 'qr', 'scan'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.supplyChain);
-  }
-  
-  // Check for blockchain keywords
-  if (hasKeywords(message, ['blockchain', 'hash', 'immutable', 'verify', 'crypto'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.blockchain);
-  }
-  
-  // Check for smart contract keywords
-  if (hasKeywords(message, ['contract', 'smart', 'payment', 'insurance', 'automat'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.smartContracts);
-  }
-  
-  // Check for general help
-  if (hasKeywords(message, ['help', 'how', 'what', 'where', 'when'])) {
-    return getRandomResponse(CHATBOT_RESPONSES.general);
-  }
-  
-  // Default response
-  return getRandomResponse(CHATBOT_RESPONSES.errors);
-}
-
-// Helper functions
-function isGreeting(message) {
-  const greetings = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening'];
-  return greetings.some(greeting => message.includes(greeting));
-}
-
-function hasKeywords(message, keywords) {
-  return keywords.some(keyword => message.includes(keyword));
-}
-
-function getRandomResponse(responses) {
-  return responses[Math.floor(Math.random() * responses.length)];
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// Export functions for global use
-window.chatbot = {
-  init: initChatbot,
-  processMessage: processUserMessage,
-  addMessage: addMessage,
-  addBotMessage: addBotMessage
-};
+// Make chatbot functions globally available
+window.toggleChatbot = toggleChatbot;
+window.closeChatbot = closeChatbot;
+window.sendMessage = sendMessage;
