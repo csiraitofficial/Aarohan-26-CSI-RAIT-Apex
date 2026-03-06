@@ -95,8 +95,11 @@ function showDashboard(type, event) {
         case 'insurance':
             loadInsuranceDashboard();
             break;
+        case 'profile-settings':
+            loadProfileSettings();
+            break;
         default:
-            container.innerHTML = '<div class="dashboard"><h2>Welcome to VaidyaChain</h2><p>Select a dashboard from the navigation menu.</p></div>';
+            container.innerHTML = '<div class="dashboard"><h2>Welcome to vaidyachain</h2><p>Select a dashboard from the navigation menu.</p></div>';
     }
 }
 
@@ -126,7 +129,8 @@ function loadFarmerDashboard() {
                 <form id="herb-collection-form">
                     <div class="form-group">
                         <label for="farmer-name">Farmer Name:</label>
-                        <input type="text" id="farmer-name" required placeholder="Enter your name">
+                        <input type="text" id="farmer-name" tabindex="-1" readonly style="background-color: var(--muted); cursor: not-allowed; font-weight: 600;">
+                        <small style="color: var(--muted-foreground)"></small>
                     </div>
                     <div class="form-group">
                         <label for="herb-type">Herb Type:</label>
@@ -169,14 +173,7 @@ function loadFarmerDashboard() {
 
             <!-- New Farmer Features Row -->
             <div class="dashboard-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
-                <!-- Weather Widget -->
-                <div class="herb-card" id="weather-widget">
-                    <h3 data-i18n="weatherAlerts">Weather Alerts</h3>
-                    <div id="weather-content" class="skeleton-container">
-                        <div class="skeleton-text"></div>
-                        <div class="skeleton-text" style="width: 80%"></div>
-                    </div>
-                </div>
+              
 
                 <!-- Price Discovery Widget -->
                 <div class="herb-card" id="price-discovery">
@@ -279,7 +276,7 @@ function loadFarmerDashboard() {
                 const herbDisplayName = herbType.charAt(0).toUpperCase() + herbType.slice(1);
                 const totalValue = (parseFloat(price) * parseFloat(quantity)).toLocaleString('en-IN');
                 const successMsg = [
-                    `✅ Batch successfully registered on VaidyaChain Blockchain!`,
+                    `✅ Batch successfully registered on vaidyachain Blockchain!`,
                     ``,
                     `📦 Batch ID   : ${batchId}`,
                     `👨‍🌾 Farmer     : ${farmerName}`,
@@ -315,6 +312,15 @@ function loadFarmerDashboard() {
     // Trigger i18n update for the dynamic content
     if (window.i18next && typeof updateTranslations === 'function') {
         updateTranslations();
+    }
+
+    // Auto-populate farmer name
+    const farmerNameInput = document.getElementById('farmer-name');
+    if (farmerNameInput) {
+        const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+        if (user) {
+            farmerNameInput.value = user.displayName || user.email;
+        }
     }
 }
 
@@ -549,7 +555,7 @@ function loadLabDashboard() {
                         <textarea id="lab-notes" rows="3"></textarea>
                     </div>
                     <button type="submit" id="verify-btn" disabled class="auth-btn">
-                        <i class="ph ph-shield-check"></i> Verify and Sign to Blockchain
+                        <i class="ph ph-shield-check"></i> Submit
                     </button>
                     <button type="button" id="generate-pdf-btn" class="action-btn outline" style="margin-top: 10px; width: 100%; display: none;">
                         <i class="ph ph-file-pdf"></i> <span data-i18n="generatePDF">Generate PDF Report</span>
@@ -757,7 +763,7 @@ function generateTestCertificate(testData) {
     // Add Logo or Header
     doc.setFontSize(22);
     doc.setTextColor(5, 150, 105);
-    doc.text("VaidyaChain Test Certificate", 105, 20, { align: "center" });
+    doc.text("vaidyachain Test Certificate", 105, 20, { align: "center" });
 
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -810,9 +816,9 @@ function generateTestCertificate(testData) {
     // Footer
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text("This is a computer generated certificate secured by VaidyaChain Blockchain.", 105, 280, { align: "center" });
+    doc.text("This is a computer generated certificate secured by vaidyachain Blockchain.", 105, 280, { align: "center" });
 
-    doc.save(`VaidyaChain_Certificate_${testData.batchId}.pdf`);
+    doc.save(`vaidyachain_Certificate_${testData.batchId}.pdf`);
 }
 
 function showBatchComparison() {
@@ -945,9 +951,7 @@ function loadManufacturerDashboard() {
                 <button class="action-btn" onclick="showDashboard('recent-manufactured')">
                     <i class="ph ph-package"></i> View Recent Products
                 </button>
-                <button class="action-btn" style="background: var(--accent)" onclick="toggleSection('supplier-management-section')">
-                    <i class="ph ph-users-three"></i> <span data-i18n="supplierManagement">Supplier Management</span>
-                </button>
+                
                 <button class="action-btn" style="background: var(--primary)" onclick="toggleSection('manufacturer-analytics-section'); if(document.getElementById('manufacturer-analytics-section').style.display !== 'none') loadManufacturerAnalytics();">
                     <i class="ph ph-chart-line-up"></i> <span data-i18n="analyticsDashboard">Production Analytics</span>
                 </button>
@@ -1773,66 +1777,181 @@ function initSustainabilityMap() {
 // Waste Management Dashboard
 function loadWasteManagementDashboard() {
     const container = document.getElementById('dashboard-container');
+    const user = typeof getCurrentUser === 'function' ? getCurrentUser() : { uid: 'demo-farmer' };
+
+    // Get incentive points from localStorage
+    const extraData = JSON.parse(localStorage.getItem(`vaidyachain_profile_extra_${user.uid}`) || '{}');
+    const ecoPoints = extraData.ecoPoints || 0;
+
     container.innerHTML = `
-        <div class="dashboard">
-            <h2>Waste Management Dashboard</h2>
-            <div class="herb-card">
-                <h3>Waste-to-Product Conversion</h3>
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-value" id="total-waste">0</div>
-                        <div class="metric-label">Waste Recorded (kg)</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value" id="carbon-saved">0</div>
-                        <div class="metric-label">Carbon Saved (kg CO₂)</div>
-                    </div>
-                </div>
+        <div class="dashboard shadcn-style">
+            <div class="page-header">
+                <h1>Waste Management & Sustainability</h1>
+                <p class="page-description">Convert agricultural waste into valuable bio-products while earning rewards.</p>
             </div>
-            <div class="herb-card">
-                <h3>Record Agricultural Waste</h3>
-                <form id="waste-collection-form">
-                    <div class="form-group">
-                        <label for="waste-source">Waste Source:</label>
-                        <select id="waste-source" required>
-                            <option value="">Select Source</option>
-                            <option value="corn-leaves">Corn Leaves</option>
-                            <option value="corn-stems">Corn Stems</option>
-                            <option value="wheat-straw">Wheat Straw</option>
-                        </select>
+
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-waste">0</div>
+                    <div class="stat-label">Total Waste (kg)</div>
+                </div>
+            
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <!-- Record Waste Form -->
+                <div class="herb-card">
+                    <div class="card-header">
+                        <i class="ph ph-recycle" style="font-size: 1.5rem; color: var(--primary);"></i>
+                        <h3 style="margin: 0;">Record Agricultural Waste</h3>
                     </div>
-                    <div class="form-group">
-                        <label for="waste-quantity">Quantity (kg):</label>
-                        <input type="number" id="waste-quantity" min="1" required>
-                    </div>
-                    <button type="submit">Record Waste</button>
-                </form>
+                    <p style="color: var(--muted-foreground); font-size: 0.85rem; margin-bottom: 1.5rem;">
+                        Input your farm waste to earn Eco-Points and track environmental impact.
+                    </p>
+                    <form id="enhanced-waste-form">
+                        <div class="form-group">
+                            <label>Waste Source</label>
+                            <select id="waste-source" required>
+                                <option value="">Select Category</option>
+                                <option value="Corn Stalks">Corn Stalks / Leaves</option>
+                                <option value="Wheat Straw">Wheat Straw</option>
+                                <option value="Rice Husk">Rice Husk</option>
+                                <option value="Herb Residue">Herb Extraction Residue</option>
+                                <option value="Other">Other Organic Waste</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Approximate Quantity (kg)</label>
+                            <div style="position: relative;">
+                                <input type="number" id="waste-quantity" min="1" required placeholder="0.00">
+                                <span style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted-foreground); font-size: 0.8rem;">KG</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="action-btn" style="width: 100%; margin-top: 1rem;">
+                            <i class="ph ph-plus-circle"></i> Log Waste & Earn Points
+                        </button>
+                    </form>
+                </div>
+
+               
+            </div>
+
+            <!-- Impact Summary -->
+            <div class="herb-card mt-8">
+                <h3>Environmental Impact History</h3>
+                <div id="waste-history-list" style="margin-top: 1rem;">
+                   <p style="text-align: center; color: var(--muted-foreground); padding: 2rem;">No waste logs recorded the season.</p>
+                </div>
             </div>
         </div>
     `;
 
-    document.getElementById('waste-collection-form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const wasteSource = document.getElementById('waste-source').value;
-        const wasteQuantity = document.getElementById('waste-quantity').value;
-        const wasteBatchId = 'WASTE-' + Date.now();
+    // Attach Event Listeners
+    const wasteForm = document.getElementById('enhanced-waste-form');
+    if (wasteForm) {
+        wasteForm.addEventListener('submit', function (e) {
+            e.preventDefault();
 
-        const wasteData = {
-            type: 'waste-collection',
-            wasteSource: wasteSource,
-            quantity: wasteQuantity,
-            wasteBatchId: wasteBatchId,
-            status: 'collected',
-            availableForConversion: true
-        };
+            const source = document.getElementById('waste-source').value;
+            const quantity = parseFloat(document.getElementById('waste-quantity').value);
+            const batchId = 'WST-' + Date.now().toString().slice(-6);
 
-        addHerbTransaction(wasteData);
-        alert(`Waste recorded! Batch ID: ${wasteBatchId}`);
-        this.reset();
-        updateWasteMetrics();
-    });
+            // Calculate points: 1 per 10kg
+            const earnedPoints = Math.floor(quantity / 10);
+
+            const wasteData = {
+                type: 'waste-collection',
+                wasteSource: source,
+                quantity: quantity,
+                wasteBatchId: batchId,
+                pointsEarned: earnedPoints,
+                status: 'collected',
+                timestamp: new Date().toISOString()
+            };
+
+            // Update Blockchain
+            addHerbTransaction(wasteData);
+
+            // Update Local User Points
+            if (user) {
+                const extra = JSON.parse(localStorage.getItem(`vaidyachain_profile_extra_${user.uid}`) || '{}');
+                extra.ecoPoints = (extra.ecoPoints || 0) + earnedPoints;
+                localStorage.setItem(`vaidyachain_profile_extra_${user.uid}`, JSON.stringify(extra));
+            }
+
+            if (window.showNotification) {
+                window.showNotification(`Successfully logged ${quantity}kg ${source}. Earned ${earnedPoints} Eco-Points!`, 'success');
+            }
+
+            this.reset();
+            loadWasteManagementDashboard(); // Full refresh for simple UI update
+        });
+    }
 
     updateWasteMetrics();
+    renderRecoveryList();
+    renderWasteHistory();
+    updateSidebarActiveState('waste-management');
+}
+
+function renderRecoveryList() {
+    const list = document.getElementById('active-recovery-list');
+    if (!list) return;
+
+    const dummyRecovery = [
+        { type: 'Bio-Fertilizer', source: 'Wheat Straw', progress: 65, daysLeft: 4 },
+        { type: 'Bio-Pesticide', source: 'Herb Residue', progress: 30, daysLeft: 12 }
+    ];
+
+    list.innerHTML = dummyRecovery.map(item => `
+        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-weight: 600; font-size: 0.9rem;">${item.type}</span>
+                <span style="font-size: 0.75rem; color: var(--muted-foreground);">${item.daysLeft} days left</span>
+            </div>
+            <div style="width: 100%; height: 6px; background: var(--muted); border-radius: 99px; overflow: hidden;">
+                <div style="width: ${item.progress}%; height: 100%; background: var(--primary);"></div>
+            </div>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground);">
+                Source: ${item.source}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderWasteHistory() {
+    const list = document.getElementById('waste-history-list');
+    if (!list) return;
+
+    const allTransactions = getAllHerbTransactions();
+    const wasteLogs = allTransactions.filter(tx => tx.data.type === 'waste-collection').reverse();
+
+    if (wasteLogs.length > 0) {
+        list.innerHTML = `
+            <table class="w-full">
+                <thead>
+                    <tr>
+                        <th>Batch ID</th>
+                        <th>Source</th>
+                        <th>Quantity</th>
+                        <th>Eco-Points</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${wasteLogs.map(log => `
+                        <tr>
+                            <td><span class="monospace-small">${log.data.wasteBatchId}</span></td>
+                            <td>${log.data.wasteSource}</td>
+                            <td>${log.data.quantity} kg</td>
+                            <td style="color: #854d0e; font-weight: 600;">+${log.data.pointsEarned || 0}</td>
+                            <td>${new Date(log.data.timestamp).toLocaleDateString()}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
 }
 
 function updateWasteMetrics() {
@@ -1864,7 +1983,7 @@ function loadConsumerPortal() {
             <div class="herb-card" style="text-align: center; background: linear-gradient(135deg, var(--primary) 0%, var(--herb-green-dark) 100%); color: white;">
                 <i class="ph ph-qr-code" style="font-size: 4rem;"></i>
                 <h3 style="color: white; margin-top: 1rem;">Verify Your Product</h3>
-                <p style="opacity: 0.9; margin-bottom: 1.5rem;">Scan the QR code on your VaidyaChain certified product to see its complete journey.</p>
+                <p style="opacity: 0.9; margin-bottom: 1.5rem;">Scan the QR code on your vaidyachain certified product to see its complete journey.</p>
                 <button class="auth-btn" style="background: white; color: var(--primary); max-width: 300px; margin: 0 auto;" onclick="startQRScanner()">
                     <i class="ph ph-camera"></i> Start Scanner
                 </button>
@@ -1943,7 +2062,7 @@ function loadConsumerVisuals() {
         if (mapEl && window.L && !mapEl._leaflet_id) {
             const map = L.map('consumer-map').setView([23.2599, 77.4126], 5);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            L.marker([23.2599, 77.4126]).addTo(map).bindPopup('VaidyaChain Certified Store - Bhopal');
+            L.marker([23.2599, 77.4126]).addTo(map).bindPopup('vaidyachain Certified Store - Bhopal');
         }
     }, 500);
 }
@@ -2017,7 +2136,7 @@ function renderProductTraceability(productId) {
                             <h4>🔬 Quality Certification</h4>
                             <small>${labTest ? 'Jan 20, 2026' : 'Pending'}</small>
                         </div>
-                        <p><strong>Lab:</strong> ${labTest ? labTest.data.lab.name : 'VaidyaChain Central Lab'}</p>
+                        <p><strong>Lab:</strong> ${labTest ? labTest.data.lab.name : 'vaidyachain Central Lab'}</p>
                         <p><strong>Purity:</strong> ${labTest ? '98.4%' : 'N/A'}</p>
                         <p><strong>Result:</strong> <span class="status-badge status-success">PASSED</span></p>
                     </div>
@@ -2040,7 +2159,7 @@ function renderProductTraceability(productId) {
             
             <div class="herb-card" style="margin-top: 2rem; background: #f8fafc; border: 1px solid var(--border);">
                  <p style="font-size: 0.9rem; color: var(--muted-foreground); text-align: center;">
-                    <i class="ph ph-shield-check"></i> This data is cryptographically signed and stored on the VaidyaChain Blockchain.
+                    <i class="ph ph-shield-check"></i> This data is cryptographically signed and stored on the vaidyachain Blockchain.
                  </p>
             </div>
         </div>
@@ -2324,7 +2443,7 @@ async function startDNASequencing(batchId) {
     tag.textContent = "VERIFIED PURE";
     tag.className = "dna-purity-tag purity-high";
 
-    if (window.showNotification) window.showNotification("Genomic record successfully secured on VaidyaChain.", 'success');
+    if (window.showNotification) window.showNotification("Genomic record successfully secured on vaidyachain.", 'success');
 
     setTimeout(() => loadDNABankingDashboard(), 2500);
 }
@@ -2922,7 +3041,7 @@ function loadOrdersDashboard() {
     const container = document.getElementById('dashboard-container');
     container.innerHTML = `
         <div class="dashboard">
-            <h2>B2B Order Management</h2>
+            <h2>Order Management</h2>
             <div class="herb-card">
                 <h3>Create New Order</h3>
                 <form id="order-form">
@@ -3060,8 +3179,8 @@ function updateBlockchainVisualization() {
     const blockCounter = document.getElementById('block-counter');
     const transactionCounter = document.getElementById('transaction-counter');
 
-    if (blockCounter && transactionCounter && typeof vaidyaChain !== 'undefined') {
-        const totalBlocks = vaidyaChain.chain.length;
+    if (blockCounter && transactionCounter && typeof vaidyachain !== 'undefined') {
+        const totalBlocks = vaidyachain.chain.length;
         const totalTransactions = totalBlocks - 1;
         blockCounter.textContent = `Blocks: ${totalBlocks}`;
         transactionCounter.textContent = `Transactions: ${totalTransactions}`;
@@ -3153,7 +3272,7 @@ function generateTestCertificate(testData) {
     doc.rect(0, 0, 210, 40, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
-    doc.text("VaidyaChain Quality Certificate", 105, 25, { align: "center" });
+    doc.text("vaidyachain Quality Certificate", 105, 25, { align: "center" });
 
     // Body
     doc.setTextColor(15, 23, 42);
@@ -3172,7 +3291,7 @@ function generateTestCertificate(testData) {
     doc.text("BLOCKCHAIN", 165, 80, { align: "center" });
     doc.text("VERIFIED", 165, 90, { align: "center" });
 
-    doc.save(`VaidyaChain_Certificate_${testData.batchId}.pdf`);
+    doc.save(`vaidyachain_Certificate_${testData.batchId}.pdf`);
 }
 
 function showBatchComparison() {
@@ -3206,3 +3325,228 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('production-trends-chart')) loadManufacturerAnalytics();
     if (document.getElementById('spectroscopy-content')) loadLabVisualizations();
 });
+
+// Profile Settings Page
+function loadProfileSettings() {
+    const container = document.getElementById('dashboard-container');
+    const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    const role = typeof getCurrentUserRole === 'function' ? getCurrentUserRole() : 'consumer';
+
+    if (!user) {
+        container.innerHTML = '<div class="dashboard"><h2>Access Denied</h2><p>Please log in to view your profile settings.</p></div>';
+        return;
+    }
+
+    // Get extra profile data from localStorage
+    const extraData = JSON.parse(localStorage.getItem(`vaidyachain_profile_extra_${user.uid}`) || '{}');
+    const gender = extraData.gender || 'Not specified';
+    const address = extraData.address || 'Not specified';
+    const aadharVerified = extraData.aadharVerified || false;
+    const aadharNumber = extraData.aadharNumber || '';
+
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Profile Settings</h2>
+            <div class="herb-card profile-settings-card">
+                <div class="profile-header-large">
+                    <div class="profile-photo-container-large">
+                        <img src="${user.photoURL || 'https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80'}" alt="Profile" class="profile-photo-large">
+                    </div>
+                    <div class="profile-info-main">
+                        <h3>${user.displayName || 'User'}</h3>
+                        <p class="role-badge role-${role}">${role.toUpperCase()}</p>
+                    </div>
+                </div>
+
+                <div class="profile-details-grid">
+                    <div class="profile-detail-item">
+                        <label>${role === 'farmer' ? 'Farmer Name' : 'Full Name'}</label>
+                        <div class="detail-value">${user.displayName || 'Not provided'}</div>
+                    </div>
+                    <div class="profile-detail-item">
+                        <label>Email Address</label>
+                        <div class="detail-value">${user.email}</div>
+                    </div>
+                    <div class="profile-detail-item">
+                        <label>Gender</label>
+                        <div class="detail-value" id="display-gender">${gender}</div>
+                    </div>
+                    <div class="profile-detail-item">
+                        <label>Address</label>
+                        <div class="detail-value" id="display-address">${address}</div>
+                    </div>
+                </div>
+
+                <div class="profile-actions-footer">
+                    <button class="action-btn outline" onclick="window.showEditProfileModal()">
+                        <i class="ph ph-pencil"></i> Edit Profile Details
+                    </button>
+                    <button class="action-btn outline btn-danger" onclick="handleLogout()">
+                        <i class="ph ph-sign-out"></i> Sign Out
+                    </button>
+                </div>
+            </div>
+
+            <!-- Aadhar Verification Card -->
+            <div class="herb-card mt-6">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Aadhar Card Verification</h3>
+                    ${aadharVerified ?
+            '<span class="status-badge status-success"><i class="ph ph-check-circle"></i> Verified</span>' :
+            '<span class="status-badge status-warning"><i class="ph ph-warning"></i> Unverified</span>'
+        }
+                </div>
+                
+                <div id="aadhar-verification-content" style="margin-top: 1.5rem;">
+                    ${aadharVerified ? `
+                        <div style="background: var(--muted); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border);">
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <i class="ph ph-identification-card" style="font-size: 2rem; color: var(--primary);"></i>
+                                <div>
+                                    <p style="font-weight: 600; font-size: 1.1rem;">Aadhar Verified Successfully</p>
+                                    <p style="color: var(--muted-foreground); font-size: 0.85rem;">Number: XXXX-XXXX-${aadharNumber.slice(-4)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <p style="color: var(--muted-foreground); margin-bottom: 1rem; font-size: 0.9rem;">
+                            To ensure authenticity on vaidyachain, please verify your identity using your 12-digit Aadhar number.
+                        </p>
+                        <div class="form-group">
+                            <label>12-Digit Aadhar Number</label>
+                            <input type="text" id="aadhar-input" placeholder="0000 0000 0000" maxlength="14" style="font-family: monospace; letter-spacing: 2px; font-size: 1.1rem; text-align: center;">
+                        </div>
+                        <button class="action-btn" style="width: 100%;" onclick="window.handleAadharVerification(event)">
+                            <i class="ph ph-shield-check"></i> Verify Identity
+                        </button>
+                    `}
+                </div>
+            </div>
+
+            <div class="herb-card mt-6">
+                <h3>System Preferences</h3>
+                <div class="form-group">
+                    <label>Language</label>
+                    <select onchange="if(window.setLanguage) { window.setLanguage(this.value); window.updateLanguageUI(this.value); }">
+                        <option value="en" ${localStorage.getItem('vaidyachain_language') === 'en' ? 'selected' : ''}>English</option>
+                        <option value="hi" ${localStorage.getItem('vaidyachain_language') === 'hi' ? 'selected' : ''}>Hindi</option>
+                        <option value="gu" ${localStorage.getItem('vaidyachain_language') === 'gu' ? 'selected' : ''}>Gujarati</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add Aadhar input formatting
+    const aadharInput = document.getElementById('aadhar-input');
+    if (aadharInput) {
+        aadharInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 12) value = value.slice(0, 12);
+            let formatted = '';
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) formatted += ' ';
+                formatted += value[i];
+            }
+            e.target.value = formatted;
+        });
+    }
+
+    updateSidebarActiveState('profile-settings');
+}
+
+// Global Aadhar Verification Handler
+window.handleAadharVerification = function (event) {
+    const input = document.getElementById('aadhar-input');
+    const aadharNum = input.value.replace(/\s/g, '');
+
+    if (aadharNum.length !== 12) {
+        if (window.showNotification) window.showNotification('Please enter a valid 12-digit Aadhar number.', 'error');
+        else alert('Please enter a valid 12-digit Aadhar number.');
+        return;
+    }
+
+    const btn = event ? event.target.closest('button') : null;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner" style="width: 16px; height: 16px;"></div> Verifying...';
+    }
+
+    // Simulate verification delay
+    setTimeout(() => {
+        const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+        if (user) {
+            const extraData = JSON.parse(localStorage.getItem(`vaidyachain_profile_extra_${user.uid}`) || '{}');
+            extraData.aadharVerified = true;
+            extraData.aadharNumber = aadharNum;
+            localStorage.setItem(`vaidyachain_profile_extra_${user.uid}`, JSON.stringify(extraData));
+
+            if (window.showNotification) window.showNotification('Identity verified successfully! Status updated on blockchain.', 'success');
+            loadProfileSettings(); // Refresh view
+        }
+    }, 2000);
+};
+
+// Global Edit Profile Modal Handler
+window.showEditProfileModal = function () {
+    const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    if (!user) return;
+
+    const extraData = JSON.parse(localStorage.getItem(`vaidyachain_profile_extra_${user.uid}`) || '{}');
+
+    let modal = document.getElementById('edit-profile-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'edit-profile-modal';
+        modal.className = 'modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Edit Profile Details</h3>
+                <button class="modal-close" onclick="document.getElementById('edit-profile-modal').style.display='none'">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select id="edit-gender">
+                        <option value="Male" ${extraData.gender === 'Male' ? 'selected' : ''}>Male</option>
+                        <option value="Female" ${extraData.gender === 'Female' ? 'selected' : ''}>Female</option>
+                        <option value="Other" ${extraData.gender === 'Other' ? 'selected' : ''}>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="edit-address" rows="3" placeholder="Enter your full address">${extraData.address || ''}</textarea>
+                </div>
+                <button class="action-btn" style="width: 100%; margin-top: 1rem;" onclick="saveProfileDetails()">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'flex';
+};
+
+window.saveProfileDetails = function () {
+    const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    if (!user) return;
+
+    const gender = document.getElementById('edit-gender').value;
+    const address = document.getElementById('edit-address').value;
+
+    const extraData = JSON.parse(localStorage.getItem(`vaidyachain_profile_extra_${user.uid}`) || '{}');
+    extraData.gender = gender;
+    extraData.address = address;
+
+    localStorage.setItem(`vaidyachain_profile_extra_${user.uid}`, JSON.stringify(extraData));
+
+    document.getElementById('edit-profile-modal').style.display = 'none';
+    if (window.showNotification) window.showNotification('Profile details updated successfully.', 'success');
+    loadProfileSettings(); // Refresh view
+};

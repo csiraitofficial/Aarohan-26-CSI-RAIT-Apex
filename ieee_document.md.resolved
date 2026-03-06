@@ -1,4 +1,4 @@
-# VaidyaChain: A Blockchain-Enabled Multi-Stakeholder Traceability and Governance Framework for the Ayurvedic Herb Supply Chain
+# vaidyachain: A Blockchain-Enabled Multi-Stakeholder Traceability and Governance Framework for the Ayurvedic Herb Supply Chain
 
 **IEEE Conference Paper Format**
 
@@ -13,7 +13,7 @@
 
 ## Abstract
 
-The global Ayurvedic medicine market, valued at over USD 10 billion, suffers from rampant adulteration, opaque supply chains, and absence of technologically enforced quality governance. This paper presents **VaidyaChain**, a full-stack, blockchain-powered Progressive Web Application (PWA) designed to provide end-to-end traceability of Ayurvedic medicinal herbs from farm origin to consumer verification. VaidyaChain uniquely integrates eleven role-based dashboards, client-side blockchain simulation with hash-chaining, Ethereum-style smart contracts for automated quality enforcement and parametric crop insurance, GPS-verified geospatial collection logging, spectroscopy-based lab visualization, DNA banking for endangered herb preservation, multilingual support (English, Hindi, Gujarati), AI-powered multilingual chatbot assistance, QR-code product authentication, and waste-to-value agricultural sustainability metrics — all within a zero-backend JavaScript architecture. This paper details the system architecture, novel feature set, implementation design, and its differentiated contribution to existing blockchain supply chain literature. Our evaluation demonstrates that VaidyaChain addresses critical gaps no existing open-source framework has resolved for the Ayurvedic domain.
+The global Ayurvedic medicine market, valued at over USD 10 billion, suffers from rampant adulteration, opaque supply chains, and absence of technologically enforced quality governance. This paper presents **vaidyachain**, a full-stack, blockchain-powered Progressive Web Application (PWA) designed to provide end-to-end traceability of Ayurvedic medicinal herbs from farm origin to consumer verification. vaidyachain uniquely integrates eleven role-based dashboards, client-side blockchain simulation with hash-chaining, Ethereum-style smart contracts for automated quality enforcement and parametric crop insurance, GPS-verified geospatial collection logging, spectroscopy-based lab visualization, DNA banking for endangered herb preservation, multilingual support (English, Hindi, Gujarati), AI-powered multilingual chatbot assistance, QR-code product authentication, and waste-to-value agricultural sustainability metrics — all within a zero-backend JavaScript architecture. This paper details the system architecture, novel feature set, implementation design, and its differentiated contribution to existing blockchain supply chain literature. Our evaluation demonstrates that vaidyachain addresses critical gaps no existing open-source framework has resolved for the Ayurvedic domain.
 
 **Keywords:** Blockchain, Ayurveda, Supply Chain Traceability, Smart Contracts, Parametric Insurance, DNA Banking, Progressive Web App, Multi-Stakeholder Platform
 
@@ -32,7 +32,7 @@ Blockchain technology, by virtue of its immutability, decentralization, and cryp
 5. **Parametric smart contract insurance** that automates payout for crop/quality losses
 6. **Genetic preservation** of endangered medicinal herb varieties
 
-VaidyaChain is the first known system to holistically address all of these simultaneously. This paper makes the following contributions:
+vaidyachain is the first known system to holistically address all of these simultaneously. This paper makes the following contributions:
 
 - A complete system architecture for a multi-stakeholder Ayurvedic supply blockchain
 - Novel integration of parametric insurance smart contracts into agricultural supply chains
@@ -60,7 +60,7 @@ Existing platforms like TraceLink (pharmaceutical) and OriginTrail address suppl
 
 ### D. Gap Analysis
 
-| Feature | IBM Food Trust | MediLedger | OriginTrail | **VaidyaChain** |
+| Feature | IBM Food Trust | MediLedger | OriginTrail | **vaidyachain** |
 |---|---|---|---|---|
 | Ayurveda-specific | ❌ | ❌ | ❌ | ✅ |
 | Multilingual (Hindi/Gujarati) | ❌ | ❌ | ❌ | ✅ |
@@ -77,7 +77,7 @@ Existing platforms like TraceLink (pharmaceutical) and OriginTrail address suppl
 
 ### A. High-Level Architecture
 
-VaidyaChain follows a **layered PWA architecture** with the following layers:
+vaidyachain follows a **layered PWA architecture** with the following layers:
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -102,7 +102,7 @@ VaidyaChain follows a **layered PWA architecture** with the following layers:
 
 ### B. Blockchain Data Model
 
-Each block in the VaidyaChain blockchain contains:
+Each block in the vaidyachain blockchain contains:
 
 ```javascript
 Block {
@@ -142,7 +142,7 @@ Four contracts are deployed at initialization:
 
 ### D. Progressive Web App (PWA) Configuration
 
-VaidyaChain is registered as a PWA via [manifest.json](file:///c:/Users/phita/project10/vaidyachain/manifest.json) and [sw.js](file:///c:/Users/phita/project10/vaidyachain/sw.js) (Service Worker), enabling:
+vaidyachain is registered as a PWA via [manifest.json](file:///c:/Users/phita/project10/vaidyachain/manifest.json) and [sw.js](file:///c:/Users/phita/project10/vaidyachain/sw.js) (Service Worker), enabling:
 - Offline functionality
 - Home screen installation
 - Background sync capability
@@ -225,7 +225,7 @@ A globally novel feature:
 - **Manual Trace**: Product ID entry with full provenance rendering
 - **Blockchain Timeline**: Visual chronological display of Farm → Lab → Factory steps
 - **Product Gallery**: Premium Ayurvedic product catalog with verified badges
-- **Store Locator**: Interactive Leaflet map showing certified VaidyaChain retailers
+- **Store Locator**: Interactive Leaflet map showing certified vaidyachain retailers
 
 ### J. Internationalization (i18n)
 
@@ -238,7 +238,7 @@ A globally novel feature:
 
 - Integrated with **OpenRouter API** (GPT-3.5-Turbo backend)
 - Context-aware conversation history (last 10 messages)
-- Domain-specific system prompt for VaidyaChain guidance
+- Domain-specific system prompt for vaidyachain guidance
 - Responds in same language as user query (English, Hindi, Gujarati)
 - Graceful fallback responses when API is unavailable
 - Accessible from all dashboard views
@@ -249,7 +249,7 @@ A globally novel feature:
 
 ### A. What Has Never Been Done Before
 
-1. **Parametric Ayurvedic Crop Insurance via Smart Contract**: No existing system automatically processes crop insurance claims based on on-chain quality test failures. VaidyaChain executes this without any human adjudicator.
+1. **Parametric Ayurvedic Crop Insurance via Smart Contract**: No existing system automatically processes crop insurance claims based on on-chain quality test failures. vaidyachain executes this without any human adjudicator.
 
 2. **DNA Banking for Endangered Medicinal Herbs on Blockchain**: No prior academic or commercial platform has combined botanical genetic preservation with blockchain immutability for the medicinal herb supply chain.
 
@@ -297,7 +297,7 @@ The [isChainValid()](file:///c:/Users/phita/project10/vaidyachain/blockchain-sim
 
 ## VII. Conclusion
 
-VaidyaChain represents a comprehensive, technically rigorous, and domain-innovative approach to blockchain-based traceability for the Ayurvedic herb supply chain. Its combination of parametric smart contract insurance, DNA banking, multilingual AI assistance, QR-based consumer verification, and zero-backend Progressive Web App architecture constitutes a cluster of features entirely absent from existing literature and platforms. This system directly addresses the authenticity crisis in the global herbal medicine market while remaining accessible to rural Indian farmers through native language support and mobile-first design.
+vaidyachain represents a comprehensive, technically rigorous, and domain-innovative approach to blockchain-based traceability for the Ayurvedic herb supply chain. Its combination of parametric smart contract insurance, DNA banking, multilingual AI assistance, QR-based consumer verification, and zero-backend Progressive Web App architecture constitutes a cluster of features entirely absent from existing literature and platforms. This system directly addresses the authenticity crisis in the global herbal medicine market while remaining accessible to rural Indian farmers through native language support and mobile-first design.
 
 Future work includes integration with actual distributed blockchain networks (Ethereum/Hyperledger), IoT sensor data ingestion for real-time environmental monitoring, and government regulatory API integration for automated AYUSH compliance certification.
 

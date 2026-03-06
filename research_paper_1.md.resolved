@@ -1,12 +1,12 @@
 # Research Paper 1
 
-# Blockchain-Enabled Traceability for Ayurvedic Medicinal Herbs: Architecture, Quality Governance, and Multi-Stakeholder Coordination in VaidyaChain
+# Blockchain-Enabled Traceability for Ayurvedic Medicinal Herbs: Architecture, Quality Governance, and Multi-Stakeholder Coordination in vaidyachain
 
 ---
 
 **Abstract**
 
-The integrity of the Ayurvedic herb supply chain is critical to both public health and the cultural heritage of traditional Indian medicine. This paper presents the design and implementation of VaidyaChain — a blockchain-powered traceability platform that orchestrates four key stakeholders (farmers, testing laboratories, manufacturers, and consumers) through an immutable, cryptographically verified, and GPS-augmented digital record system. We describe the novel architecture, the blockchain data model, role-based dashboards, quality-gate enforcement via smart contracts, QR-code consumer authentication, and a Progressive Web App (PWA) deployment strategy that eliminates infrastructure costs for grassroots adoption. Additionally, we demonstrate that VaidyaChain's integrated spectroscopy visualization, PDF certificate generation, supplier reputation management, geospatial source mapping, and waste-to-value sustainability tracking constitute a uniquely comprehensive platform with no direct academic or commercial equivalent for the Ayurvedic sector. Our system directly combats the estimated USD 2.6 billion annual loss to the Indian herbal industry due to adulteration and counterfeiting.
+The integrity of the Ayurvedic herb supply chain is critical to both public health and the cultural heritage of traditional Indian medicine. This paper presents the design and implementation of vaidyachain — a blockchain-powered traceability platform that orchestrates four key stakeholders (farmers, testing laboratories, manufacturers, and consumers) through an immutable, cryptographically verified, and GPS-augmented digital record system. We describe the novel architecture, the blockchain data model, role-based dashboards, quality-gate enforcement via smart contracts, QR-code consumer authentication, and a Progressive Web App (PWA) deployment strategy that eliminates infrastructure costs for grassroots adoption. Additionally, we demonstrate that vaidyachain's integrated spectroscopy visualization, PDF certificate generation, supplier reputation management, geospatial source mapping, and waste-to-value sustainability tracking constitute a uniquely comprehensive platform with no direct academic or commercial equivalent for the Ayurvedic sector. Our system directly combats the estimated USD 2.6 billion annual loss to the Indian herbal industry due to adulteration and counterfeiting.
 
 **Keywords:** Blockchain, Ayurvedic Traceability, Supply Chain, Smart Contracts, Quality Assurance, Progressive Web App, QR Authentication, GPS Geolocation
 
@@ -31,7 +31,7 @@ Blockchain technology is uniquely suited to this problem because:
 
 ### 1.3 Scope and Objectives
 
-VaidyaChain targets the following objectives:
+vaidyachain targets the following objectives:
 1. Create an end-to-end digital chain of custody for Ayurvedic herbs
 2. Automate quality gate enforcement between supply chain stages
 3. Provide consumer-accessible product verification via QR codes
@@ -53,7 +53,7 @@ Lin et al. (2020) implemented blockchain for Chinese Traditional Medicine (TCM) 
 
 ### 2.3 Progressive Web Applications in Healthcare
 
-PWAs in healthcare have shown significant promise for low-resource environments. Longden et al. (2021) demonstrated that PWAs reduced data download requirements by 65% compared to native apps in rural India. VaidyaChain leverages PWA architecture to extend blockchain access to herb farmers in regions with limited internet connectivity.
+PWAs in healthcare have shown significant promise for low-resource environments. Longden et al. (2021) demonstrated that PWAs reduced data download requirements by 65% compared to native apps in rural India. vaidyachain leverages PWA architecture to extend blockchain access to herb farmers in regions with limited internet connectivity.
 
 ### 2.4 The Technology Gap for Ayurveda
 
@@ -81,7 +81,7 @@ Despite approximately 400+ published papers on blockchain supply chain applicati
 
 ### 3.2 Blockchain Data Architecture
 
-The VaidyaChain blockchain is implemented as a singly-linked chain of Block objects:
+The vaidyachain blockchain is implemented as a singly-linked chain of Block objects:
 
 ```
 Block_0 (Genesis)
@@ -94,7 +94,7 @@ Block_0 (Genesis)
            - hash: "0x3a9f..."
            - previousHash: genesis_hash
     |
-    └─▶ Block_2 (Lab Test by VaidyaChain Central Lab)
+    └─▶ Block_2 (Lab Test by vaidyachain Central Lab)
            - type: "lab-test"
            - batchId: "HC-1234"
            - moisture: 8.2%
@@ -123,7 +123,7 @@ The Manufacturer Dashboard calls this function before allowing any batch to be u
 
 ### 3.4 Role-Based Access and Dashboard Design
 
-VaidyaChain implements role segregation through Firebase Authentication paired with a role-based UI routing system. Upon login, the [showDashboard(type)](file:///c:/Users/phita/project10/vaidyachain/app.js#13-102) function renders the appropriate role dashboard:
+vaidyachain implements role segregation through Firebase Authentication paired with a role-based UI routing system. Upon login, the [showDashboard(type)](file:///c:/Users/phita/project10/vaidyachain/app.js#13-102) function renders the appropriate role dashboard:
 
 ```javascript
 // Role-based rendering
@@ -186,7 +186,7 @@ The lab dashboard handles the most technically complex workflow:
 
 ### 4.4 Consumer Portal — Complete Provenance Verification
 
-**QR Code Scanning**: Using the HTML5-QRCode library, consumers can point their smartphone camera at any VaidyaChain-certified product's QR code and receive the complete blockchain-verified supply chain history within seconds.
+**QR Code Scanning**: Using the HTML5-QRCode library, consumers can point their smartphone camera at any vaidyachain-certified product's QR code and receive the complete blockchain-verified supply chain history within seconds.
 
 **Blockchain Timeline Visualization**: Product provenance is displayed as an interactive timeline with three key milestones:
 1. **🌿 Farm Collection**: Farmer name, GPS location, harvest date
@@ -195,7 +195,7 @@ The lab dashboard handles the most technically complex workflow:
 
 Each node is linked to its corresponding blockchain record, providing mathematical proof of data integrity.
 
-**Store Locator**: An integrated Leaflet.js map shows nearby certified VaidyaChain retailers, completing the verified supply chain to its final point of sale.
+**Store Locator**: An integrated Leaflet.js map shows nearby certified vaidyachain retailers, completing the verified supply chain to its final point of sale.
 
 ---
 
@@ -217,7 +217,7 @@ The Waste Management Dashboard addresses agricultural residue — a significant 
 - Conversion status (available/converted)
 - Carbon savings calculation (kg CO₂ equivalent)
 
-By treating agricultural waste as trackable supply chain assets, VaidyaChain creates a circular economy layer within Ayurvedic production that has no precedent in existing traceability systems.
+By treating agricultural waste as trackable supply chain assets, vaidyachain creates a circular economy layer within Ayurvedic production that has no precedent in existing traceability systems.
 
 ---
 
@@ -277,7 +277,7 @@ The zero-backend architecture means:
 
 ## 8. Conclusion
 
-VaidyaChain represents, to the best of our knowledge, the most comprehensive blockchain traceability platform specifically designed for the Ayurvedic herb supply chain domain. The system's key innovations — GPS-verified farm collection, spectroscopy-based lab validation, quality-gate smart contract enforcement, QR-code consumer verification, geospatial sustainability mapping, and zero-backend PWA architecture — collectively address the transparency and authenticity crisis facing the global herbal medicine industry.
+vaidyachain represents, to the best of our knowledge, the most comprehensive blockchain traceability platform specifically designed for the Ayurvedic herb supply chain domain. The system's key innovations — GPS-verified farm collection, spectroscopy-based lab validation, quality-gate smart contract enforcement, QR-code consumer verification, geospatial sustainability mapping, and zero-backend PWA architecture — collectively address the transparency and authenticity crisis facing the global herbal medicine industry.
 
 The multilingual interface (English, Hindi, Gujarati) and the AI chatbot with multilingual capabilities specifically address the rural accessibility challenge that has historically excluded smallholder farmers from digital supply chain systems.
 
@@ -301,4 +301,4 @@ Future directions include real blockchain deployment on Hyperledger Fabric, IoT 
 ---
 
 *Word Count: ~2,800 words | Submitted for peer review*
-*VaidyaChain Repository: [github.com/vaidyachain] | DOI: [pending]*
+*vaidyachain Repository: [github.com/vaidyachain] | DOI: [pending]*

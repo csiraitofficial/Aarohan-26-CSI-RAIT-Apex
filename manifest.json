@@ -1,6 +1,6 @@
 {
-    "name": "VaidyaChain",
-    "short_name": "VaidyaChain",
+    "name": "vaidyachain",
+    "short_name": "vaidyachain",
     "description": "Blockchain-based botanical traceability system for Ayurvedic herbs",
     "start_url": "/index.html",
     "display": "standalone",

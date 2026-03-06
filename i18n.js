@@ -1,10 +1,10 @@
-// i18n.js - Internationalization for VaidyaChain
+// i18n.js - Internationalization for vaidyachain
 // Supports: English, Hindi, Gujarati
 
 const translations = {
     en: {
         // General
-        appName: "VaidyaChain",
+        appName: "vaidyachain",
         tagline: "Ayurvedic Herb Traceability",
 
         // Navigation
@@ -20,7 +20,7 @@ const translations = {
         learnMore: "Learn More",
 
         // Features
-        whyChooseVaidyaChain: "Why Choose VaidyaChain?",
+        whyChoosevaidyachain: "Why Choose vaidyachain?",
         blockchainPowered: "Blockchain Powered",
         blockchainDesc: "Immutable records ensure complete transparency and trust in the supply chain.",
         qrTracking: "QR Code Tracking",
@@ -68,9 +68,9 @@ const translations = {
         cancel: "Cancel",
 
         // Chatbot
-        chatbotTitle: "VaidyaChain Assistant",
-        chatbotPlaceholder: "Ask me anything about VaidyaChain...",
-        chatbotWelcome: "Hello! I'm your VaidyaChain assistant. How can I help you today?",
+        chatbotTitle: "vaidyachain Assistant",
+        chatbotPlaceholder: "Ask me anything about vaidyachain...",
+        chatbotWelcome: "Hello! I'm your vaidyachain assistant. How can I help you today?",
         chatbotThinking: "Thinking...",
 
         // Status
@@ -145,7 +145,7 @@ const translations = {
         learnMore: "और जानें",
 
         // Features
-        whyChooseVaidyaChain: "वैद्याचेन क्यों चुनें?",
+        whyChoosevaidyachain: "वैद्याचेन क्यों चुनें?",
         blockchainPowered: "ब्लॉकचेन संचालित",
         blockchainDesc: "अपरिवर्तनीय रिकॉर्ड आपूर्ति श्रृंखला में पूर्ण पारदर्शिता और विश्वास सुनिश्चित करते हैं।",
         qrTracking: "QR कोड ट्रैकिंग",
@@ -270,7 +270,7 @@ const translations = {
         learnMore: "વધુ જાણો",
 
         // Features
-        whyChooseVaidyaChain: "વૈદ્યાચૈન કેમ પસંદ કરવું?",
+        whyChoosevaidyachain: "વૈદ્યાચૈન કેમ પસંદ કરવું?",
         blockchainPowered: "બ્લોકચેન સક્ષમ",
         blockchainDesc: "અપરિવર્તનીય રેકોર્ડ્સ સપ્લાય ચેઇનમાં સંપૂર્ણ પારદર્શકતા અને વિશ્વાસ સુનિશ્ચિત કરે છે.",
         qrTracking: "QR કોડ ટ્રૅકિંગ",

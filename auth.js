@@ -1,5 +1,5 @@
 // auth.js
-// Firebase Auth Integration for VaidyaChain with Google Sign-In
+// Firebase Auth Integration for vaidyachain with Google Sign-In
 
 // Firebase configuration
 const firebaseConfig = {
@@ -219,10 +219,39 @@ function setupLoginButtons() {
         loginBtn.addEventListener("click", showLoginModal);
     }
 
-    // Sidebar logout button
+    // Sidebar logout button - keep as fallback if it exists
     const logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", handleLogout);
+    }
+
+    // New Topbar logout button
+    const logoutBtnTopbar = document.getElementById("logout-btn");
+    if (logoutBtnTopbar) {
+        logoutBtnTopbar.addEventListener("click", handleLogout);
+    }
+
+    // Profile Dropdown Toggle
+    setupProfileDropdown();
+}
+
+function setupProfileDropdown() {
+    const profileBtn = document.getElementById('profile-btn');
+    const profileDropdown = document.getElementById('profile-dropdown');
+
+    if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = profileDropdown.style.display === 'block';
+            profileDropdown.style.display = isVisible ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.style.display = 'none';
+            }
+        });
     }
 }
 
@@ -254,9 +283,9 @@ function showLoginModal() {
                 
                 <div class="login-modal-header">
                     <div class="login-logo">
-                        <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" alt="VaidyaChain">
+                        <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=80" alt="vaidyachain">
                     </div>
-                    <h2 id="modal-title">Welcome to VaidyaChain</h2>
+                    <h2 id="modal-title">Welcome to vaidyachain</h2>
                     <p id="modal-subtitle">Sign in to access your dashboard</p>
                 </div>
                 
@@ -340,7 +369,7 @@ function switchAuthMode(mode) {
         registerForm.style.display = 'none';
         loginToggle.classList.add('active');
         registerToggle.classList.remove('active');
-        modalTitle.textContent = 'Welcome to VaidyaChain';
+        modalTitle.textContent = 'Welcome to vaidyachain';
         modalSubtitle.textContent = 'Sign in to access your dashboard';
     } else {
         loginForm.style.display = 'none';
@@ -348,7 +377,7 @@ function switchAuthMode(mode) {
         loginToggle.classList.remove('active');
         registerToggle.classList.add('active');
         modalTitle.textContent = 'Create Your Account';
-        modalSubtitle.textContent = 'Join VaidyaChain to get started';
+        modalSubtitle.textContent = 'Join vaidyachain to get started';
     }
 }
 
@@ -650,22 +679,24 @@ function updateUIForLoggedInUser(user, role) {
     const userPhotoImg = document.getElementById('user-photo');
     const authContainer = document.getElementById('auth-container');
 
-    if (loginBtn) loginBtn.classList.remove('show');
+    if (loginBtn) {
+        loginBtn.style.display = 'none';
+    }
 
     if (userInfo) {
-        userInfo.classList.add('show');
+        userInfo.style.display = 'flex';
         if (userEmailSpan) {
             userEmailSpan.textContent = user.displayName || user.email;
         }
         if (userPhotoImg && user.photoURL) {
             userPhotoImg.src = user.photoURL;
-            userPhotoImg.style.display = 'block';
+            userPhotoImg.parentElement.style.display = 'flex';
         }
     }
 
-    // Ensure auth container is visible when user is logged in
+    // Ensure auth container is visible/hidden appropriately
     if (authContainer) {
-        authContainer.style.display = 'block';
+        authContainer.style.display = 'none';
     }
 
     showRoleIndicator(role);
@@ -677,8 +708,13 @@ function updateUIForLoggedOutUser() {
     const userInfo = document.getElementById('user-info');
     const authContainer = document.getElementById('auth-container');
 
-    if (loginBtn) loginBtn.classList.add('show');
-    if (userInfo) userInfo.classList.remove('show');
+    if (loginBtn) {
+        loginBtn.style.display = 'block';
+    }
+
+    if (userInfo) {
+        userInfo.style.display = 'none';
+    }
 
     // Ensure auth container is visible when user is logged out
     if (authContainer) {

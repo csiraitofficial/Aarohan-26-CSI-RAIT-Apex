@@ -12,14 +12,16 @@
         href="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=192&q=80">
     <link rel="manifest" href="manifest.json">
 
-    <title>VaidyaChain - Ayurvedic Herb Traceability</title>
+    <title>vaidyachain - Ayurvedic Herb Traceability</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Geist:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
     <!-- Icons and Fonts -->
-    <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.0.3/src/css/phosphor.css">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/css/phosphor.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
@@ -31,6 +33,8 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <link rel="stylesheet" href="styles.css">
+    <!-- shadcn/ui Black & White theme override -->
+    <link rel="stylesheet" href="shadcn-theme.css">
 
     <script>
         // Register Service Worker
@@ -48,7 +52,7 @@
     <!-- Initial Loading Overlay -->
     <div class="auth-loading-overlay">
         <div class="loading-spinner"></div>
-        <p>Initializing VaidyaChain...</p>
+        <p>Initializing vaidyachain...</p>
     </div>
     <!-- Home Page (Landing Page) -->
     <div id="home-page" class="home-page">
@@ -57,8 +61,8 @@
             <div class="home-header-content">
                 <div class="home-logo">
                     <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&q=80"
-                        alt="VaidyaChain Logo">
-                    <span>VaidyaChain</span>
+                        alt="vaidyachain Logo">
+                    <span>vaidyachain</span>
                 </div>
                 <nav class="home-nav">
                     <a href="#features" data-i18n="features">Features</a>
@@ -141,7 +145,7 @@
 
         <!-- Features Section -->
         <section id="features" class="home-features">
-            <h2>Why Choose VaidyaChain?</h2>
+            <h2>Why Choose vaidyachain?</h2>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
@@ -227,10 +231,10 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=40&q=80"
-                        alt="VaidyaChain">
-                    <span>VaidyaChain</span>
+                        alt="vaidyachain">
+                    <span>vaidyachain</span>
                 </div>
-                <p>&copy; 2026 VaidyaChain. Blockchain-Powered Ayurvedic Traceability.</p>
+                <p>&copy; 2026 vaidyachain. Blockchain-Powered Ayurvedic Traceability.</p>
             </div>
         </footer>
     </div>
@@ -240,7 +244,9 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>VaidyaChain</h2>
+                 <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80"
+                        alt="vaidyachain Logo" class="header-logo">
+                <h2>vaidyachain</h2>
                 <p>Botanical Traceability</p>
             </div>
             <nav class="sidebar-nav">
@@ -267,8 +273,8 @@
                             Orders</a></li>
                     <li><a href="javascript:void(0)" onclick="showDashboard('insurance', event)" id="nav-insurance"><i
                                 class="ph ph-shield-check"></i> Insurance</a></li>
-                    <li><a href="javascript:void(0)" onclick="showDashboard('dna-banking', event)"
-                            id="nav-dna-banking"><i class="ph ph-dna"></i> DNA Banking</a></li>
+                    <!-- <li><a href="javascript:void(0)" onclick="showDashboard('dna-banking', event)"
+                            id="nav-dna-banking"><i class="ph ph-dna"></i> DNA Banking</a></li> -->
                     <li><a href="javascript:void(0)" onclick="showDashboard('consumer', event)" id="nav-consumer"><i
                                 class="ph ph-user"></i>
                             Consumer Portal</a></li>
@@ -276,17 +282,9 @@
             </nav>
             <div class="sidebar-footer">
                 <div id="auth-container">
-                    <button id="login-btn" class="auth-btn">
+                    <button id="login-btn" class="auth-btn" style="width: 100%;">
                         <i class="ph ph-sign-in"></i> Login
                     </button>
-                    <div id="user-info" style="display: none;">
-                        <img id="user-photo" src="" alt="User"
-                            style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: none;">
-                        <span id="user-email"></span>
-                        <button id="logout-btn" class="auth-btn outline">
-                            <i class="ph ph-sign-out"></i> Logout
-                        </button>
-                    </div>
                 </div>
             </div>
         </aside>
@@ -296,11 +294,11 @@
             <!-- Topbar -->
             <div class="topbar">
                 <div class="topbar-header">
-                    <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80"
-                        alt="VaidyaChain Logo" class="header-logo">
+                    <!-- <img src="https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?ixlib=rb-4.0.3&auto=format&fit=crop&w=120&q=80"
+                        alt="vaidyachain Logo" class="header-logo">
                     <div class="header-title">
-                        <h1>VaidyaChain</h1>
-                    </div>
+                        <h1>vaidyachain</h1>
+                    </div> -->
                 </div>
                 <div class="search-container">
                     <i class="ph ph-magnifying-glass search-icon"></i>
@@ -328,6 +326,25 @@
                                 <span class="lang-name">ગુજરાતી</span>
                                 <i class="ph ph-check lang-check"></i>
                             </button>
+                        </div>
+                    </div>
+
+                    <div id="user-info" class="profile-wrapper" style="display: none;">
+                        <button id="profile-btn" class="profile-btn">
+                            <img id="user-photo" src="" alt="User" class="profile-photo">
+                        </button>
+                        <div id="profile-dropdown" class="profile-dropdown" style="display: none;">
+                            <div class="profile-dropdown-header">
+                                <span id="user-email" class="profile-email"></span>
+                            </div>
+                            <div class="profile-dropdown-content">
+                                <a href="javascript:void(0)" onclick="showDashboard('profile-settings', event)">
+                                    <i class="ph ph-user-circle"></i> Profile Settings
+                                </a>
+                                <button id="logout-btn" class="profile-dropdown-btn">
+                                    <i class="ph ph-sign-out"></i> Logout
+                                </button>
+                            </div>
                         </div>
                     </div>
 

@@ -1,11 +1,11 @@
-// chatbot.js - OpenRouter AI Chatbot Integration for VaidyaChain
-// API Key: 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
+// chatbot.js - OpenRouter AI Chatbot Integration for vaidyachain
+// API Key: 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
 
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = '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';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // System prompt for the chatbot
-const SYSTEM_PROMPT = `You are a helpful AI assistant for VaidyaChain - a blockchain-based Ayurvedic herb traceability system. 
+const SYSTEM_PROMPT = `You are a helpful AI assistant for vaidyachain - a blockchain-based Ayurvedic herb traceability system. 
 
 Your role is to help users with:
 1. Understanding how the blockchain traceability system works
@@ -16,7 +16,7 @@ Your role is to help users with:
 6. Answering questions about blockchain technology in simple terms
 7. Providing information about insurance, sustainability, and DNA banking features
 
-Key features of VaidyaChain:
+Key features of vaidyachain:
 - Blockchain-powered tracking from farm to consumer
 - QR code scanning for product verification
 - Quality assurance through lab testing
@@ -33,7 +33,7 @@ let chatHistory = [];
 let isChatOpen = false;
 
 // Initialize chatbot
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     createChatbotUI();
     setupChatbotEventListeners();
 });
@@ -58,7 +58,7 @@ function createChatbotUI() {
                         <i class="ph ph-robot"></i>
                     </div>
                     <div>
-                        <h3 data-i18n="chatbotTitle">VaidyaChain Assistant</h3>
+                        <h3 data-i18n="chatbotTitle">vaidyachain Assistant</h3>
                         <span class="chatbot-status">
                             <span class="status-dot"></span>
                             Online
@@ -76,7 +76,7 @@ function createChatbotUI() {
                         <i class="ph ph-robot"></i>
                     </div>
                     <div class="message-content">
-                        <p data-i18n="chatbotWelcome">Hello! I'm your VaidyaChain assistant. How can I help you today?</p>
+                        <p data-i18n="chatbotWelcome">Hello! I'm your vaidyachain assistant. How can I help you today?</p>
                     </div>
                 </div>
             </div>
@@ -86,7 +86,7 @@ function createChatbotUI() {
                     type="text" 
                     id="chatbot-input" 
                     data-i18n-placeholder="chatbotPlaceholder"
-                    placeholder="Ask me anything about VaidyaChain..."
+                    placeholder="Ask me anything about vaidyachain..."
                 >
                 <button id="chatbot-send" class="chatbot-send">
                     <i class="ph ph-paper-plane-tilt"></i>
@@ -94,7 +94,7 @@ function createChatbotUI() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(chatbotContainer);
 }
 
@@ -105,21 +105,21 @@ function setupChatbotEventListeners() {
     const sendBtn = document.getElementById('chatbot-send');
     const input = document.getElementById('chatbot-input');
     const window = document.getElementById('chatbot-window');
-    
+
     if (toggle) {
         toggle.addEventListener('click', toggleChatbot);
     }
-    
+
     if (close) {
         close.addEventListener('click', closeChatbot);
     }
-    
+
     if (sendBtn) {
         sendBtn.addEventListener('click', sendMessage);
     }
-    
+
     if (input) {
-        input.addEventListener('keypress', function(e) {
+        input.addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
@@ -131,9 +131,9 @@ function setupChatbotEventListeners() {
 function toggleChatbot() {
     const window = document.getElementById('chatbot-window');
     const toggle = document.getElementById('chatbot-toggle');
-    
+
     isChatOpen = !isChatOpen;
-    
+
     if (isChatOpen) {
         window.classList.add('chatbot-open');
         toggle.classList.add('chatbot-hidden');
@@ -147,7 +147,7 @@ function toggleChatbot() {
 function closeChatbot() {
     const window = document.getElementById('chatbot-window');
     const toggle = document.getElementById('chatbot-toggle');
-    
+
     isChatOpen = false;
     window.classList.remove('chatbot-open');
     toggle.classList.remove('chatbot-hidden');
@@ -157,23 +157,23 @@ function closeChatbot() {
 async function sendMessage() {
     const input = document.getElementById('chatbot-input');
     const message = input.value.trim();
-    
+
     if (!message) return;
-    
+
     // Add user message to UI
     addMessage(message, 'user');
     input.value = '';
-    
+
     // Show typing indicator
     showTypingIndicator();
-    
+
     try {
         // Send to OpenRouter API
         const response = await getAIResponse(message);
-        
+
         // Remove typing indicator
         removeTypingIndicator();
-        
+
         // Add bot response
         addMessage(response, 'bot');
     } catch (error) {
@@ -190,12 +190,12 @@ async function getAIResponse(userMessage) {
         role: 'user',
         content: userMessage
     });
-    
+
     // Keep only last 10 messages
     if (chatHistory.length > 10) {
         chatHistory = chatHistory.slice(-10);
     }
-    
+
     try {
         const response = await fetch(OPENROUTER_API_URL, {
             method: 'POST',
@@ -203,7 +203,7 @@ async function getAIResponse(userMessage) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
                 'HTTP-Referer': window.location.href,
-                'X-Title': 'VaidyaChain AI Assistant'
+                'X-Title': 'vaidyachain AI Assistant'
             },
             body: JSON.stringify({
                 model: 'openai/gpt-3.5-turbo',
@@ -215,29 +215,29 @@ async function getAIResponse(userMessage) {
                 max_tokens: 500
             })
         });
-        
+
         if (!response.ok) {
             throw new Error(`API Error: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.choices && data.choices[0]) {
             const botResponse = data.choices[0].message.content;
-            
+
             // Add bot response to history
             chatHistory.push({
                 role: 'assistant',
                 content: botResponse
             });
-            
+
             return botResponse;
         } else {
             throw new Error('Invalid response format');
         }
     } catch (error) {
         console.error('OpenRouter API error:', error);
-        
+
         // Fallback to a simple response if API fails
         return getFallbackResponse(userMessage);
     }
@@ -246,49 +246,49 @@ async function getAIResponse(userMessage) {
 // Fallback responses when API is unavailable
 function getFallbackResponse(message) {
     const lowerMessage = message.toLowerCase();
-    
+
     // Check for common questions
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('namaste')) {
-        return "Hello! Namaste! Welcome to VaidyaChain. How can I help you today?";
+        return "Hello! Namaste! Welcome to vaidyachain. How can I help you today?";
     }
-    
+
     if (lowerMessage.includes('trace') || lowerMessage.includes('track')) {
-        return "VaidyaChain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
+        return "vaidyachain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
     }
-    
+
     if (lowerMessage.includes('farmer') || lowerMessage.includes('farm')) {
         return "As a farmer, you can use the Farmer Dashboard to register your herb collections with GPS location. Simply select the herb type, enter the quantity, and the system will create a blockchain record with a unique batch ID.";
     }
-    
+
     if (lowerMessage.includes('lab') || lowerMessage.includes('test') || lowerMessage.includes('quality')) {
         return "The Testing Lab dashboard allows quality testers to verify herb batches. They can check moisture content, pesticides, heavy metals, and microbial count. Approved batches can then be used for manufacturing.";
     }
-    
+
     if (lowerMessage.includes('manufacturer') || lowerMessage.includes('product')) {
         return "Manufacturers can create products from approved herb batches. After entering batch details and product information, the system generates a unique QR code that consumers can scan to verify authenticity.";
     }
-    
+
     if (lowerMessage.includes('consumer') || lowerMessage.includes('verify')) {
         return "Consumers can verify product authenticity by scanning the QR code or entering the Product ID in the Consumer Portal. This shows the complete journey from farm collection through lab testing to manufacturing.";
     }
-    
+
     if (lowerMessage.includes('blockchain')) {
-        return "Blockchain technology creates an immutable, transparent record of every transaction. In VaidyaChain, each step (collection, testing, manufacturing) is recorded on the blockchain, ensuring complete traceability and trust.";
+        return "Blockchain technology creates an immutable, transparent record of every transaction. In vaidyachain, each step (collection, testing, manufacturing) is recorded on the blockchain, ensuring complete traceability and trust.";
     }
-    
+
     if (lowerMessage.includes('insurance')) {
-        return "VaidyaChain offers blockchain-based crop insurance with automatic claim processing. Parametric triggers like weather conditions or quality test failures can automatically initiate claim approvals.";
+        return "vaidyachain offers blockchain-based crop insurance with automatic claim processing. Parametric triggers like weather conditions or quality test failures can automatically initiate claim approvals.";
     }
-    
+
     if (lowerMessage.includes('sustainability')) {
         return "The Sustainability Dashboard tracks environmental impact metrics like herbs tracked and quality pass rates. It also shows source locations on a map to monitor sustainable sourcing practices.";
     }
-    
+
     if (lowerMessage.includes('dna') || lowerMessage.includes('genetic')) {
         return "DNA Banking allows preservation of Ayurvedic herb genetics for future regeneration. DNA samples can be stored indefinitely and used to regenerate rare or endangered herb species.";
     }
-    
-    return "Thank you for your question! For detailed information, please explore the different dashboards in VaidyaChain. Each section - Farmer, Lab, Manufacturer, and Consumer - has specific tools and features to help you.";
+
+    return "Thank you for your question! For detailed information, please explore the different dashboards in vaidyachain. Each section - Farmer, Lab, Manufacturer, and Consumer - has specific tools and features to help you.";
 }
 
 // Add message to chat
@@ -296,9 +296,9 @@ function addMessage(content, sender) {
     const messagesContainer = document.getElementById('chatbot-messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = `chatbot-message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
-    
+
     const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
-    
+
     messageDiv.innerHTML = `
         ${sender === 'bot' ? `
             <div class="message-avatar">
@@ -309,7 +309,7 @@ function addMessage(content, sender) {
             <p>${content}</p>
         </div>
     `;
-    
+
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
@@ -332,7 +332,7 @@ function showTypingIndicator() {
             </div>
         </div>
     `;
-    
+
     messagesContainer.appendChild(typingDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }

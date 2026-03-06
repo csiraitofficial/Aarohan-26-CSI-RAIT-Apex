@@ -34,7 +34,7 @@ class Blockchain {
         newBlock.previousHash = this.getLatestBlock().hash;
         newBlock.hash = newBlock.calculateHash();
         this.chain.push(newBlock);
-        
+
         // Index batch IDs for quick lookup
         if (newBlock.data.batchId) {
             if (!this.batchIndex[newBlock.data.batchId]) {
@@ -42,20 +42,20 @@ class Blockchain {
             }
             this.batchIndex[newBlock.data.batchId].push(newBlock);
         }
-        
+
         // Save to localStorage for persistence
         this.saveToStorage();
     }
 
     saveToStorage() {
-        localStorage.setItem('vaidyaChain', JSON.stringify(this.chain));
-        localStorage.setItem('vaidyaChainBatchIndex', JSON.stringify(this.batchIndex));
+        localStorage.setItem('vaidyachain', JSON.stringify(this.chain));
+        localStorage.setItem('vaidyachainBatchIndex', JSON.stringify(this.batchIndex));
     }
 
     loadFromStorage() {
-        const chainData = localStorage.getItem('vaidyaChain');
-        const indexData = localStorage.getItem('vaidyaChainBatchIndex');
-        
+        const chainData = localStorage.getItem('vaidyachain');
+        const indexData = localStorage.getItem('vaidyachainBatchIndex');
+
         if (chainData) {
             this.chain = JSON.parse(chainData);
         }
@@ -89,47 +89,47 @@ class Blockchain {
     findBatchStatus(batchId) {
         const transactions = this.findBatchTransactions(batchId);
         if (transactions.length === 0) return null;
-        
+
         // Return the latest transaction (last in array)
         return transactions[transactions.length - 1].data;
     }
 }
 
 // Initialize or load blockchain
-let vaidyaChain = new Blockchain();
-vaidyaChain.loadFromStorage();
+let vaidyachain = new Blockchain();
+vaidyachain.loadFromStorage();
 
 // Function to add a new herb transaction
 function addHerbTransaction(herbData) {
     const newBlock = new Block(new Date().toLocaleString(), herbData);
-    vaidyaChain.addBlock(newBlock);
+    vaidyachain.addBlock(newBlock);
     return newBlock;
 }
 
 // Function to get all herb transactions
 function getAllHerbTransactions() {
-    return vaidyaChain.chain.filter(block => block.data.herbType || block.data.batchId || block.data.wasteBatchId);
+    return vaidyachain.chain.filter(block => block.data.herbType || block.data.batchId || block.data.wasteBatchId);
 }
 
 // Function to find a herb by batch ID
 function findHerbByBatchId(batchId) {
-    const transactions = vaidyaChain.findBatchTransactions(batchId);
+    const transactions = vaidyachain.findBatchTransactions(batchId);
     return transactions.length > 0 ? transactions[0] : null;
 }
 
 // Function to get all transactions for a batch
 function getBatchHistory(batchId) {
-    return vaidyaChain.findBatchTransactions(batchId);
+    return vaidyachain.findBatchTransactions(batchId);
 }
 
 // Function to check if batch exists
 function doesBatchExist(batchId) {
-    return vaidyaChain.findBatchTransactions(batchId).length > 0;
+    return vaidyachain.findBatchTransactions(batchId).length > 0;
 }
 
 // Function to check if batch passed lab tests
 function didBatchPassLabTests(batchId) {
-    const transactions = vaidyaChain.findBatchTransactions(batchId);
+    const transactions = vaidyachain.findBatchTransactions(batchId);
     const labTest = transactions.find(tx => tx.data.type === 'lab-test');
     return labTest && labTest.data.testResult === 'pass';
 }
@@ -169,7 +169,7 @@ let smartContracts = {};
 function initializeSmartContracts() {
     // 1. Payment Contract - Handles automatic farmer payments
     smartContracts.paymentContract = new SmartContract('PaymentContract', {
-        deposit: function(state, params) {
+        deposit: function (state, params) {
             const { farmerId, amount, productId } = params;
             if (!state.balances) state.balances = {};
             if (!state.balances[farmerId]) state.balances[farmerId] = 0;
@@ -182,7 +182,7 @@ function initializeSmartContracts() {
             };
         },
 
-        releasePayment: function(state, params) {
+        releasePayment: function (state, params) {
             const { farmerId, batchId, percentage = 100 } = params;
             if (!state.balances || !state.balances[farmerId]) {
                 return { success: false, error: 'No balance available' };
@@ -204,7 +204,7 @@ function initializeSmartContracts() {
             };
         },
 
-        getBalance: function(state, params) {
+        getBalance: function (state, params) {
             const { farmerId } = params;
             return {
                 success: true,
@@ -215,7 +215,7 @@ function initializeSmartContracts() {
 
     // 2. Insurance Contract - Handles crop failure claims
     smartContracts.insuranceContract = new SmartContract('InsuranceContract', {
-        purchaseInsurance: function(state, params) {
+        purchaseInsurance: function (state, params) {
             const { farmerId, batchId, premium, coverage } = params;
             if (!state.policies) state.policies = {};
             if (!state.claims) state.claims = {};
@@ -235,7 +235,7 @@ function initializeSmartContracts() {
             };
         },
 
-        fileClaim: function(state, params) {
+        fileClaim: function (state, params) {
             const { batchId, claimType, evidence, lossAmount } = params;
             if (!state.policies[batchId] || state.policies[batchId].status !== 'active') {
                 return { success: false, error: 'No active insurance policy' };
@@ -261,7 +261,7 @@ function initializeSmartContracts() {
             };
         },
 
-        processClaim: function(state, params) {
+        processClaim: function (state, params) {
             const { claimId, approved, payoutAmount } = params;
             if (!state.claims[claimId]) {
                 return { success: false, error: 'Claim not found' };
@@ -314,7 +314,7 @@ function initializeSmartContracts() {
 
     // 3. Quality Assurance Contract - Automated quality checks
     smartContracts.qualityContract = new SmartContract('QualityContract', {
-        setQualityThresholds: function(state, params) {
+        setQualityThresholds: function (state, params) {
             const { herbType, thresholds } = params;
             if (!state.thresholds) state.thresholds = {};
             state.thresholds[herbType] = thresholds;
@@ -326,9 +326,9 @@ function initializeSmartContracts() {
             };
         },
 
-        checkQuality: function(state, params) {
+        checkQuality: function (state, params) {
             const { batchId, testResults } = params;
-            const transactions = vaidyaChain.findBatchTransactions(batchId);
+            const transactions = vaidyachain.findBatchTransactions(batchId);
             const collectionTx = transactions.find(tx => tx.data.type === 'collection');
 
             if (!collectionTx) {
@@ -346,7 +346,7 @@ function initializeSmartContracts() {
                 const threshold = thresholds[param];
                 const result = testResults[param];
 
-                switch(threshold.operator) {
+                switch (threshold.operator) {
                     case '<': return result < threshold.value;
                     case '<=': return result <= threshold.value;
                     case '>': return result > threshold.value;
@@ -375,7 +375,7 @@ function initializeSmartContracts() {
 
     // 4. Supply Chain Tracking Contract
     smartContracts.supplyChainContract = new SmartContract('SupplyChainContract', {
-        registerStakeholder: function(state, params) {
+        registerStakeholder: function (state, params) {
             const { stakeholderId, type, name, location, credentials } = params;
             if (!state.stakeholders) state.stakeholders = {};
 
@@ -396,7 +396,7 @@ function initializeSmartContracts() {
             };
         },
 
-        updateReputation: function(state, params) {
+        updateReputation: function (state, params) {
             const { stakeholderId, change, reason } = params;
             if (!state.stakeholders?.[stakeholderId]) {
                 return { success: false, error: 'Stakeholder not found' };
@@ -412,7 +412,7 @@ function initializeSmartContracts() {
             };
         },
 
-        verifyBatchTransfer: function(state, params) {
+        verifyBatchTransfer: function (state, params) {
             const { batchId, fromStakeholder, toStakeholder, transferType } = params;
 
             // Verify both stakeholders exist and are verified
@@ -421,7 +421,7 @@ function initializeSmartContracts() {
             }
 
             // Check batch ownership
-            const transactions = vaidyaChain.findBatchTransactions(batchId);
+            const transactions = vaidyachain.findBatchTransactions(batchId);
             const latestTx = transactions[transactions.length - 1];
 
             if (latestTx.data.currentOwner !== fromStakeholder) {
@@ -587,7 +587,7 @@ window.getContractState = getContractState;
 window.getContractEvents = getContractEvents;
 
 // Define helper functions globally
-window.getTimeAgo = function(date) {
+window.getTimeAgo = function (date) {
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 
@@ -597,7 +597,7 @@ window.getTimeAgo = function(date) {
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
 };
 
-window.getEventIcon = function(eventType) {
+window.getEventIcon = function (eventType) {
     const icons = {
         'PaymentDeposited': '💰',
         'PaymentReleased': '✅',
@@ -614,8 +614,8 @@ window.getEventIcon = function(eventType) {
     return icons[eventType] || '🔄';
 };
 
-window.getEventDescription = function(event) {
-    switch(event.event) {
+window.getEventDescription = function (event) {
+    switch (event.event) {
         case 'PaymentDeposited':
             return `₹${event.data.amount} deposited for farmer ${event.data.farmerId}`;
         case 'PaymentReleased':
@@ -636,7 +636,7 @@ window.getEventDescription = function(event) {
 };
 
 // Additional helper functions for UI
-window.depositToPaymentContract = function() {
+window.depositToPaymentContract = function () {
     const amount = prompt('Enter amount to deposit (₹):');
     if (amount && parseFloat(amount) > 0) {
         try {
@@ -659,7 +659,7 @@ window.depositToPaymentContract = function() {
     return false;
 };
 
-window.purchaseInsurance = function() {
+window.purchaseInsurance = function () {
     const batchId = prompt('Enter batch ID to insure:');
     if (batchId) {
         try {
@@ -682,7 +682,7 @@ window.purchaseInsurance = function() {
     return false;
 };
 
-window.registerStakeholder = function() {
+window.registerStakeholder = function () {
     const stakeholderId = prompt('Enter stakeholder ID:');
     const type = prompt('Enter type (farmer/lab/manufacturer):');
     const name = prompt('Enter name:');
@@ -710,7 +710,7 @@ window.registerStakeholder = function() {
 };
 
 // View functions
-window.viewPaymentHistory = function() {
+window.viewPaymentHistory = function () {
     const events = getContractEvents('paymentContract');
     let history = 'Payment Contract History:\n\n';
     events.forEach(event => {
@@ -719,7 +719,7 @@ window.viewPaymentHistory = function() {
     alert(history || 'No payment history yet.');
 };
 
-window.viewInsuranceClaims = function() {
+window.viewInsuranceClaims = function () {
     const events = getContractEvents('insuranceContract');
     let history = 'Insurance Claims History:\n\n';
     events.forEach(event => {
@@ -728,7 +728,7 @@ window.viewInsuranceClaims = function() {
     alert(history || 'No insurance claims yet.');
 };
 
-window.viewQualityEvents = function() {
+window.viewQualityEvents = function () {
     const events = getContractEvents('qualityContract');
     let history = 'Quality Assurance Events:\n\n';
     events.forEach(event => {
@@ -737,7 +737,7 @@ window.viewQualityEvents = function() {
     alert(history || 'No quality events yet.');
 };
 
-window.viewTransferHistory = function() {
+window.viewTransferHistory = function () {
     const events = getContractEvents('supplyChainContract');
     let history = 'Supply Chain Transfer History:\n\n';
     events.forEach(event => {
@@ -747,7 +747,7 @@ window.viewTransferHistory = function() {
 };
 
 // Reset Smart Contracts Data
-window.resetSmartContracts = function() {
+window.resetSmartContracts = function () {
     if (confirm('Are you sure you want to reset all smart contract data? This will clear all balances, policies, and events.')) {
         // Clear smart contract storage
         localStorage.removeItem('vaidyaSmartContracts');
@@ -762,7 +762,7 @@ window.resetSmartContracts = function() {
 };
 
 // Debug function to test insurance payment transfer
-window.testInsurancePayment = function() {
+window.testInsurancePayment = function () {
     console.log('=== INSURANCE PAYMENT DEBUG ===');
 
     // Check insurance contract state
