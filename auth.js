@@ -61,6 +61,11 @@ async function initializeFirebase() {
         db = firebase.firestore();
         console.log('Firestore initialized successfully');
 
+        // Start blockchain real-time sync
+        if (typeof vaidyachain !== 'undefined' && vaidyachain.startFirebaseSync) {
+            vaidyachain.startFirebaseSync();
+        }
+
         // Listen for auth state changes
         firebase.auth().onAuthStateChanged(async (user) => {
             console.log('Auth state changed:', user ? user.email : 'null');

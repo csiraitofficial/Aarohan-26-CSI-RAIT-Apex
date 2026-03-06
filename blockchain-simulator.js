@@ -93,6 +93,53 @@ class Blockchain {
         // Return the latest transaction (last in array)
         return transactions[transactions.length - 1].data;
     }
+
+    startFirebaseSync() {
+        if (typeof db !== 'undefined' && db && !this.syncStarted) {
+            this.syncStarted = true;
+            try {
+                db.collection('transactions').orderBy('createdAt').onSnapshot((snapshot) => {
+                    if (snapshot.empty) return;
+
+                    const blocks = [];
+                    // Preserve Genesis Block
+                    if (this.chain.length > 0 && this.chain[0].previousHash === '0') {
+                        blocks.push(this.chain[0]);
+                    }
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // Reconstruct Block object
+                        const block = new Block(data.timestamp, data.data, data.previousHash);
+                        block.hash = data.hash; // Preserve original hash
+                        blocks.push(block);
+                    });
+
+                    if (blocks.length > 0) {
+                        this.chain = blocks;
+                        this.batchIndex = {};
+                        for (const block of this.chain) {
+                            const batchId = block.data.batchId || block.data.wasteBatchId;
+                            if (batchId) {
+                                if (!this.batchIndex[batchId]) this.batchIndex[batchId] = [];
+                                this.batchIndex[batchId].push(block);
+                            }
+                        }
+                        this.saveToStorage();
+                        console.log('Blockchain synced in real-time. ' + blocks.length + ' blocks loaded.');
+
+                        // Update UI if needed
+                        if (typeof window.loadFarmerMarketData === 'function' && document.getElementById('farmer-map')) {
+                            // Attempt to refresh current view based on URL or DOM state
+                            // This is broad, but handles syncing updates.
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error setting up Firebase sync for blockchain:', error);
+            }
+        }
+    }
 }
 
 // Initialize or load blockchain
@@ -103,6 +150,26 @@ vaidyachain.loadFromStorage();
 function addHerbTransaction(herbData) {
     const newBlock = new Block(new Date().toLocaleString(), herbData);
     vaidyachain.addBlock(newBlock);
+
+    // Sync to Firebase
+    if (typeof db !== 'undefined' && db) {
+        db.collection('transactions').doc(newBlock.hash).set({
+            timestamp: newBlock.timestamp,
+            data: newBlock.data || null,
+            previousHash: newBlock.previousHash || '',
+            hash: newBlock.hash || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => {
+            console.error('Firebase sync error:', err);
+            const msg = 'Failed to sync to Firebase Database: ' + err.message + '. (Check your Firestore Rules!)';
+            if (typeof window.showNotification === 'function') {
+                window.showNotification(msg, 'error');
+            } else {
+                alert(msg);
+            }
+        });
+    }
+
     return newBlock;
 }
 
@@ -559,9 +626,18 @@ function saveSmartContracts() {
         };
     });
     localStorage.setItem('vaidyaSmartContracts', JSON.stringify(contractData));
+
+    // Sync to Firebase
+    if (typeof db !== 'undefined' && db) {
+        db.collection('system').doc('smartContracts').set({
+            data: JSON.stringify(contractData),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.error('Error saving smart contracts to Firebase:', err));
+    }
 }
 
 function loadSmartContracts() {
+    // First load from localStorage to be quick
     const contractData = localStorage.getItem('vaidyaSmartContracts');
     if (contractData) {
         const data = JSON.parse(contractData);
@@ -571,6 +647,22 @@ function loadSmartContracts() {
                 smartContracts[name].events = data[name].events;
             }
         });
+    }
+
+    // Then try fetching from Firebase
+    if (typeof db !== 'undefined' && db) {
+        db.collection('system').doc('smartContracts').get().then(doc => {
+            if (doc.exists && doc.data().data) {
+                const data = JSON.parse(doc.data().data);
+                Object.keys(data).forEach(name => {
+                    if (smartContracts[name]) {
+                        smartContracts[name].state = data[name].state;
+                        smartContracts[name].events = data[name].events;
+                    }
+                });
+                localStorage.setItem('vaidyaSmartContracts', JSON.stringify(data));
+            }
+        }).catch(err => console.error('Error loading smart contracts from Firebase:', err));
     }
 }
 

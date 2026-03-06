@@ -455,6 +455,39 @@ function loadFarmerDashboard() {
                 addHerbTransaction(herbData);
                 if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
 
+                // Comprehensive direct write to Firebase for the "Tag New Herb Collection"
+                if (typeof firebase !== 'undefined' && firebase.firestore) {
+                    const dbInstance = firebase.firestore();
+                    dbInstance.collection("collections").doc(batchId).set({
+                        batchId: batchId,
+                        farmerId: farmerId,
+                        farmerName: farmerName,
+                        herbType: herbType,
+                        quantity: parseFloat(quantity) || 0,
+                        price: parseFloat(price) || 0,
+                        totalValue: (parseFloat(quantity) || 0) * (parseFloat(price) || 0),
+                        collectionDate: collectionDate,
+                        location: {
+                            latitude: parseFloat(lat),
+                            longitude: parseFloat(lng),
+                            address: 'Farm Location'
+                        },
+                        status: 'collected',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true })
+                        .then(() => {
+                            console.log("Herb collection successfully synced to Firestore with Batch ID: ", batchId);
+                        })
+                        .catch((error) => {
+                            console.error("Error adding herb collection to Firestore: ", error);
+                            if (window.showNotification) {
+                                window.showNotification("Error syncing to database. Check console.", "error");
+                            }
+                        });
+                }
+
+
                 // Show full details in the success message
                 const herbDisplayName = herbType.charAt(0).toUpperCase() + herbType.slice(1);
                 const totalValue = (parseFloat(price) * parseFloat(quantity)).toLocaleString('en-IN');
@@ -1067,6 +1100,33 @@ function loadLabDashboard() {
         addHerbTransaction(testData);
         if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
 
+        // Direct write to Firebase for the lab test result
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            const dbInstance = firebase.firestore();
+            dbInstance.collection("lab_tests").doc(batchId).set({
+                batchId: batchId,
+                moisture: parseFloat(moisture) || 0,
+                pesticides: pesticides,
+                heavyMetals: heavyMetals,
+                microbial: microbial,
+                notes: notes,
+                testResult: passesTests ? 'pass' : 'fail',
+                status: passesTests ? 'lab-approved' : 'lab-rejected',
+                testDate: new Date().toISOString(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true })
+                .then(() => {
+                    console.log("Lab test successfully synced to Firestore with Batch ID: ", batchId);
+                })
+                .catch((error) => {
+                    console.error("Error adding lab test to Firestore: ", error);
+                    if (window.showNotification) {
+                        window.showNotification("Error syncing test to database.", "error");
+                    }
+                });
+        }
+
         alert(`Lab test results recorded! Batch ${batchId} ${passesTests ? 'PASSED' : 'FAILED'}.`);
 
         // Escrow Handling
@@ -1670,6 +1730,32 @@ function loadManufacturerDashboard() {
 
         addHerbTransaction(manufacturingData);
         if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
+
+        // Direct write to Firebase for the new manufactured product
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            const dbInstance = firebase.firestore();
+            dbInstance.collection("products").doc(productId).set({
+                productId: productId,
+                batchId: batchId,
+                productName: productName,
+                productType: productType,
+                manufacturingDate: manufacturingDate,
+                expiryDate: expiryDate,
+                manufacturerInfo: manufacturerInfo,
+                status: 'manufactured',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true })
+                .then(() => {
+                    console.log("Product successfully synced to Firestore with Product ID: ", productId);
+                })
+                .catch((error) => {
+                    console.error("Error adding product to Firestore: ", error);
+                    if (window.showNotification) {
+                        window.showNotification("Error syncing product to database.", "error");
+                    }
+                });
+        }
 
         const productUrl = `${window.location.origin}${window.location.pathname}?dashboard=consumer&product=${productId}`;
 
