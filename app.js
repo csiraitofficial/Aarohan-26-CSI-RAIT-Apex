@@ -1726,13 +1726,15 @@ function loadManufacturerDashboard() {
             <!-- Manufacturing Section -->
             <div class="herb-card">
                 <h3>🏭 Create Product from Approved Batch</h3>
+                <p class="dashboard-subtitle">Select a batch that has passed laboratory quality testing to begin manufacturing.</p>
                 <form id="manufacturing-form">
                     <div class="form-group">
-                        <label for="manufacturing-batch-id">Batch ID:</label>
-                        <input type="text" id="manufacturing-batch-id" required placeholder="Enter approved batch ID">
-                        <button type="button" id="check-batch-status">Check Batch Status</button>
+                        <label for="manufacturing-batch-id">Select Approved Batch:</label>
+                        <select id="manufacturing-batch-id" required>
+                            <option value="">Select an Approved Batch</option>
+                        </select>
                     </div>
-                    <div id="batch-status-message" style="margin: 10px 0; padding: 10px; border-radius: 5px; display: none;"></div>
+                    <div id="batch-status-message" style="margin: 10px 0; padding: 10px; border-radius: 8px; display: none;"></div>
                     <div class="form-group">
                         <label for="product-name">Product Name:</label>
                         <input type="text" id="product-name" required placeholder="e.g., Ashwagandha Premium Extract">
@@ -1780,6 +1782,9 @@ function loadManufacturerDashboard() {
 
     // Populate send to lab dropdown
     loadBatchesForSendToLab();
+
+    // Populate approved batches for manufacturing
+    loadApprovedBatchesForManufacturing();
 
     // Handle batch selection for send to lab
     document.getElementById('send-batch-id').addEventListener('change', function () {
@@ -1845,6 +1850,56 @@ function loadManufacturerDashboard() {
         }
     });
 
+    // Handle batch selection for manufacturing
+    document.getElementById('manufacturing-batch-id').addEventListener('change', function () {
+        const batchId = this.value;
+        const statusMessage = document.getElementById('batch-status-message');
+
+        if (!batchId) {
+            statusMessage.style.display = 'none';
+            return;
+        }
+
+        const batchTransactions = getBatchHistory(batchId);
+        const labTests = batchTransactions.filter(tx => tx.data.type === 'lab-test');
+
+        if (labTests.length === 0) {
+            statusMessage.innerHTML = `
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <i class="ph ph-hourglass" style="color: #2563eb; font-size: 1.5rem; flex-shrink: 0;"></i>
+                    <div>
+                        <h4 style="color: #1e40af; margin: 0 0 0.25rem; font-size: 0.95rem;">Testing Pending</h4>
+                        <p style="color: #1d4ed8; margin: 0; font-size: 0.85rem;">This batch has not been tested yet.</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            const latestTest = labTests[labTests.length - 1];
+            if (latestTest.data.testResult === 'pass') {
+                statusMessage.innerHTML = `
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <i class="ph ph-check-circle" style="color: #16a34a; font-size: 1.5rem; flex-shrink: 0;"></i>
+                        <div>
+                            <h4 style="color: #166534; margin: 0 0 0.25rem; font-size: 0.95rem;">Quality Approved</h4>
+                            <p style="color: #15803d; margin: 0; font-size: 0.85rem;">This batch passed lab tests on ${new Date(latestTest.data.timestamp).toLocaleDateString()} and is ready for production.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                statusMessage.innerHTML = `
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <i class="ph ph-warning-circle" style="color: #dc2626; font-size: 1.5rem; flex-shrink: 0;"></i>
+                        <div>
+                            <h4 style="color: #991b1b; margin: 0 0 0.25rem; font-size: 0.95rem;">Batch Rejected</h4>
+                            <p style="color: #b91c1c; margin: 0; font-size: 0.85rem;">This batch failed lab tests and cannot be used for manufacturing.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        statusMessage.style.display = 'block';
+    });
+
     // Handle send to lab form submission
     document.getElementById('send-to-lab-form').addEventListener('submit', function (e) {
         e.preventDefault();
@@ -1886,63 +1941,6 @@ function loadManufacturerDashboard() {
         document.getElementById('selected-batch-info').style.display = 'none';
         document.getElementById('send-to-lab-btn').disabled = true;
         loadBatchHistoryList();
-    });
-
-    document.getElementById('check-batch-status').addEventListener('click', function () {
-        const batchId = document.getElementById('manufacturing-batch-id').value;
-        const statusMessage = document.getElementById('batch-status-message');
-
-        if (!batchId) { alert('Please enter a Batch ID'); return; }
-
-        if (!doesBatchExist(batchId)) {
-            statusMessage.innerHTML = `
-                <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1rem; display: flex; align-items: center; gap: 0.75rem;">
-                    <i class="ph ph-magnifying-glass" style="color: #d97706; font-size: 1.25rem;"></i>
-                    <p style="color: #b45309; margin: 0; font-size: 0.85rem; font-weight: 500;">Batch ID not found in blockchain registry.</p>
-                </div>
-            `;
-            statusMessage.style.display = 'block';
-            return;
-        }
-
-        const batchTransactions = getBatchHistory(batchId);
-        const labTests = batchTransactions.filter(tx => tx.data.type === 'lab-test');
-
-        if (labTests.length === 0) {
-            statusMessage.innerHTML = `
-                <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
-                    <i class="ph ph-hourglass" style="color: #2563eb; font-size: 1.5rem; flex-shrink: 0;"></i>
-                    <div>
-                        <h4 style="color: #1e40af; margin: 0 0 0.25rem; font-size: 0.95rem;">Testing Pending</h4>
-                        <p style="color: #1d4ed8; margin: 0; font-size: 0.85rem;">This batch has not been tested yet. Please wait for the lab to certify it.</p>
-                    </div>
-                </div>
-            `;
-        } else {
-            const latestTest = labTests[labTests.length - 1];
-            if (latestTest.data.testResult === 'pass') {
-                statusMessage.innerHTML = `
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
-                        <i class="ph ph-check-circle" style="color: #16a34a; font-size: 1.5rem; flex-shrink: 0;"></i>
-                        <div>
-                            <h4 style="color: #166534; margin: 0 0 0.25rem; font-size: 0.95rem;">Approved for Manufacturing</h4>
-                            <p style="color: #15803d; margin: 0; font-size: 0.85rem;">This batch PASSED lab tests and is fully ready to be formulated.</p>
-                        </div>
-                    </div>
-                `;
-            } else {
-                statusMessage.innerHTML = `
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem;">
-                        <i class="ph ph-warning-circle" style="color: #dc2626; font-size: 1.5rem; flex-shrink: 0;"></i>
-                        <div>
-                            <h4 style="color: #991b1b; margin: 0 0 0.25rem; font-size: 0.95rem;">Batch Rejected</h4>
-                            <p style="color: #b91c1c; margin: 0; font-size: 0.85rem;">This batch FAILED lab tests and must be discarded or sent to waste management.</p>
-                        </div>
-                    </div>
-                `;
-            }
-        }
-        statusMessage.style.display = 'block';
     });
 
     document.getElementById('manufacturing-form').addEventListener('submit', function (e) {
@@ -2549,6 +2547,7 @@ function loadBatchesForSendToLab() {
     }
 
     const allTransactions = getAllHerbTransactions();
+    // Get batches that have been purchased by a manufacturer but not yet sent to lab/tested
     const collectionTransactions = allTransactions.filter(tx => tx.data.type === 'collection');
 
     collectionTransactions.forEach(tx => {
@@ -2556,6 +2555,48 @@ function loadBatchesForSendToLab() {
         option.value = tx.data.batchId;
         option.textContent = `${tx.data.batchId} - ${tx.data.herbType} (${tx.data.quantity}kg)`;
         select.appendChild(option);
+    });
+}
+
+/**
+ * Populates the manufacturing dropdown with batches that have passed quality testing
+ */
+function loadApprovedBatchesForManufacturing() {
+    const select = document.getElementById('manufacturing-batch-id');
+    if (!select) return;
+
+    // Clear existing options except the first
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+
+    const allTransactions = getAllHerbTransactions();
+
+    // 1. Get all batches that have a passing lab test
+    const approvedBatchIds = allTransactions
+        .filter(tx => tx.data.type === 'lab-test' && tx.data.testResult === 'pass')
+        .map(tx => tx.data.batchId);
+
+    // 2. Filter for unique batch IDs
+    const uniqueApprovedIds = [...new Set(approvedBatchIds)];
+
+    // 3. Get collection data for these batches
+    const collectionTransactions = allTransactions.filter(tx =>
+        tx.data.type === 'collection' && uniqueApprovedIds.includes(tx.data.batchId)
+    );
+
+    // 4. Also check if the batch has already been manufactured to avoid duplicates
+    const alreadyManufactured = allTransactions
+        .filter(tx => tx.data.type === 'manufacturing')
+        .map(tx => tx.data.batchId);
+
+    collectionTransactions.forEach(tx => {
+        if (!alreadyManufactured.includes(tx.data.batchId)) {
+            const option = document.createElement('option');
+            option.value = tx.data.batchId;
+            option.textContent = `${tx.data.batchId} - ${tx.data.herbType} (Quality Checked)`;
+            select.appendChild(option);
+        }
     });
 }
 
@@ -4341,7 +4382,7 @@ function loadCircularSourcingDashboard() {
             <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
                 <div>
                     <h1 style="display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="ph ph-arrows-clockwise" style="color: #10b981;"></i> Circular Economy Hub
+                        <i class="ph ph-arrows-clockwise" style="color: #10b981;"></i> Eco-Sourcing
                     </h1>
                     <p class="page-description">Source agricultural waste from farmers and upscale it into sustainable products.</p>
                 </div>
@@ -4386,7 +4427,7 @@ function loadCircularSourcingDashboard() {
                                 <input type="number" id="upcycled-yield" min="1" required placeholder="100">
                             </div>
                             <button type="submit" class="action-btn" style="width: 100%; height: 44px; background: #10b981; color: white;">
-                                <i class="ph ph-rocket-launch"></i> Start Circular Production
+                                <i class="ph ph-rocket-launch"></i> Start Eco-Sourcing
                             </button>
                         </form>
                     </div>
@@ -4396,7 +4437,7 @@ function loadCircularSourcingDashboard() {
                 <div class="lg:col-span-3">
                     <div class="herb-card">
                         <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="ph ph-truck" style="color: #2563eb;"></i> Circular Product Distribution
+                            <i class="ph ph-truck" style="color: #2563eb;"></i> Eco-Sourcing Product Distribution
                         </h3>
                         <div id="circular-orders-list">
                             <!-- Populated by JS -->
