@@ -56,8 +56,8 @@ function createChatbotUI() {
     chatbotContainer.className = 'chatbot-container';
     chatbotContainer.innerHTML = `
         <!-- Chatbot Toggle Button -->
-        <button id="chatbot-toggle" class="chatbot-toggle" title="Chat with AI Assistant">
-            <i class="ph ph-robot"></i>
+        <button id="chatbot-toggle" class="chatbot-toggle" title="Chat with AI Assistant" style="background:linear-gradient(135deg,#16a34a,#15803d)!important;color:#fff!important;border:none!important;">
+            <i class="ph ph-robot" style="color:#fff!important;font-size:1.6rem;"></i>
             <span class="chatbot-badge">AI</span>
         </button>
 
@@ -77,11 +77,13 @@ function createChatbotUI() {
                     </div>
                 </div>
                 <div style="display:flex;gap:4px;align-items:center;">
-                    <button id="chatbot-refresh-ctx" class="chatbot-close" title="Refresh data context" style="opacity:0.7;font-size:0.85rem;">
-                        <i class="ph ph-arrows-clockwise"></i>
+                    <button id="chatbot-refresh-ctx" class="chatbot-close" title="Refresh data context"
+                        style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                        <i class="ph ph-arrows-clockwise" style="color:#fff!important;font-size:1rem;"></i>
                     </button>
-                    <button id="chatbot-close" class="chatbot-close">
-                        <i class="ph ph-x"></i>
+                    <button id="chatbot-close" class="chatbot-close"
+                        style="background:rgba(255,255,255,0.25);border:none;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                        <i class="ph ph-x" style="color:#fff!important;font-size:1rem;"></i>
                     </button>
                 </div>
             </div>
