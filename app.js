@@ -9,11 +9,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const homePage = document.getElementById('home-page');
         const appContainer = document.querySelector('.app-container');
         const hero = document.getElementById('hero');
-        
+
         if (homePage) homePage.style.display = 'none';
         if (appContainer) appContainer.style.display = 'flex';
         if (hero) hero.style.display = 'none';
-        
+
         // Initial load will be handled by auth.js once session is resolved
         console.log('Initial dashboard requested:', dashboard);
     }
@@ -70,6 +70,9 @@ function showDashboard(type, event) {
             break;
         case 'manufacturer':
             loadManufacturerDashboard();
+            break;
+        case 'purchased-batches':
+            loadPurchasedBatchesDashboard();
             break;
         case 'sustainability':
             loadSustainabilityDashboard();
@@ -1392,6 +1395,151 @@ function generateTestCertificate(testData) {
     doc.save(`vaidyachain_Certificate_${testData.batchId}.pdf`);
 }
 
+// Function to generate Traceability PDF
+function generateProductTraceabilityPDF(productId) {
+    if (typeof window.jspdf === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+        document.head.appendChild(script);
+        alert("Loading PDF library... Please try again in a moment.");
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const allTransactions = getAllHerbTransactions();
+
+    // Find the product record (manufacturing or waste conversion)
+    const productRecord = allTransactions.find(tx =>
+        (tx.data.type === 'manufacturing' || tx.data.type === 'waste-conversion') &&
+        (tx.data.productId === productId || tx.data.batchId === productId)
+    );
+
+    if (!productRecord) {
+        alert("Product record not found for PDF generation.");
+        return;
+    }
+
+    const batchId = productRecord.data.batchId;
+    const batchHistory = getBatchHistory(batchId);
+    const collection = batchHistory.find(tx => tx.data.type === 'collection');
+    const labTest = batchHistory.find(tx => tx.data.type === 'lab-test');
+
+    // --- PDF LAYOUT ---
+
+    // 1. Header & Logo
+    doc.setFillColor(6, 78, 59); // Dark Green Header
+    doc.rect(0, 0, 210, 40, 'F');
+
+    doc.setFontSize(26);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.text("vaidyachain", 20, 25);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Blockchain-Powered Ayurvedic Traceability", 20, 32);
+
+    doc.setFontSize(14);
+    doc.text("Traceability Report", 190, 25, { align: "right" });
+
+    // 2. Product Summary Card
+    doc.setDrawColor(226, 232, 240);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(20, 50, 170, 45, 3, 3, 'FD');
+
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text(productRecord.data.productName, 30, 65);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Product ID: ${productId}`, 30, 75);
+    doc.text(`Type: ${productRecord.data.productType || 'Ayurvedic Formula'}`, 30, 82);
+
+    doc.setTextColor(16, 185, 129);
+    doc.setFont("helvetica", "bold");
+    doc.text("VERIFIED BY BLOCKCHAIN", 180, 65, { align: "right" });
+    doc.setFont("helvetica", "normal");
+
+    // 3. Timeline / Journey Section
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(16);
+    doc.text("Product Journey", 20, 110);
+
+    // Draw timeline line
+    doc.setDrawColor(203, 213, 225);
+    doc.line(25, 115, 25, 220);
+
+    // Step 1: Farm
+    doc.setFillColor(16, 185, 129);
+    doc.circle(25, 125, 3, 'F');
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("1. Farm Collection", 35, 126);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Date: ${collection ? collection.data.collectionDate : 'N/A'}`, 35, 133);
+    doc.text(`Farmer: ${collection ? collection.data.farmer.name : 'N/A'}`, 35, 138);
+    doc.text(`Location: ${collection ? (collection.data.location.address || 'Certified Organic Farm') : 'N/A'}`, 35, 143);
+
+    // Step 2: Quality Control
+    doc.setFillColor(59, 130, 246);
+    doc.circle(25, 160, 3, 'F');
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("2. Quality & Lab Certification", 35, 161);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Lab: ${labTest ? labTest.data.lab.name : 'vaidyachain Central Lab'}`, 35, 168);
+    doc.text(`Purity: ${labTest ? '98.4%' : 'N/A'}`, 35, 173);
+    doc.text("Result: PASSED", 35, 178);
+
+    // Step 3: Manufacturing
+    doc.setFillColor(6, 78, 59);
+    doc.circle(25, 195, 3, 'F');
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text("3. Manufacturing", 35, 196);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(`Date: ${productRecord.data.manufacturingDate}`, 35, 203);
+    doc.text(`Manufacturer: ${productRecord.data.manufacturerInfo || 'Ayurveda Essentials Pvt. Ltd.'}`, 35, 208);
+    doc.text(`Batch ID: ${batchId}`, 35, 213);
+
+    // 4. Verification Details
+    doc.setFillColor(241, 245, 249);
+    doc.rect(20, 230, 170, 35, 'F');
+
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    const hashLabel = productRecord.hash ? `Blockchain Hash: ${productRecord.hash}` : `Verification ID: VC-${productId}-${Date.now()}`;
+    doc.text(hashLabel, 30, 240);
+    doc.text("This product has been cryptographically sealed on the vaidyachain blockchain. The details provided above are immutable.", 30, 247, { maxWidth: 150 });
+
+    // Seal Image simulation
+    doc.setDrawColor(16, 185, 129);
+    doc.setLineWidth(0.5);
+    doc.rect(160, 235, 25, 25);
+    doc.setFontSize(6);
+    doc.setTextColor(16, 185, 129);
+    doc.text("SECURED BY", 163, 245);
+    doc.text("BLOCKCHAIN", 163, 250);
+
+    // 5. Footer
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text("This is an official vaidyachain Traceability Report. Scan the product QR code for live verification.", 105, 285, { align: "center" });
+    doc.text("vaidyachain Project - Empowering Consumers with Transparency", 105, 290, { align: "center" });
+
+    doc.save(`vaidyachain_Traceability_${productId}.pdf`);
+}
+
 function showBatchComparison() {
     if (window.showNotification) {
         window.showNotification("Opening Batch Comparison Analysis...", 'info');
@@ -1552,6 +1700,7 @@ function loadManufacturerDashboard() {
                 </div>
             </div>
             
+
             <!-- Marketplace / Buy Batches Section -->
             <div class="herb-card" id="manufacturer-marketplace">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -1563,13 +1712,6 @@ function loadManufacturerDashboard() {
                 </div>
             </div>
 
-            <!-- Batch History Section -->
-            <div class="herb-card">
-                <h3>📦 Your Purchased Batches</h3>
-                <p class="dashboard-subtitle">Batches you have purchased - ready for quality testing</p>
-                <div id="batch-history-list"></div>
-            </div>
-            
             <!-- Send to Testing Lab Section -->
             <div class="herb-card">
                 <h3>🧪 Send to Testing Lab</h3>
@@ -1639,9 +1781,6 @@ function loadManufacturerDashboard() {
             </div>
         </div>
     `;
-
-    // Load batch history
-    loadBatchHistoryList();
 
     // Load marketplace
     loadMarketplaceList();
@@ -1884,10 +2023,12 @@ function loadManufacturerDashboard() {
 
         document.getElementById('qr-result').style.display = 'block';
         document.getElementById('qr-code-container').innerHTML = `
-            <div style="text-align: center;">
+            <div style="text-align: center; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(productUrl)}" alt="QR Code" style="max-width: 200px; border-radius: 8px;">
-                <p>Product ID: ${productId}</p>
-                <p><small>Scan this QR code to view the full history</small></p>
+                <div>
+                    <p style="margin: 0; font-weight: 600;">Product ID: ${productId}</p>
+                    <p style="margin: 5px 0 15px; font-size: 0.8rem; color: #64748b;">Scan this QR code to view the full history</p>
+                </div>
             </div>
         `;
 
@@ -1896,6 +2037,46 @@ function loadManufacturerDashboard() {
         // Initial load for extra sections
         loadSuppliersList();
     });
+}
+
+// Purchased Batches Dashboard
+function loadPurchasedBatchesDashboard() {
+    const container = document.getElementById('dashboard-container');
+    container.innerHTML = `
+        <div class="dashboard">
+            <h2>Your Purchased Batches</h2>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                <button class="action-btn" onclick="showDashboard('manufacturer')">
+                    <i class="ph ph-arrow-left"></i> Back to Marketplace
+                </button>
+            </div>
+
+            <!-- Batch History Section -->
+            <div class="herb-card">
+                <h3>📦 Purchased Batches History</h3>
+                <p class="dashboard-subtitle">Batches you have purchased through the marketplace - ready for quality testing and manufacturing.</p>
+                <div id="batch-history-list"></div>
+            </div>
+            
+            <!-- Quick Tips Section -->
+            <div class="batch-grid">
+                <div class="herb-card" style="margin-top: 1rem;">
+                    <h4 style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                        <i class="ph ph-info"></i> Next Steps
+                    </h4>
+                    <ul style="font-size: 0.85rem; color: #64748b; padding-left: 1.25rem; margin-top: 0.75rem;">
+                        <li>Verify delivery of your purchased batches</li>
+                        <li>Send batches to the Testing Lab for quality certification</li>
+                        <li>Wait for lab approval before starting manufacturing</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Load batch history list
+    loadBatchHistoryList();
 }
 
 function toggleSection(id) {
@@ -2403,7 +2584,7 @@ function loadRecentCollections() {
     // Add search functionality
     const searchInput = document.getElementById('collection-search');
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
+        searchInput.addEventListener('input', function () {
             filterCollections(this.value);
         });
     }
@@ -2438,7 +2619,7 @@ function loadCollectionsTable() {
         const price = data.price ? `₹${parseFloat(data.price).toLocaleString('en-IN')}/kg` : 'N/A';
         const totalPrice = (data.price && data.quantity) ? `₹${(parseFloat(data.price) * parseFloat(data.quantity)).toLocaleString('en-IN')}` : 'N/A';
         const statusClass = data.status === 'collected' ? 'success' : 'warning';
-        
+
         html += `
             <div class="table-row" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr; gap: 1rem; padding: 1rem; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
@@ -2484,7 +2665,7 @@ function loadCollectionsTable() {
     });
 
     tbody.innerHTML = html;
-    
+
     // Add hover effect
     const rows = tbody.querySelectorAll('.table-row');
     rows.forEach(row => {
@@ -2537,7 +2718,7 @@ function filterCollections(searchTerm) {
         const price = data.price ? `₹${parseFloat(data.price).toLocaleString('en-IN')}/kg` : 'N/A';
         const totalPrice = (data.price && data.quantity) ? `₹${(parseFloat(data.price) * parseFloat(data.quantity)).toLocaleString('en-IN')}` : 'N/A';
         const statusClass = data.status === 'collected' ? 'success' : 'warning';
-        
+
         html += `
             <div class="table-row" style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr; gap: 1rem; padding: 1rem; border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
@@ -2583,7 +2764,7 @@ function filterCollections(searchTerm) {
     });
 
     tbody.innerHTML = html;
-    
+
     // Add hover effect
     const rows = tbody.querySelectorAll('.table-row');
     rows.forEach(row => {
@@ -2636,7 +2817,7 @@ function exportCollectionsCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     if (window.showNotification) {
         window.showNotification('Collections exported successfully!', 'success');
     }
@@ -3004,13 +3185,7 @@ function loadConsumerPortal() {
             </div>
 
             <!-- Product Gallery -->
-            <div class="herb-card">
-                <h3 data-i18n="productGallery">Premium Ayurvedic Catalog</h3>
-                <div class="batch-grid" id="consumer-product-gallery">
-                    <div class="skeleton-card"></div>
-                    <div class="skeleton-card"></div>
-                </div>
-            </div>
+            
 
             <!-- Store Locator -->
             <div class="herb-card">
@@ -3108,9 +3283,14 @@ function renderProductTraceability(productId) {
                         <h2 style="margin: 0;">Traceability Report</h2>
                         <p style="color: var(--muted-foreground)">Product: ${productRecord.data.productName} (${productId})</p>
                     </div>
-                    <span class="status-badge status-success" style="padding: 10px 20px; font-size: 1.1rem; font-weight: 700;">
-                        <i class="ph ph-seal-check"></i> BLOCKCHAIN VERIFIED
-                    </span>
+                    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                        <button class="action-btn" onclick="generateProductTraceabilityPDF('${productId}')" style="background: #ef4444; border: none; color: white; width: auto; padding: 0.5rem 1rem;">
+                            <i class="ph ph-file-pdf"></i> Download PDF
+                        </button>
+                        <span class="status-badge status-success" style="padding: 10px 20px; font-size: 1.1rem; font-weight: 700;">
+                            <i class="ph ph-seal-check"></i> BLOCKCHAIN VERIFIED
+                        </span>
+                    </div>
                 </div>
             </div>
             

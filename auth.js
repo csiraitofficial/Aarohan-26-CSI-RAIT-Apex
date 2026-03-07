@@ -26,7 +26,7 @@ const USER_ROLES = {
 // Role-based sidebar visibility
 const ROLE_SIDEBAR_CONFIG = {
     [USER_ROLES.ADMIN]: [
-        'nav-farmer', 'nav-lab', 'nav-manufacturer', 'nav-waste-management',
+        'nav-farmer', 'nav-lab', 'nav-manufacturer', 'nav-purchased-batches', 'nav-waste-management',
         'nav-smart-contracts', 'nav-sustainability', 'nav-inventory', 'nav-orders',
         'nav-insurance', 'nav-dna-banking', 'nav-consumer'
     ],
@@ -34,7 +34,7 @@ const ROLE_SIDEBAR_CONFIG = {
         'nav-farmer', 'nav-smart-contracts', 'nav-insurance', 'nav-waste-management'
     ],
     [USER_ROLES.MANUFACTURER]: [
-        'nav-lab', 'nav-manufacturer', 'nav-inventory', 'nav-orders', 'nav-dna-banking'
+        'nav-lab', 'nav-manufacturer', 'nav-purchased-batches', 'nav-inventory', 'nav-orders', 'nav-dna-banking'
     ],
     [USER_ROLES.CONSUMER]: [
         'nav-consumer'
