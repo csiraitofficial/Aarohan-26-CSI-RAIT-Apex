@@ -1366,13 +1366,13 @@ canvas {
     position: fixed;
     bottom: 1.5rem;
     right: 1.5rem;
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border-radius: 9999px;
-    background: #ffffff;
-    color: #09090b;
-    border: 1px solid #e4e4e7;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(22, 163, 74, 0.45) !important;
     cursor: pointer;
     z-index: 1000;
     display: flex;
@@ -1383,24 +1383,25 @@ canvas {
 
 .chatbot-toggle i {
     font-size: 1.75rem;
+    color: #ffffff !important;
 }
 
 .chatbot-toggle:hover {
-    transform: scale(1.05);
-    background: #f4f4f5;
+    transform: scale(1.08);
+    background: linear-gradient(135deg, #15803d, #166534) !important;
+    box-shadow: 0 6px 25px rgba(22, 163, 74, 0.6) !important;
 }
 
 #chatbot-toggle {
-    background: #ffffff !important;
-    color: #09090b !important;
-    border-radius: 9999px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid #e4e4e7 !important;
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(22, 163, 74, 0.4) !important;
 }
 
 .chatbot-toggle:hover,
 #chatbot-toggle:hover {
-    background: #f4f4f5 !important;
+    background: linear-gradient(135deg, #15803d, #166534) !important;
 }
 
 .chat-message.bot {
@@ -1587,13 +1588,33 @@ body {
     contain: layout style;
 }
 
-/* ── Chatbot greens → black/white ─────────────────────────── */
-.chatbot-header,
-.chatbot-container>.chatbot-toggle,
-#chatbot-toggle,
-.chatbot-widget-btn {
-    background: #ffffff !important;
-    color: #09090b !important;
+/* Chatbot header — keep dark green so white close icon stays visible */
+.chatbot-header {
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    color: #ffffff !important;
+    border-bottom: none !important;
+}
+
+.chatbot-header h3 {
+    color: #ffffff !important;
+}
+
+/* Chatbot toggle container (not the button itself) */
+.chatbot-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Close button — white icon on dark header */
+.chatbot-close {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+.chatbot-close:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
 }
 
 /* Status dot (was #4ade80 green) → white pulse */
