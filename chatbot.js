@@ -1,51 +1,55 @@
-// chatbot.js - OpenRouter AI Chatbot Integration for vaidyachain
-// API Key: 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
+// chatbot.js - Role-Aware Agentic AI Assistant for vaidyachain
+// Powered by Google Gemini | Context-injected with live Firestore + blockchain data
 
-const OPENROUTER_API_KEY = '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';
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const GEMINI_API_KEY = 'AIzaSyCjSZEgEsF8iN9qWbhBISsnsdRiAoM06yQ';
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
-// System prompt for the chatbot
-const SYSTEM_PROMPT = `You are a helpful AI assistant for vaidyachain - a blockchain-based Ayurvedic herb traceability system. 
 
-Your role is to help users with:
-1. Understanding how the blockchain traceability system works
-2. Guiding farmers through herb collection and registration
-3. Explaining the quality testing process at laboratories
-4. Helping manufacturers with product creation and QR code generation
-5. Assisting consumers in tracing product authenticity
-6. Answering questions about blockchain technology in simple terms
-7. Providing information about insurance, sustainability, and DNA banking features
+// ─── Base system prompt ─────────────────────────────────────────────────────
+const BASE_SYSTEM_PROMPT = `You are an intelligent, role-aware AI assistant for vaidyachain — a blockchain-based Ayurvedic herb traceability platform connecting farmers, testing labs, manufacturers, and consumers.
 
-Key features of vaidyachain:
-- Blockchain-powered tracking from farm to consumer
-- QR code scanning for product verification
-- Quality assurance through lab testing
-- Multi-stakeholder platform (farmers, labs, manufacturers, consumers)
-- Sustainability monitoring
-- Crop insurance with parametric triggers
-- DNA banking for herb preservation
+Your capabilities:
+1. Answer questions about the blockchain traceability system
+2. Retrieve and explain live data from the system (batches, lab reports, products, transactions)
+3. Guide each user type through their specific workflows
+4. Format responses clearly with structured data when presenting batch/report details
 
-Always be friendly, helpful, and provide clear explanations. If you don't know something, admit it and suggest where the user might find more information.
+Data interpretation rules:
+- "collection" type transactions = herb collection by a farmer
+- "lab-test" or "lab_test" type = quality testing results at a lab
+- "manufacturing" type = product manufactured from a batch
+- "purchase" type = purchase of a herb batch by a manufacturer
+- "smart-contract-event" = automated blockchain event (payment, insurance, etc.)
 
-Language: Respond in the same language as the user's query. If the user writes in Hindi or Gujarati, respond in Hindi or Gujarati respectively.`;
+When a user asks for specific data (e.g., "lab test report for BATCH-123"):
+1. First search the SYSTEM DATA CONTEXT provided to you
+2. Present the found data in a clear, structured format
+3. If not found, say it isn't in the current records
 
+Response format:
+- Use **bold** for important fields, batch IDs, and status values
+- Use bullet points for lists of data
+- Always include the Batch ID when discussing batch-related data
+- Be concise but complete
+
+Language: Respond in the same language as the user (Hindi, Gujarati, or English).`;
+
+// ─── State ──────────────────────────────────────────────────────────────────
 let chatHistory = [];
 let isChatOpen = false;
+let agentContext = null; // Cached role-specific data
 
-// Initialize chatbot
-
+// ─── Initialize chatbot ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
     createChatbotUI();
     setupChatbotEventListeners();
 
-    // Ensure chatbot toggle is visible on page load
     const toggle = document.getElementById('chatbot-toggle');
-    if (toggle) {
-        toggle.classList.remove('chatbot-hidden');
-    }
+    if (toggle) toggle.classList.remove('chatbot-hidden');
 });
 
-// Create the chatbot UI
+// ─── Create UI ──────────────────────────────────────────────────────────────
 function createChatbotUI() {
     const chatbotContainer = document.createElement('div');
     chatbotContainer.id = 'chatbot-container';
@@ -56,7 +60,7 @@ function createChatbotUI() {
             <i class="ph ph-robot"></i>
             <span class="chatbot-badge">AI</span>
         </button>
-        
+
         <!-- Chatbot Window -->
         <div id="chatbot-window" class="chatbot-window">
             <div class="chatbot-header">
@@ -65,35 +69,39 @@ function createChatbotUI() {
                         <i class="ph ph-robot"></i>
                     </div>
                     <div>
-                        <h3 data-i18n="chatbotTitle">vaidyachain Assistant</h3>
+                        <h3>vaidyachain Assistant</h3>
                         <span class="chatbot-status">
                             <span class="status-dot"></span>
-                            Online
+                            <span id="chatbot-role-label">Connecting…</span>
                         </span>
                     </div>
                 </div>
-                <button id="chatbot-close" class="chatbot-close">
-                    <i class="ph ph-x"></i>
-                </button>
+                <div style="display:flex;gap:4px;align-items:center;">
+                    <button id="chatbot-refresh-ctx" class="chatbot-close" title="Refresh data context" style="opacity:0.7;font-size:0.85rem;">
+                        <i class="ph ph-arrows-clockwise"></i>
+                    </button>
+                    <button id="chatbot-close" class="chatbot-close">
+                        <i class="ph ph-x"></i>
+                    </button>
+                </div>
             </div>
-            
+
+            <!-- Messages -->
             <div id="chatbot-messages" class="chatbot-messages">
                 <div class="chatbot-message bot-message">
-                    <div class="message-avatar">
-                        <i class="ph ph-robot"></i>
-                    </div>
+                    <div class="message-avatar"><i class="ph ph-robot"></i></div>
                     <div class="message-content">
-                        <p data-i18n="chatbotWelcome">Hello! I'm your vaidyachain assistant. How can I help you today?</p>
+                        <p>Hello! I'm your vaidyachain AI assistant. I have access to your live data and can help you with batch reports, lab tests, manufacturing details, and more. What would you like to know?</p>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Input Area -->
             <div class="chatbot-input-area">
-                <input 
-                    type="text" 
-                    id="chatbot-input" 
-                    data-i18n-placeholder="chatbotPlaceholder"
-                    placeholder="Ask me anything about vaidyachain..."
+                <input
+                    type="text"
+                    id="chatbot-input"
+                    placeholder="Ask about batches, reports, products…"
                 >
                 <button id="chatbot-send" class="chatbot-send">
                     <i class="ph ph-paper-plane-tilt"></i>
@@ -102,100 +110,286 @@ function createChatbotUI() {
         </div>
     `;
 
-
     document.body.appendChild(chatbotContainer);
 }
 
-// Setup event listeners
+// ─── Event Listeners ────────────────────────────────────────────────────────
 function setupChatbotEventListeners() {
     const toggle = document.getElementById('chatbot-toggle');
     const close = document.getElementById('chatbot-close');
     const sendBtn = document.getElementById('chatbot-send');
     const input = document.getElementById('chatbot-input');
-    const window = document.getElementById('chatbot-window');
+    const refreshBtn = document.getElementById('chatbot-refresh-ctx');
 
-
-    if (toggle) {
-        toggle.addEventListener('click', toggleChatbot);
-    }
-
-
-    if (close) {
-        close.addEventListener('click', closeChatbot);
-    }
-
-
-    if (sendBtn) {
-        sendBtn.addEventListener('click', sendMessage);
-    }
-
+    if (toggle) toggle.addEventListener('click', toggleChatbot);
+    if (close) close.addEventListener('click', closeChatbot);
+    if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+    if (refreshBtn) refreshBtn.addEventListener('click', async () => {
+        const refreshIcon = refreshBtn.querySelector('i');
+        if (refreshIcon) {
+            refreshIcon.style.animation = 'spin 1s linear infinite';
+        }
+        agentContext = null;
+        await buildAgentContext();
+        if (refreshIcon) refreshIcon.style.animation = '';
+        addMessage('✅ Data context refreshed! I now have the latest information from the system.', 'bot');
+    });
 
     if (input) {
         input.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+            if (e.key === 'Enter') sendMessage();
         });
     }
 }
 
-// Toggle chatbot visibility
+// ─── Toggle / Close ─────────────────────────────────────────────────────────
 function toggleChatbot() {
-    const window = document.getElementById('chatbot-window');
+    const win = document.getElementById('chatbot-window');
     const toggle = document.getElementById('chatbot-toggle');
-
-
     isChatOpen = !isChatOpen;
-
-
     if (isChatOpen) {
-        window.classList.add('chatbot-open');
+        win.classList.add('chatbot-open');
         toggle.classList.add('chatbot-hidden');
+        // Build context in background when first opened
+        if (!agentContext) buildAgentContext();
     } else {
-        window.classList.remove('chatbot-open');
+        win.classList.remove('chatbot-open');
         toggle.classList.remove('chatbot-hidden');
     }
 }
 
-// Close chatbot
 function closeChatbot() {
-    const window = document.getElementById('chatbot-window');
+    const win = document.getElementById('chatbot-window');
     const toggle = document.getElementById('chatbot-toggle');
-
-
     isChatOpen = false;
-    window.classList.remove('chatbot-open');
+    win.classList.remove('chatbot-open');
     toggle.classList.remove('chatbot-hidden');
 }
 
-// Send message to OpenRouter
+// ─── Agent Context Builder (the core "agent" logic) ─────────────────────────
+async function buildAgentContext() {
+    const role = (typeof window.getCurrentUserRole === 'function')
+        ? (window.getCurrentUserRole() || 'unknown')
+        : 'unknown';
+    const user = (typeof window.getCurrentUser === 'function')
+        ? window.getCurrentUser()
+        : null;
+
+    // Update role label in header
+    const roleLabel = document.getElementById('chatbot-role-label');
+    if (roleLabel) {
+        roleLabel.textContent = role !== 'unknown' ? `${role.toUpperCase()} mode` : 'Guest mode';
+    }
+
+    const ctx = {
+        role,
+        user: user ? { uid: user.uid, email: user.email, displayName: user.displayName } : null,
+        timestamp: new Date().toISOString(),
+        blockchainData: {},
+        firestoreData: {},
+    };
+
+    // ── 1. Pull from blockchain (local) ──────────────────────────────────
+    try {
+        if (typeof window.getAllHerbTransactions === 'function') {
+            const allTx = window.getAllHerbTransactions();
+
+            // Slim down for context injection
+            const slimTx = allTx.map(tx => {
+                const d = tx.data || {};
+                const base = {
+                    batchId: tx.batchId || d.batchId || 'N/A',
+                    type: d.type || 'unknown',
+                    timestamp: tx.timestamp || d.timestamp,
+                };
+
+                switch (d.type) {
+                    case 'collection':
+                        return {
+                            ...base,
+                            herbType: d.herbType,
+                            quantity: d.quantity,
+                            price: d.price,
+                            farmer: d.farmer,
+                            location: d.location,
+                            status: d.status,
+                            collectionDate: d.collectionDate,
+                        };
+                    case 'lab-test':
+                    case 'lab_test':
+                        return {
+                            ...base,
+                            labName: d.labName,
+                            testResult: d.testResult,
+                            status: d.status,
+                            moisture: d.moisture,
+                            pesticides: d.pesticides,
+                            heavyMetals: d.heavyMetals,
+                            microbialCount: d.microbialCount,
+                            notes: d.notes,
+                            metrics: d.metrics,
+                            testedBy: d.testedBy,
+                        };
+                    case 'manufacturing':
+                        return {
+                            ...base,
+                            productName: d.productName,
+                            productId: d.productId,
+                            manufacturer: d.manufacturer,
+                            quantity: d.quantity,
+                            expiryDate: d.expiryDate,
+                        };
+                    case 'purchase':
+                        return {
+                            ...base,
+                            amount: d.amount,
+                            buyerId: d.buyerId,
+                        };
+                    case 'smart-contract-event':
+                        return {
+                            ...base,
+                            event: d.event,
+                            contract: d.contract,
+                            data: d.data,
+                        };
+                    default:
+                        return base;
+                }
+            });
+
+            // Keep latest 80 transactions
+            ctx.blockchainData.transactions = slimTx.slice(-80);
+
+            // Role-specific filtered summaries
+            if (role === 'farmer' && user) {
+                ctx.blockchainData.myCollections = slimTx.filter(
+                    tx => tx.type === 'collection' && tx.farmer && tx.farmer.id === user.uid
+                );
+            }
+            if (role === 'manufacturer') {
+                ctx.blockchainData.myProducts = slimTx.filter(tx => tx.type === 'manufacturing');
+                ctx.blockchainData.approvedBatches = slimTx.filter(
+                    tx => (tx.type === 'lab-test' || tx.type === 'lab_test') && tx.testResult === 'pass'
+                );
+            }
+            if (role === 'lab') {
+                ctx.blockchainData.labTests = slimTx.filter(
+                    tx => tx.type === 'lab-test' || tx.type === 'lab_test'
+                );
+                ctx.blockchainData.pendingBatches = slimTx.filter(
+                    tx => tx.type === 'collection' && tx.status === 'collected'
+                );
+            }
+        }
+    } catch (e) {
+        console.warn('[ChatAgent] Blockchain data fetch failed:', e);
+    }
+
+    // ── 2. Pull from Firestore ──────────────────────────────────────────
+    try {
+        if (typeof db !== 'undefined' && db) {
+            const fetchCollection = async (colName, limitN = 30) => {
+                const snap = await db.collection(colName).orderBy('createdAt', 'desc').limit(limitN).get();
+                return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            };
+
+            // Fetch based on role
+            const fetches = [];
+
+            if (role === 'farmer') {
+                fetches.push(
+                    fetchCollection('collections', 20).then(d => { ctx.firestoreData.collections = d; }),
+                );
+            } else if (role === 'lab') {
+                fetches.push(
+                    fetchCollection('collections', 20).then(d => { ctx.firestoreData.collections = d; }),
+                    fetchCollection('labTests', 20).then(d => { ctx.firestoreData.labTests = d; }).catch(() => { })
+                );
+            } else if (role === 'manufacturer') {
+                fetches.push(
+                    fetchCollection('manufacturing', 20).then(d => { ctx.firestoreData.manufacturing = d; }).catch(() => { }),
+                    fetchCollection('collections', 20).then(d => { ctx.firestoreData.collections = d; }),
+                );
+            } else if (role === 'admin') {
+                fetches.push(
+                    fetchCollection('collections', 20).then(d => { ctx.firestoreData.collections = d; }),
+                    fetchCollection('manufacturing', 15).then(d => { ctx.firestoreData.manufacturing = d; }).catch(() => { }),
+                    fetchCollection('transactions', 20).then(d => { ctx.firestoreData.transactions = d; }).catch(() => { }),
+                    db.collection('users').limit(50).get().then(snap => {
+                        ctx.firestoreData.users = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+                    }).catch(() => { })
+                );
+            } else if (role === 'consumer') {
+                fetches.push(
+                    fetchCollection('collections', 10).then(d => { ctx.firestoreData.collections = d; }),
+                );
+            } else {
+                // Guest / unknown
+                fetches.push(
+                    fetchCollection('collections', 5).then(d => { ctx.firestoreData.collections = d; }),
+                );
+            }
+
+            await Promise.allSettled(fetches);
+        }
+    } catch (e) {
+        console.warn('[ChatAgent] Firestore data fetch failed:', e);
+    }
+
+    agentContext = ctx;
+    return ctx;
+}
+
+// ─── Build dynamic system prompt with context ────────────────────────────────
+function buildSystemPrompt(ctx) {
+    let prompt = BASE_SYSTEM_PROMPT;
+
+    if (!ctx) return prompt;
+
+    prompt += `\n\n===== CURRENT SESSION CONTEXT =====`;
+    prompt += `\nTIMESTAMP: ${ctx.timestamp}`;
+    prompt += `\nUSER ROLE: ${ctx.role.toUpperCase()}`;
+
+    if (ctx.user) {
+        prompt += `\nUSER: ${ctx.user.displayName || ctx.user.email} (UID: ${ctx.user.uid})`;
+    }
+
+    // Inject blockchain data
+    if (ctx.blockchainData && Object.keys(ctx.blockchainData).length > 0) {
+        prompt += `\n\n===== LIVE BLOCKCHAIN DATA =====`;
+        prompt += `\n${JSON.stringify(ctx.blockchainData, null, 2)}`;
+    }
+
+    // Inject Firestore data
+    if (ctx.firestoreData && Object.keys(ctx.firestoreData).length > 0) {
+        prompt += `\n\n===== LIVE FIRESTORE DATABASE DATA =====`;
+        prompt += `\n${JSON.stringify(ctx.firestoreData, null, 2)}`;
+    }
+
+    prompt += `\n\n===== INSTRUCTIONS =====`;
+    prompt += `\nYou have the above live data from this system. When the user queries specific data (batch IDs, lab reports, products, etc.), search the provided context and return accurate, structured information. Do not make up data not in the context. If something is not found, say so clearly.`;
+    prompt += `\nFor role "${ctx.role}": Focus your assistance on what this user type needs most. A manufacturer wants to see lab test outcomes and approved batches. A farmer wants to see their collections and payments. A lab user wants pending tests and test metrics. A consumer wants to trace product authenticity.`;
+
+    return prompt;
+}
+
+
+// ─── Send message ────────────────────────────────────────────────────────────
 async function sendMessage() {
     const input = document.getElementById('chatbot-input');
     const message = input.value.trim();
-
-
     if (!message) return;
 
-
-    // Add user message to UI
     addMessage(message, 'user');
     input.value = '';
 
-
-    // Show typing indicator
     showTypingIndicator();
 
-
     try {
-        // Send to OpenRouter API
+        // Ensure context is built
+        if (!agentContext) await buildAgentContext();
         const response = await getAIResponse(message);
-
-
-        // Remove typing indicator
         removeTypingIndicator();
-
-
-        // Add bot response
         addMessage(response, 'bot');
     } catch (error) {
         removeTypingIndicator();
@@ -204,191 +398,246 @@ async function sendMessage() {
     }
 }
 
-// Get AI response from OpenRouter
+// ─── Get AI response (Google Gemini) ─────────────────────────────────────────
 async function getAIResponse(userMessage) {
-    // Add current message to history
-    chatHistory.push({
-        role: 'user',
-        content: userMessage
+    chatHistory.push({ role: 'user', content: userMessage });
+    if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+
+    // Try to handle offline with fallback for batch-specific queries
+    const offlineResult = tryOfflineBatchQuery(userMessage);
+
+    const systemPrompt = buildSystemPrompt(agentContext);
+
+    // Convert chatHistory to Gemini format
+    const geminiContents = chatHistory.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }],
+    }));
+
+    const requestBody = JSON.stringify({
+        system_instruction: {
+            parts: [{ text: systemPrompt }],
+        },
+        contents: geminiContents,
+        generationConfig: {
+            temperature: 0.5,
+            maxOutputTokens: 700,
+        },
     });
 
+    // Retry logic for rate-limit (429) errors
+    const MAX_RETRIES = 2;
+    const RETRY_DELAYS = [2000, 5000];
 
-    // Keep only last 10 messages
-    if (chatHistory.length > 10) {
-        chatHistory = chatHistory.slice(-10);
-    }
-
-
-    try {
-        const response = await fetch(OPENROUTER_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                'HTTP-Referer': window.location.href,
-                'X-Title': 'vaidyachain AI Assistant'
-            },
-            body: JSON.stringify({
-                model: 'openai/gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: SYSTEM_PROMPT },
-                    ...chatHistory
-                ],
-                temperature: 0.7,
-                max_tokens: 500
-            })
-        });
-
-
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
-        }
-
-
-        const data = await response.json();
-
-
-        if (data.choices && data.choices[0]) {
-            const botResponse = data.choices[0].message.content;
-
-
-            // Add bot response to history
-            chatHistory.push({
-                role: 'assistant',
-                content: botResponse
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: requestBody,
             });
 
+            if (response.status === 429 && attempt < MAX_RETRIES) {
+                console.warn(`[ChatAgent] Rate limited (429), retrying in ${RETRY_DELAYS[attempt]}ms... (attempt ${attempt + 1})`);
+                await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+                continue;
+            }
 
-            return botResponse;
-        } else {
-            throw new Error('Invalid response format');
+            if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
+
+            const data = await response.json();
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                const botResponse = data.candidates[0].content.parts[0].text;
+                chatHistory.push({ role: 'assistant', content: botResponse });
+                return botResponse;
+            }
+            throw new Error('Invalid Gemini response format');
+        } catch (error) {
+            if (attempt < MAX_RETRIES && error.message && error.message.includes('429')) {
+                await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]));
+                continue;
+            }
+            console.error('[ChatAgent] Gemini API error:', error);
+            if (offlineResult) return offlineResult;
+            return getFallbackResponse(userMessage);
         }
-    } catch (error) {
-        console.error('OpenRouter API error:', error);
-
-
-        // Fallback to a simple response if API fails
-        return getFallbackResponse(userMessage);
     }
+    // Should not reach here, but safety fallback
+    if (offlineResult) return offlineResult;
+    return getFallbackResponse(userMessage);
 }
 
-// Fallback responses when API is unavailable
-function getFallbackResponse(message) {
-    const lowerMessage = message.toLowerCase();
+// ─── Offline batch query resolver (fast, no API needed) ──────────────────────
+function tryOfflineBatchQuery(message) {
+    if (typeof window.getAllHerbTransactions !== 'function') return null;
 
+    const batchMatch = message.match(/BATCH-[\w\d]+/i);
+    if (!batchMatch) return null;
 
-    // Check for common questions
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('namaste')) {
-        return "Hello! Namaste! Welcome to vaidyachain. How can I help you today?";
+    const batchId = batchMatch[0].toUpperCase();
+    const allTx = window.getAllHerbTransactions();
+    const relevantTx = allTx.filter(
+        tx => tx.batchId === batchId || (tx.data && (tx.data.batchId === batchId || tx.batchId === batchId))
+    );
+
+    if (relevantTx.length === 0) return null; // Let AI handle
+
+    // Also check firestoreData
+    let extraFirestore = '';
+    if (agentContext && agentContext.firestoreData) {
+        const { collections = [], manufacturing = [], labTests = [] } = agentContext.firestoreData;
+        const allFs = [...collections, ...manufacturing, ...labTests];
+        const fsBatch = allFs.filter(r => r.batchId === batchId || r.id === batchId);
+        if (fsBatch.length > 0) {
+            extraFirestore = `\n\n**Firestore Records:**\n${JSON.stringify(fsBatch, null, 2)}`;
+        }
     }
 
+    const msgLower = message.toLowerCase();
+    const isLabQuery = msgLower.includes('lab') || msgLower.includes('test') || msgLower.includes('report');
 
-    if (lowerMessage.includes('trace') || lowerMessage.includes('track')) {
-        return "vaidyachain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
+    let result = `Here is the complete blockchain history for **${batchId}**:\n\n`;
+
+    const labTests = relevantTx.filter(tx => tx.data && (tx.data.type === 'lab-test' || tx.data.type === 'lab_test'));
+    const collections = relevantTx.filter(tx => tx.data && tx.data.type === 'collection');
+    const manufacturing = relevantTx.filter(tx => tx.data && tx.data.type === 'manufacturing');
+
+    if (collections.length > 0) {
+        const c = collections[0].data;
+        result += `**🌿 Collection Record**\n`;
+        result += `- Herb Type: **${c.herbType || 'N/A'}**\n`;
+        result += `- Quantity: **${c.quantity} kg**\n`;
+        result += `- Price: ₹${c.price}/kg\n`;
+        result += `- Farmer: ${c.farmer ? c.farmer.name : 'N/A'} (ID: ${c.farmer ? c.farmer.id : 'N/A'})\n`;
+        result += `- Collection Date: ${c.collectionDate || 'N/A'}\n`;
+        result += `- Status: **${c.status || 'collected'}**\n\n`;
     }
 
-
-    if (lowerMessage.includes('farmer') || lowerMessage.includes('farm')) {
-        return "As a farmer, you can use the Farmer Dashboard to register your herb collections with GPS location. Simply select the herb type, enter the quantity, and the system will create a blockchain record with a unique batch ID.";
+    if (labTests.length > 0) {
+        labTests.forEach((ltx, i) => {
+            const l = ltx.data;
+            const passed = l.testResult === 'pass' || l.status === 'approved';
+            result += `**🔬 Lab Test Report ${labTests.length > 1 ? `#${i + 1}` : ''}**\n`;
+            result += `- Lab Name: ${l.labName || 'N/A'}\n`;
+            result += `- Result: **${passed ? '✅ PASSED' : '❌ FAILED'}**\n`;
+            if (l.moisture !== undefined) result += `- Moisture: ${l.moisture}%\n`;
+            if (l.pesticides) result += `- Pesticides: ${l.pesticides}\n`;
+            if (l.heavyMetals) result += `- Heavy Metals: ${l.heavyMetals}\n`;
+            if (l.microbialCount) result += `- Microbial Count: ${l.microbialCount}\n`;
+            if (l.metrics) result += `- Metrics: ${JSON.stringify(l.metrics)}\n`;
+            if (l.notes) result += `- Notes: ${l.notes}\n`;
+            if (l.testedBy) result += `- Tested By: ${l.testedBy}\n`;
+            result += '\n';
+        });
+    } else if (isLabQuery) {
+        result += `**🔬 Lab Test Report:** No lab test records found on the blockchain for **${batchId}** yet.\n\n`;
     }
 
-
-    if (lowerMessage.includes('lab') || lowerMessage.includes('test') || lowerMessage.includes('quality')) {
-        return "The Testing Lab dashboard allows quality testers to verify herb batches. They can check moisture content, pesticides, heavy metals, and microbial count. Approved batches can then be used for manufacturing.";
+    if (manufacturing.length > 0) {
+        const m = manufacturing[0].data;
+        result += `**🏭 Manufacturing Record**\n`;
+        result += `- Product Name: **${m.productName || 'N/A'}**\n`;
+        result += `- Product ID: ${m.productId || 'N/A'}\n`;
+        result += `- Manufacturer: ${m.manufacturer || 'N/A'}\n`;
+        result += `- Quantity: ${m.quantity || 'N/A'}\n`;
+        result += `- Expiry Date: ${m.expiryDate || 'N/A'}\n\n`;
     }
 
-
-    if (lowerMessage.includes('manufacturer') || lowerMessage.includes('product')) {
-        return "Manufacturers can create products from approved herb batches. After entering batch details and product information, the system generates a unique QR code that consumers can scan to verify authenticity.";
-    }
-
-
-    if (lowerMessage.includes('consumer') || lowerMessage.includes('verify')) {
-        return "Consumers can verify product authenticity by scanning the QR code or entering the Product ID in the Consumer Portal. This shows the complete journey from farm collection through lab testing to manufacturing.";
-    }
-
-
-    if (lowerMessage.includes('blockchain')) {
-        return "Blockchain technology creates an immutable, transparent record of every transaction. In vaidyachain, each step (collection, testing, manufacturing) is recorded on the blockchain, ensuring complete traceability and trust.";
-    }
-
-
-    if (lowerMessage.includes('insurance')) {
-        return "vaidyachain offers blockchain-based crop insurance with automatic claim processing. Parametric triggers like weather conditions or quality test failures can automatically initiate claim approvals.";
-    }
-
-
-    if (lowerMessage.includes('sustainability')) {
-        return "The Sustainability Dashboard tracks environmental impact metrics like herbs tracked and quality pass rates. It also shows source locations on a map to monitor sustainable sourcing practices.";
-    }
-
-
-    if (lowerMessage.includes('dna') || lowerMessage.includes('genetic')) {
-        return "DNA Banking allows preservation of Ayurvedic herb genetics for future regeneration. DNA samples can be stored indefinitely and used to regenerate rare or endangered herb species.";
-    }
-
-    return "Thank you for your question! For detailed information, please explore the different dashboards in vaidyachain. Each section - Farmer, Lab, Manufacturer, and Consumer - has specific tools and features to help you.";
+    result += extraFirestore;
+    return result;
 }
 
-// Add message to chat
+// ─── Add message to UI ────────────────────────────────────────────────────────
 function addMessage(content, sender) {
-    const messagesContainer = document.getElementById('chatbot-messages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chatbot-message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
+    const container = document.getElementById('chatbot-messages');
+    const div = document.createElement('div');
+    div.className = `chatbot-message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
 
+    // Convert markdown-like bold/bullets to HTML
+    const formatted = content
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n- /g, '<br>• ')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>');
 
-    const currentLang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'en';
-
-
-    messageDiv.innerHTML = `
-        ${sender === 'bot' ? `
-            <div class="message-avatar">
-                <i class="ph ph-robot"></i>
-            </div>
-        ` : ''}
-        <div class="message-content">
-            <p>${content}</p>
-        </div>
+    div.innerHTML = `
+        ${sender === 'bot' ? `<div class="message-avatar"><i class="ph ph-robot"></i></div>` : ''}
+        <div class="message-content"><p>${formatted}</p></div>
     `;
 
-
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
 }
 
-// Show typing indicator
+// ─── Typing indicator ─────────────────────────────────────────────────────────
 function showTypingIndicator() {
-    const messagesContainer = document.getElementById('chatbot-messages');
-    const typingDiv = document.createElement('div');
-    typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'chatbot-message bot-message';
-    typingDiv.innerHTML = `
-        <div class="message-avatar">
-            <i class="ph ph-robot"></i>
-        </div>
+    const container = document.getElementById('chatbot-messages');
+    const div = document.createElement('div');
+    div.id = 'typing-indicator';
+    div.className = 'chatbot-message bot-message';
+    div.innerHTML = `
+        <div class="message-avatar"><i class="ph ph-robot"></i></div>
         <div class="message-content typing">
             <div class="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span></span><span></span><span></span>
             </div>
         </div>
     `;
-
-
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
 }
 
-// Remove typing indicator
 function removeTypingIndicator() {
-    const typing = document.getElementById('typing-indicator');
-    if (typing) {
-        typing.remove();
-    }
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
 }
 
-// Make chatbot functions globally available
+// ─── Fallback responses when API is down ─────────────────────────────────────
+function getFallbackResponse(message) {
+    const msg = message.toLowerCase();
+
+    if (/\b(hello|hi|namaste)\b/i.test(message)) {
+        return "Hello! Namaste! Welcome to vaidyachain. How can I help you today?";
+    }
+    if (/\b(trace|track)\b/i.test(message)) {
+        return "vaidyachain uses blockchain technology to track Ayurvedic herbs from farm to consumer. You can trace any product by entering its ID in the Consumer Portal or scanning the QR code on the product packaging.";
+    }
+    if (/\b(farmer|farm)\b/i.test(message)) {
+        return "As a farmer, you can register herb collections with GPS location. Simply select the herb type, enter the quantity, and the system creates a blockchain record with a unique batch ID.";
+    }
+    if (/\b(lab|test|quality)\b/i.test(message) && !/batch/i.test(msg)) {
+        return "The Testing Lab dashboard allows quality testers to verify herb batches. They can check moisture content, pesticides, heavy metals, and microbial count. Approved batches can then be used for manufacturing.";
+    }
+    if (/\b(manufacturer|product)\b/i.test(message)) {
+        return "Manufacturers can create products from approved herb batches. After entering batch details and product information, the system generates a unique QR code that consumers can scan to verify authenticity.";
+    }
+    if (/\b(consumer|verify)\b/i.test(message)) {
+        return "Consumers can verify product authenticity by scanning the QR code or entering the Product ID in the Consumer Portal. This shows the complete journey from farm through lab testing to manufacturing.";
+    }
+    if (/\b(blockchain)\b/i.test(message)) {
+        return "Blockchain technology creates an immutable, transparent record of every transaction. In vaidyachain, each step (collection, testing, manufacturing) is recorded, ensuring complete traceability and trust.";
+    }
+
+    // Fallback batch lookup (offline)
+    if (/batch/i.test(msg)) {
+        const result = tryOfflineBatchQuery(message);
+        if (result) return result;
+    }
+
+    return "Thank you for your question! For detailed information, please explore the different dashboards. Each section — Farmer, Lab, Manufacturer, and Consumer — has specific tools to help you.\n\n(Note: The AI service is currently unreachable; responses are automated.)";
+}
+
+// ─── Global exports ───────────────────────────────────────────────────────────
 window.toggleChatbot = toggleChatbot;
 window.closeChatbot = closeChatbot;
 window.sendMessage = sendMessage;
+
+// Re-build context whenever the user role changes (e.g. after login)
+const _origApplySidebar = window.applyRoleBasedSidebar;
+if (typeof _origApplySidebar === 'function') {
+    window.applyRoleBasedSidebar = function (role) {
+        _origApplySidebar(role);
+        agentContext = null; // Invalidate cached context
+        if (isChatOpen) buildAgentContext();
+    };
+}
