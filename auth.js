@@ -126,13 +126,13 @@ async function initializeFirebase() {
                 };
                 localStorage.setItem('vaidyachain_user', JSON.stringify(userData));
 
-                // Update UI for logged in user
-                updateUIForLoggedInUser(user, currentUserRole);
-                applyRoleBasedSidebar(currentUserRole);
-
                 // Check if a specific dashboard was requested in the URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const requestedDashboard = urlParams.get('dashboard');
+
+                // Update UI for logged in user
+                updateUIForLoggedInUser(user, currentUserRole);
+                applyRoleBasedSidebar(currentUserRole);
 
                 // Hide home page, show dashboard
                 showAppDashboard();
@@ -140,6 +140,14 @@ async function initializeFirebase() {
                 if (requestedDashboard) {
                     if (typeof showDashboard === 'function') {
                         showDashboard(requestedDashboard);
+                    }
+                } else {
+                    // Default dashboard for role if none requested
+                    if (typeof showDashboard === 'function') {
+                        if (currentUserRole === USER_ROLES.FARMER) showDashboard('farmer');
+                        else if (currentUserRole === USER_ROLES.MANUFACTURER) showDashboard('manufacturer');
+                        else if (currentUserRole === USER_ROLES.ADMIN) showDashboard('farmer');
+                        else showDashboard('consumer');
                     }
                 }
 
@@ -151,10 +159,23 @@ async function initializeFirebase() {
                 currentUser = null;
                 currentUserRole = null;
                 updateUIForLoggedOutUser();
-                applyRoleBasedSidebar(null);
 
-                // Show home page
-                showHomePage();
+                // For guest access to specific dashboards
+                const urlParams = new URLSearchParams(window.location.search);
+                const requestedDashboard = urlParams.get('dashboard');
+
+                if (requestedDashboard === 'consumer') {
+                    // Allow guest access to consumer portal (for QR scanning)
+                    applyRoleBasedSidebar('consumer'); // Give them consumer-level view
+                    showAppDashboard();
+                    if (typeof showDashboard === 'function') {
+                        showDashboard('consumer');
+                    }
+                } else {
+                    applyRoleBasedSidebar(null);
+                    // Show home page
+                    showHomePage();
+                }
             }
         });
 
@@ -860,7 +881,7 @@ function applyRoleBasedSidebar(role) {
 
     if (!role) {
         allNavItems.forEach(item => {
-            item.classList.add('show');
+            item.classList.remove('show');
         });
         return;
     }
