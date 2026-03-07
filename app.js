@@ -138,13 +138,31 @@ function updateSidebarActiveState(activeType) {
  * @param {string} role - User role (farmer, manufacturer)
  * @returns {number} Current balance
  */
+/**
+ * Gets a user's wallet balance.
+ * Uses localStorage as a fast cache, but always syncs from Firestore.
+ */
 function getWalletBalance(userId, role) {
     if (!userId) return 0;
     const key = `vaidyachain_wallet_${userId}`;
     const stored = localStorage.getItem(key);
 
+    // Kick off async Firestore read to keep cache fresh
+    if (typeof db !== 'undefined' && db) {
+        db.collection('wallets').doc(userId).get().then(doc => {
+            if (doc.exists) {
+                const bal = doc.data().balance;
+                localStorage.setItem(key, bal.toString());
+            } else {
+                // First-time init in Firestore
+                const initial = (role === 'manufacturer') ? 50000 : 0;
+                db.collection('wallets').doc(userId).set({ balance: initial, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+                localStorage.setItem(key, initial.toString());
+            }
+        }).catch(() => {});
+    }
+
     if (stored === null) {
-        // Initial defaults
         const initial = (role === 'manufacturer') ? 50000 : 0;
         localStorage.setItem(key, initial.toString());
         return initial;
@@ -153,16 +171,41 @@ function getWalletBalance(userId, role) {
 }
 
 /**
- * Updates a user's wallet balance
+ * Updates a user's wallet balance in both localStorage and Firestore.
  * @param {string} userId - User UID
- * @param {number} amount - Amount to add (can be negative)
+ * @param {number} amount - Amount to add (negative to deduct)
  */
 function updateWalletBalance(userId, amount) {
     if (!userId) return;
     const key = `vaidyachain_wallet_${userId}`;
+
+    if (typeof db !== 'undefined' && db) {
+        // Firestore atomic increment (cross-browser safe)
+        const walletRef = db.collection('wallets').doc(userId);
+        walletRef.get().then(doc => {
+            const current = doc.exists ? (doc.data().balance || 0) : 0;
+            const newBalance = current + amount;
+            return walletRef.set({ balance: newBalance, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        }).then(() => {
+            // Update local cache after Firestore confirms
+            db.collection('wallets').doc(userId).get().then(doc => {
+                if (doc.exists) localStorage.setItem(key, doc.data().balance.toString());
+            });
+        }).catch(err => {
+            console.error('Wallet update failed in Firestore, falling back to localStorage:', err);
+            // Fallback to localStorage only
+            const current = parseFloat(localStorage.getItem(key) || '0');
+            localStorage.setItem(key, (current + amount).toString());
+        });
+    } else {
+        // No Firestore — localStorage only
+        const current = parseFloat(localStorage.getItem(key) || '0');
+        localStorage.setItem(key, (current + amount).toString());
+    }
+
+    // Also update localStorage immediately for instant UI feedback
     const current = parseFloat(localStorage.getItem(key) || '0');
-    const newBalance = current + amount;
-    localStorage.setItem(key, newBalance.toString());
+    localStorage.setItem(key, (current + amount).toString());
 
     // Auto-refresh visibility
     const urlParams = new URLSearchParams(window.location.search);
@@ -171,6 +214,26 @@ function updateWalletBalance(userId, amount) {
     if (currentPage === 'farmer') loadFarmerDashboard();
     if (currentPage === 'manufacturer') loadManufacturerDashboard();
 }
+
+/**
+ * Sets up a real-time Firestore listener on a user's wallet.
+ * When the balance changes (e.g., manufacturer pays farmer), the farmer's UI
+ * auto-updates without any page refresh.
+ * @param {string} userId - The farmer's UID
+ */
+function listenWalletBalance(userId, onUpdate) {
+    if (!userId || typeof db === 'undefined' || !db) return null;
+    return db.collection('wallets').doc(userId).onSnapshot(doc => {
+        if (doc.exists) {
+            const bal = doc.data().balance || 0;
+            const key = `vaidyachain_wallet_${userId}`;
+            localStorage.setItem(key, bal.toString());
+            if (typeof onUpdate === 'function') onUpdate(bal);
+        }
+    });
+}
+window.listenWalletBalance = listenWalletBalance;
+
 
 /**
  * Shows a simulated top-up modal
@@ -260,6 +323,7 @@ function refundLockedFunds(batchId) {
 // Farmer Dashboard
 function loadFarmerDashboard() {
     const container = document.getElementById('dashboard-container');
+    const farmerId = getCurrentUser()?.uid || 'FARMER-DEMO';
     container.innerHTML = `
         <div class="dashboard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; background: white; padding: 1.25rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
@@ -270,7 +334,7 @@ function loadFarmerDashboard() {
                 <div style="text-align: right;">
                     <p style="margin: 0; font-size: 0.75rem; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;"></p>
                     <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
-                        <span style="font-size: 1.5rem; font-weight: 700; font-family: 'Geist Mono', monospace;">₹${getWalletBalance(getCurrentUser()?.uid || 'FARMER-DEMO', 'farmer').toLocaleString()}</span>
+                        <span id="farmer-wallet-balance" style="font-size: 1.5rem; font-weight: 700; font-family: 'Geist Mono', monospace;">₹${getWalletBalance(farmerId, 'farmer').toLocaleString()}</span>
                         <button class="action-btn" style="padding: 0.4rem; min-width: auto; border-radius: 8px;" onclick="window.showTopUpModal()" title="Add Money">
                             <i class="ph ph-plus"></i>
                         </button>
@@ -701,6 +765,12 @@ function loadFarmerDashboard() {
 
     // Load Weather and Price Data
     loadFarmerMarketData('Ashwagandha');
+
+    // Real-time wallet balance listener — auto-updates when manufacturer pays
+    listenWalletBalance(farmerId, (newBal) => {
+        const balEl = document.getElementById('farmer-wallet-balance');
+        if (balEl) balEl.textContent = `₹${newBal.toLocaleString()}`;
+    });
 }
 
 function loadReturnedProducts() {
