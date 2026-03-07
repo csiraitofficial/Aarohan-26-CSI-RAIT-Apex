@@ -303,8 +303,8 @@ function showLoginModal() {
         modal.className = 'login-modal-overlay';
         modal.innerHTML = `
             <div class="login-modal-content">
-                <button class="login-modal-close" onclick="closeLoginModal()">
-                    <i class="ph ph-x"></i>
+                <button class="login-modal-close" onclick="closeLoginModal()" style="color:#374151;font-size:1.2rem;font-weight:700;line-height:1;">
+                    &#x2715;
                 </button>
                 
                 <div class="login-modal-header">

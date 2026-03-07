@@ -1,4 +1,4 @@
-﻿// Main application logic
+// Main application logic
 document.addEventListener('DOMContentLoaded', function () {
     // Check if we have a dashboard parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -241,7 +241,7 @@ function refundLockedFunds(batchId) {
     if (transactions.some(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'Refunded')) return;
 
     const amount = purchaseTx.data.amount;
-    const manufacturerId = 'MANU-001'; // Default for demo
+    const manufacturerId = purchaseTx.data.buyerId || 'MANU-001';
 
     updateWalletBalance(manufacturerId, amount);
 
@@ -2188,7 +2188,9 @@ function loadMarketplaceList() {
 }
 
 window.buyBatch = function (batchId, amount) {
-    const manufacturerId = 'MANU-001';
+    // Use actual logged-in manufacturer UID, fallback to 'MANU-001' for demo
+    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    const manufacturerId = (currentUser && currentUser.uid) ? currentUser.uid : 'MANU-001';
     const currentBalance = getWalletBalance(manufacturerId, 'manufacturer');
 
     if (currentBalance < amount) {
@@ -2219,6 +2221,7 @@ window.buyBatch = function (batchId, amount) {
         batchId: batchId,
         txnId: txnId,
         buyer: 'Ayurveda Essentials Pvt. Ltd.',
+        buyerId: manufacturerId,
         seller: collectionData.data.farmer,
         amount: amount,
         status: 'Funds Locked in Escrow 🔒',

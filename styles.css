@@ -439,7 +439,7 @@ body {
 
 .home-nav a {
     text-decoration: none;
-    color: var(--foreground);
+    color: #374151 !important;
     font-weight: 500;
     font-size: 0.95rem;
     transition: color 0.2s;
@@ -450,10 +450,11 @@ body {
 }
 
 .home-nav a:hover {
-    color: var(--herb-green);
+    color: #16a34a !important;
     background: transparent !important;
     box-shadow: none !important;
 }
+
 
 .home-login-btn {
     display: flex;
@@ -479,15 +480,16 @@ body {
 
 /* Hero Section */
 .home-hero {
-    padding: 8rem 2rem 4rem;
+    padding: 8rem 2rem 5rem;
     max-width: 1400px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 4rem;
     align-items: center;
-    min-height: 100vh;
+    min-height: 90vh;
 }
+
 
 .home-hero-content {
     padding-top: 2rem;
@@ -1045,24 +1047,30 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    border: 1px solid var(--border);
-    background: white;
+    border: 1.5px solid #d1d5db;
+    background: #f3f4f6;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
+    color: #374151 !important;
 }
 
 .login-modal-close:hover {
-    background: var(--secondary);
-    border-color: var(--muted-foreground);
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #111827 !important;
 }
 
 .login-modal-close i {
-    font-size: 1.25rem;
-    color: var(--muted-foreground);
+    font-size: 1.1rem;
+    color: #374151 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
+
 
 .login-modal-header {
     text-align: center;
