@@ -27,14 +27,14 @@ const USER_ROLES = {
 const ROLE_SIDEBAR_CONFIG = {
     [USER_ROLES.ADMIN]: [
         'nav-farmer', 'nav-lab', 'nav-manufacturer', 'nav-purchased-batches', 'nav-waste-management',
-        'nav-smart-contracts', 'nav-sustainability', 'nav-inventory', 'nav-orders',
+        'nav-smart-contracts', 'nav-sustainability', 'nav-inventory', 'nav-circular-sourcing',
         'nav-insurance', 'nav-dna-banking', 'nav-consumer'
     ],
     [USER_ROLES.FARMER]: [
         'nav-farmer', 'nav-smart-contracts', 'nav-insurance', 'nav-waste-management'
     ],
     [USER_ROLES.MANUFACTURER]: [
-        'nav-lab', 'nav-manufacturer', 'nav-purchased-batches', 'nav-inventory', 'nav-orders', 'nav-dna-banking'
+        'nav-lab', 'nav-manufacturer', 'nav-purchased-batches', 'nav-inventory', 'nav-circular-sourcing', 'nav-dna-banking'
     ],
     [USER_ROLES.CONSUMER]: [
         'nav-consumer'

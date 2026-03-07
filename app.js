@@ -83,8 +83,8 @@ function showDashboard(type, event) {
         case 'inventory':
             loadInventoryDashboard();
             break;
-        case 'orders':
-            loadOrdersDashboard();
+        case 'circular-sourcing':
+            loadCircularSourcingDashboard();
             break;
         case 'consumer':
             loadConsumerPortal();
@@ -4124,7 +4124,8 @@ function getProductIcon(type) {
         'capsule': '💊',
         'tablet': '🔵',
         'extract': '🧴',
-        'oil': '🫒'
+        'oil': '🫒',
+        'circular': '♻️'
     };
     return icons[type] || '📦';
 }
@@ -4235,142 +4236,206 @@ function loadInventoryData() {
     grid.innerHTML = html;
 }
 
-function loadOrdersDashboard() {
+function loadCircularSourcingDashboard() {
     const container = document.getElementById('dashboard-container');
+    if (!container) return;
+
     container.innerHTML = `
-        <div class="dashboard">
-            <h2>Order Management</h2>
-            <div class="herb-card">
-                <h3>Create New Order</h3>
-                <form id="order-form">
-                    <div class="form-group">
-                        <label for="order-product-id">Product ID:</label>
-                        <select id="order-product-id" required>
-                            <option value="">Select a Product</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="order-quantity">Quantity (Units):</label>
-                        <input type="number" id="order-quantity" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="order-distributor">Distributor Name:</label>
-                        <input type="text" id="order-distributor" required placeholder="e.g., Wellness Retailers Inc.">
-                    </div>
-                    <div class="form-group">
-                        <label for="order-destination">Destination:</label>
-                        <input type="text" id="order-destination" required placeholder="e.g., Mumbai Central Warehouse">
-                    </div>
-                    <button type="submit">Create Order & Submit to Blockchain</button>
-                </form>
+        <div class="dashboard shadcn-style">
+            <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+                <div>
+                    <h1 style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="ph ph-arrows-clockwise" style="color: #10b981;"></i> Circular Economy Hub
+                    </h1>
+                    <p class="page-description">Source agricultural waste from farmers and upscale it into sustainable products.</p>
+                </div>
             </div>
-            <div class="herb-card">
-                <h3>Recent Orders & Fulfillment</h3>
-                <div id="orders-list"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Farmer Waste Marketplace -->
+                <div class="lg:col-span-2">
+                    <div class="herb-card" style="height: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-storefront" style="color: #059669;"></i> Available Raw Waste Materials
+                            </h3>
+                            <span style="font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 99px;">Farmer Contributions</span>
+                        </div>
+                        <div id="waste-marketplace-list" class="grid grid-cols-1 md:grid-cols-1 gap-4">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Circular Product Form -->
+                <div>
+                    <div class="herb-card" style="border-top: 4px solid #10b981;">
+                        <h3 style="margin-bottom: 1rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="ph ph-hammer" style="color: #10b981;"></i> Upcycling Lab
+                        </h3>
+                        <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1.5rem;">Batch-convert waste into high-value botanical products.</p>
+                        
+                        <form id="circular-production-form">
+                            <div class="form-group">
+                                <label>Selected Waste Batch</label>
+                                <input type="text" id="selected-waste-id" readonly placeholder="Click 'Acquisition' in marketplace" 
+                                       style="background: #f8fafc; cursor: not-allowed;">
+                            </div>
+                            <div class="form-group">
+                                <label>Upcycled Product Name</label>
+                                <input type="text" id="upcycled-product-name" required placeholder="e.g., Organic Bio-Fertilizer">
+                            </div>
+                            <div class="form-group">
+                                <label>Yield Quantity (Units)</label>
+                                <input type="number" id="upcycled-yield" min="1" required placeholder="100">
+                            </div>
+                            <button type="submit" class="action-btn" style="width: 100%; height: 44px; background: #10b981; color: white;">
+                                <i class="ph ph-rocket-launch"></i> Start Circular Production
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Distribution History -->
+                <div class="lg:col-span-3">
+                    <div class="herb-card">
+                        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="ph ph-truck" style="color: #2563eb;"></i> Circular Product Distribution
+                        </h3>
+                        <div id="circular-orders-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
 
-    const allTransactions = getAllHerbTransactions();
-    const manufacturingTransactions = allTransactions.filter(tx => tx.data.type === 'manufacturing');
-    const productSelect = document.getElementById('order-product-id');
+    loadWasteMarketplace();
+    loadCircularOrdersList();
 
-    const uniqueProducts = {};
-    manufacturingTransactions.forEach(tx => {
-        uniqueProducts[tx.data.productId] = tx.data.productName;
-    });
-
-    Object.keys(uniqueProducts).forEach(id => {
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = `${uniqueProducts[id]} (${id})`;
-        productSelect.appendChild(opt);
-    });
-
-    document.getElementById('order-form').addEventListener('submit', function (e) {
+    // Form submission
+    document.getElementById('circular-production-form').addEventListener('submit', function (e) {
         e.preventDefault();
+        const wasteId = document.getElementById('selected-waste-id').value;
+        const prodName = document.getElementById('upcycled-product-name').value;
+        const yieldQty = document.getElementById('upcycled-yield').value;
 
-        const prodId = document.getElementById('order-product-id').value;
-        const qty = document.getElementById('order-quantity').value;
-        const distributor = document.getElementById('order-distributor').value;
-        const destination = document.getElementById('order-destination').value;
-        const orderId = 'ORD-' + Date.now();
+        if (!wasteId) {
+            alert("Please select a waste batch from the marketplace first!");
+            return;
+        }
 
-        const orderData = {
-            type: 'order',
-            orderId: orderId,
-            productId: prodId,
-            quantity: qty,
-            distributor: distributor,
-            destination: destination,
-            status: 'pending',
-            date: new Date().toISOString()
+        const productId = 'ECO-' + Date.now().toString().slice(-6);
+        const manufacturingData = {
+            type: 'manufacturing',
+            batchId: wasteId,
+            productId: productId,
+            productName: prodName,
+            productType: 'circular',
+            manufacturingDate: new Date().toISOString().split('T')[0],
+            expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 year expiry
+            status: 'manufactured',
+            isUpcycled: true
         };
 
-        addHerbTransaction(orderData);
+        addHerbTransaction(manufacturingData);
         if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
 
         if (window.showNotification) {
-            window.showNotification(`Order ${orderId} created successfully!`, 'success');
-        } else {
-            alert(`Order created! ID: ${orderId}`);
+            window.showNotification(`Production started! Product ID: ${productId}`, 'success');
         }
 
         this.reset();
-        loadOrdersList();
+        loadCircularSourcingDashboard();
     });
-
-    loadOrdersList();
 }
 
-function loadOrdersList() {
-    const listContainer = document.getElementById('orders-list');
-    if (!listContainer) return;
+function loadWasteMarketplace() {
+    const list = document.getElementById('waste-marketplace-list');
+    if (!list) return;
 
     const allTransactions = getAllHerbTransactions();
-    const orders = allTransactions.filter(tx => tx.data.type === 'order');
+    // Get all waste collections that haven't been upcycled yet
+    const wasteTxs = allTransactions.filter(tx => tx.data.type === 'waste-collection');
+    const usedWasteIds = allTransactions.filter(tx => tx.data.type === 'manufacturing' && tx.data.isUpcycled).map(tx => tx.data.batchId);
 
-    if (orders.length === 0) {
-        listContainer.innerHTML = '<p>No orders created yet.</p>';
+    const availableWaste = wasteTxs.filter(tx => !usedWasteIds.includes(tx.data.wasteBatchId)).reverse();
+
+    if (availableWaste.length === 0) {
+        list.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: #f8fafc; border-radius: 12px; border: 2px dashed #e2e8f0;">
+                <i class="ph ph-leaf" style="font-size: 2.5rem; color: #cbd5e1; margin-bottom: 1rem; display: block;"></i>
+                <p style="color: #64748b; margin: 0;">No raw waste materials currently available from farmers.</p>
+            </div>
+        `;
         return;
     }
 
-    let html = '';
-    orders.reverse().forEach(tx => {
-        html += `
-            <div class="order-item" style="border: 1px solid #eee; padding: 15px; margin-bottom: 10px; border-radius: 8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <h4>Order: ${tx.data.orderId}</h4>
-                        <p><strong>Product ID:</strong> ${tx.data.productId} | <strong>Qty:</strong> ${tx.data.quantity}</p>
-                        <p><strong>To:</strong> ${tx.data.distributor} (${tx.data.destination})</p>
-                        <p><strong>Status:</strong> <span class="status-badge status-${tx.data.status === 'pending' ? 'warning' : 'success'}">${tx.data.status.toUpperCase()}</span></p>
+    list.innerHTML = availableWaste.map(tx => `
+        <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;" onmouseover="this.style.borderColor='#10b981'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.borderColor='var(--border)'; this.style.boxShadow='none'">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="width: 44px; height: 44px; background: #ecfdf5; color: #059669; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                    <i class="ph ph-recycle" style="font-size: 1.5rem;"></i>
+                </div>
+                <div>
+                    <h4 style="margin: 0; font-size: 1rem; color: #1e293b;">${tx.data.wasteSource}</h4>
+                    <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-family: 'Geist Mono', monospace;">${tx.data.wasteBatchId}</p>
+                </div>
+                <div style="margin-left: 1.5rem; border-left: 1px solid #e2e8f0; padding-left: 1.5rem;">
+                    <span style="display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Quantity</span>
+                    <span style="font-weight: 700; color: #0f172a;">${tx.data.quantity} KG</span>
+                </div>
+            </div>
+            <button class="action-btn outline" style="padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: 8px; border-color: #10b981; color: #10b981;" 
+                    onclick="document.getElementById('selected-waste-id').value='${tx.data.wasteBatchId}'; window.scrollTo({top: 0, behavior: 'smooth'});">
+                <i class="ph ph-hand-pointing"></i> Acquisition
+            </button>
+        </div>
+    `).join('');
+}
+
+function loadCircularOrdersList() {
+    const listContainer = document.getElementById('circular-orders-list');
+    if (!listContainer) return;
+
+    const allTransactions = getAllHerbTransactions();
+    // These are orders for circular products
+    const circularProducts = allTransactions.filter(tx => tx.data.type === 'manufacturing' && tx.data.isUpcycled);
+
+    if (circularProducts.length === 0) {
+        listContainer.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #64748b; font-size: 0.85rem;">
+                No finished circular products recorded in production history.
+            </div>
+        `;
+        return;
+    }
+
+    listContainer.innerHTML = circularProducts.reverse().map(prod => {
+        const wasteTx = allTransactions.find(tx => tx.data.wasteBatchId === prod.data.batchId);
+        return `
+            <div style="background: white; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div style="width: 36px; height: 36px; background: #f0fdf4; color: #16a34a; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i class="ph ph-package"></i>
                     </div>
                     <div>
-                        ${tx.data.status === 'pending' ?
-                `<button class="secondary-btn" onclick="shipOrder('${tx.data.orderId}')">Mark as Shipped</button>`
-                : ''}
+                        <h4 style="margin: 0; font-size: 0.95rem;">${prod.data.productName}</h4>
+                        <div style="font-size: 0.7rem; color: #64748b;">
+                            From: <span style="color: #059669; font-weight: 600;">${wasteTx ? wasteTx.data.wasteSource : 'Unknown Waste'}</span> • 
+                            ID: <span style="font-family: 'Geist Mono', monospace;">${prod.data.productId}</span>
+                        </div>
                     </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 700; color: #1e293b;">${prod.data.yieldQty || '100'} Units</div>
+                    <div style="font-size: 0.7rem; color: #94a3b8;">Produced: ${new Date(prod.data.manufacturingDate).toLocaleDateString()}</div>
                 </div>
             </div>
         `;
-    });
-
-    listContainer.innerHTML = html;
+    }).join('');
 }
-
-window.shipOrder = function (orderId) {
-    const allTransactions = getAllHerbTransactions();
-    const originalOrderTx = allTransactions.find(tx => tx.data.type === 'order' && tx.data.orderId === orderId);
-
-    if (originalOrderTx) {
-        const updateData = { ...originalOrderTx.data, status: 'shipped', updateDate: new Date().toISOString() };
-        addHerbTransaction(updateData);
-        if (typeof updateBlockchainVisualization === 'function') updateBlockchainVisualization();
-        if (window.showNotification) window.showNotification(`Order ${orderId} marked as shipped.`, 'success');
-        loadOrdersList();
-    }
-};
 
 // Blockchain visualization update
 function updateBlockchainVisualization() {
