@@ -981,9 +981,7 @@ function loadLabDashboard() {
                     <button class="action-btn" onclick="showDashboard('recent-tests')">
                         <i class="ph ph-clock-counter-clockwise"></i> View Recent Tests
                     </button>
-                    <button class="action-btn" style="background: var(--accent)" onclick="showBatchComparison()">
-                        <i class="ph ph-scales"></i> <span data-i18n="batchComparison">Batch Comparison</span>
-                    </button>
+                    
                 </div>
             </div>
 
@@ -1094,10 +1092,7 @@ function loadLabDashboard() {
                 </form>
             </div>
             
-            <div class="herb-card">
-                <h3 data-i18n="tagNewHerb">Batch Comparison History</h3>
-                <canvas id="lab-comparison-chart" height="150"></canvas>
-            </div>
+            
         </div>
     `;
 
@@ -2058,18 +2053,7 @@ function loadPurchasedBatchesDashboard() {
             </div>
             
             <!-- Quick Tips Section -->
-            <div class="batch-grid">
-                <div class="herb-card" style="margin-top: 1rem;">
-                    <h4 style="display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
-                        <i class="ph ph-info"></i> Next Steps
-                    </h4>
-                    <ul style="font-size: 0.85rem; color: #64748b; padding-left: 1.25rem; margin-top: 0.75rem;">
-                        <li>Verify delivery of your purchased batches</li>
-                        <li>Send batches to the Testing Lab for quality certification</li>
-                        <li>Wait for lab approval before starting manufacturing</li>
-                    </ul>
-                </div>
-            </div>
+           
         </div>
     `;
 
@@ -2323,11 +2307,37 @@ function loadBatchHistoryList() {
     const purchasedBatchIds = purchasedTransactions.map(tx => tx.data.batchId);
 
     if (purchasedBatchIds.length === 0) {
-        container.innerHTML = '<p style="color: #666; grid-column: 1/-1; text-align: center; padding: 2rem;">You haven\'t purchased any batches yet. Visit the Marketplace to buy herbs.</p>';
+        container.innerHTML = `
+            <div style="text-align: center; padding: 4rem 2rem; background: #f8fafc; border-radius: 16px; border: 2px dashed #e2e8f0;">
+                <div style="width: 64px; height: 64px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="ph ph-shopping-cart" style="font-size: 2rem; color: #94a3b8;"></i>
+                </div>
+                <h3 style="margin: 0 0 0.5rem; color: #1e293b;">No Batches Purchased Yet</h3>
+                <p style="margin: 0; color: #64748b; max-width: 320px; margin-left: auto; margin-right: auto;">Visit the Marketplace to browse and purchase high-quality herbs from verified farmers.</p>
+                <button class="action-btn" style="margin-top: 1.5rem; background: var(--primary); color: white;" onclick="showDashboard('manufacturer')">
+                    Browse Marketplace
+                </button>
+            </div>
+        `;
         return;
     }
 
-    let html = '<div class="batch-grid">';
+    let html = `
+        <div class="premium-table-container" style="overflow-x: auto; background: white; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; text-align: left;">
+                <thead>
+                    <tr style="background: #f8fafc; border-bottom: 1px solid var(--border);">
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Batch / Herb Details</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Farmer & Origin</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Quantity & Value</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Current Status</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Escrow & Logistics</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
     purchasedBatchIds.reverse().forEach(batchId => {
         const batchHistory = getBatchHistory(batchId);
         const collectionTx = batchHistory.find(tx => tx.data.type === 'collection');
@@ -2335,129 +2345,136 @@ function loadBatchHistoryList() {
         const logisticsTx = batchHistory.filter(tx => tx.data.type === 'logistics');
         const labTx = batchHistory.filter(tx => tx.data.type === 'lab-test');
         const settlementTx = batchHistory.find(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'PaymentReleased');
+        const refundTx = batchHistory.find(tx => tx.data.type === 'smart-contract-event' && tx.data.event === 'Refunded');
 
-        const data = collectionTx.data;
+        const data = collectionTx ? collectionTx.data : {};
         const currentLogistics = logisticsTx.length > 0 ? logisticsTx[logisticsTx.length - 1].data : { status: 'Awaiting Pickup' };
         const latestLab = labTx.length > 0 ? labTx[labTx.length - 1].data : null;
 
-        let statusBadge = '<span class="status-badge status-info">Funds Escrowed 🔒</span>';
-        let statusClass = 'escrow';
-
-        if (settlementTx) {
-            statusBadge = '<span class="status-badge status-success">Payment Released 🔓</span>';
-            statusClass = 'settled';
+        // Status Badge Logic
+        let statusHtml = '';
+        if (refundTx) {
+            statusHtml = '<span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="ph ph-x-circle"></i> Refunded</span>';
+        } else if (settlementTx) {
+            statusHtml = '<span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="ph ph-check-circle"></i> Completed</span>';
         } else if (latestLab) {
             if (latestLab.testResult === 'pass') {
-                statusBadge = '<span class="status-badge status-success">Quality Passed ✅</span>';
-                statusClass = 'passed';
+                statusHtml = '<span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="ph ph-shield-check"></i> Quality Passed</span>';
             } else {
-                statusBadge = '<span class="status-badge status-danger">Quality Failed ❌</span>';
-                statusClass = 'failed';
+                statusHtml = '<span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: #fff1f2; color: #e11d48; border: 1px solid #fecaca; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="ph ph-shield-warning"></i> Quality Failed</span>';
             }
-        } else if (currentLogistics.status === 'In Transit') {
-            statusBadge = '<span class="status-badge status-warning">In Transit 🚚</span>';
-            statusClass = 'transit';
+        } else {
+            const logStatus = currentLogistics.status;
+            let bgColor = '#eff6ff';
+            let textColor = '#2563eb';
+            let borderColor = '#bfdbfe';
+            let icon = 'ph-truck';
+
+            if (logStatus.includes('Delivered')) {
+                bgColor = '#f5f3ff';
+                textColor = '#7c3aed';
+                borderColor = '#ddd6fe';
+                icon = 'ph-house-line';
+            } else if (logStatus === 'Awaiting Pickup') {
+                bgColor = '#f8fafc';
+                textColor = '#64748b';
+                borderColor = '#e2e8f0';
+                icon = 'ph-clock';
+            }
+
+            statusHtml = `<span style="display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="ph ${icon}"></i> ${logStatus}</span>`;
         }
 
-        // Gather all farmer details for the manufacturer view
-        const farmerName = data.farmer ? data.farmer.name : 'N/A';
-        const farmerId = data.farmer ? data.farmer.id : 'N/A';
         const herbDisplay = data.herbType ? (data.herbType.charAt(0).toUpperCase() + data.herbType.slice(1)) : 'N/A';
-        const pricePerKg = data.price ? `₹${parseFloat(data.price).toLocaleString('en-IN')}/kg` : 'N/A';
+        const totalPrice = purchaseTx ? `₹${purchaseTx.data.amount.toLocaleString()}` : 'N/A';
         const harvestDate = data.collectionDate || 'N/A';
-        const locStr = data.location ? (data.location.address || `${parseFloat(data.location.latitude).toFixed(4)}, ${parseFloat(data.location.longitude).toFixed(4)}`) : 'N/A';
 
         html += `
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: left; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 1.25rem;">
-                <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: ${statusClass === 'settled' ? '#10b981' : (statusClass === 'failed' ? '#ef4444' : '#f59e0b')};"></div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+            <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background='white'">
+                <td style="padding: 1.25rem 1.5rem;">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="background: #f8fafc; color: #475569; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                            <i class="ph ph-package" style="font-size: 1.5rem;"></i>
+                        <div style="width: 36px; height: 36px; background: #f1f5f9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #475569;">
+                            <i class="ph ph-leaf" style="font-size: 1.25rem; color: #10b981;"></i>
                         </div>
                         <div>
-                            <h4 style="margin: 0; font-size: 1.1rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem;"><i class="ph ph-leaf" style="color:#10b981;"></i> ${herbDisplay}</h4>
-                            <p style="margin: 0; font-size: 0.75rem; color: #64748b; font-family: 'Geist Mono', monospace;">${batchId}</p>
-                        </div>
-                    </div>
-                    <div>${statusBadge}</div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 1.5rem; font-size: 0.85rem;">
-                    <div>
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farmer Name</div>
-                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-user"></i> ${farmerName}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farmer ID</div>
-                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="ph ph-identification-card"></i> <span title="${farmerId}">${farmerId.length > 10 ? farmerId.substring(0, 10) + '...' : farmerId}</span></div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Harvest Date</div>
-                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar"></i> ${harvestDate}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Quantity & Price</div>
-                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-scales"></i> ${data.quantity} kg @ ${pricePerKg}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Purchase Amount</div>
-                        <div style="font-weight: 700; color: #059669; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-currency-inr"></i> ₹${purchaseTx.data.amount.toLocaleString()}</div>
-                    </div>
-                    <div>
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Transaction ID</div>
-                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem; font-family: 'Geist Mono', monospace;"><i class="ph ph-hash"></i> ${purchaseTx.data.txnId}</div>
-                    </div>
-                    <div style="grid-column: 1 / -1;">
-                        <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Farm Location</div>
-                        <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-map-pin" style="color:#ef4444;"></i> ${locStr}</div>
-                    </div>
-                    <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding-top: 0.75rem; border-top: 1px dashed #e2e8f0;">
-                        <div>
-                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Transit Status</div>
-                            <div style="font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-truck"></i> ${currentLogistics.status}</div>
-                        </div>
-                        <div>
-                            <div style="color: #64748b; margin-bottom: 0.25rem; font-size: 0.75rem;">Escrow Status</div>
-                            <div style="font-weight: 600; color: ${settlementTx ? '#10b981' : '#f59e0b'}; display: flex; align-items: center; gap: 0.25rem;">
-                                ${settlementTx ? '<i class="ph ph-lock-key-open"></i> Payment Released' : '<i class="ph ph-lock-key"></i> Locked in Escrow'}
+                            <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.125rem;">${herbDisplay}</div>
+                            <div style="font-family: 'Geist Mono', monospace; font-size: 0.7rem; color: #64748b; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>${batchId}</span>
+                                <span style="color: #cbd5e1;">•</span>
+                                <span style="display: flex; align-items: center; gap: 0.25rem;"><i class="ph ph-calendar"></i> ${harvestDate}</span>
                             </div>
                         </div>
                     </div>
-                </div>
+                </td>
+                <td style="padding: 1.25rem 1.5rem;">
+                    <div style="font-weight: 600; color: #334155; margin-bottom: 0.125rem;">${data.farmer ? data.farmer.name : 'N/A'}</div>
+                    <div style="font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 0.25rem;">
+                        <i class="ph ph-map-pin" style="color: #ef4444;"></i>
+                        <span style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${data.location ? (data.location.address || 'Farm') : 'Farm'}">
+                            ${data.location ? (data.location.address || 'Farm') : 'Farm'}
+                        </span>
+                    </div>
+                </td>
+                <td style="padding: 1.25rem 1.5rem;">
+                    <div style="font-weight: 600; color: #334155; margin-bottom: 0.125rem;">${data.quantity || 0} kg</div>
+                    <div style="font-family: 'Geist Mono', monospace; font-weight: 700; color: #059669; font-size: 0.85rem;">${totalPrice}</div>
+                </td>
+                <td style="padding: 1.25rem 1.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        ${statusHtml}
+                        ${currentLogistics.iot ? `
+                        <div style="display: flex; gap: 0.75rem; font-size: 0.65rem; color: #64748b;">
+                            <span style="display: flex; align-items: center; gap: 0.15rem;"><i class="ph ph-thermometer" style="color:#ef4444;"></i> ${currentLogistics.iot.temp}</span>
+                            <span style="display: flex; align-items: center; gap: 0.15rem;"><i class="ph ph-drop" style="color:#3b82f6;"></i> ${currentLogistics.iot.humidity}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </td>
+                <td style="padding: 1.25rem 1.5rem;">
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.375rem; font-weight: 600; font-size: 0.75rem; color: ${settlementTx ? '#10b981' : (refundTx ? '#dc2626' : '#f59e0b')};">
+                            <i class="ph ${settlementTx ? 'ph-lock-key-open' : (refundTx ? 'ph-arrow-u-up-left' : 'ph-lock-key')}"></i>
+                            ${settlementTx ? 'Released' : (refundTx ? 'Refunded' : 'Locked')}
+                        </div>
+                        <div style="font-size: 0.65rem; color: #94a3b8; font-family: 'Geist Mono', monospace; display: flex; align-items: center; gap: 0.25rem;">
+                            <i class="ph ph-hash"></i> ${purchaseTx ? purchaseTx.data.txnId : ''}
+                        </div>
+                    </div>
+                </td>
+                <td style="padding: 1.25rem 1.5rem; text-align: center;">
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        ${currentLogistics.status === 'In Transit' ? `
+                            <button class="action-btn" style="padding: 0.4rem 0.75rem; height: 32px; font-size: 0.75rem; background: var(--primary); color: white;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">
+                                <i class="ph ph-check"></i> Arrival
+                            </button>
+                        ` : ''}
+                        
+                        ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `
+                            <button class="action-btn" style="padding: 0.4rem 0.75rem; height: 32px; font-size: 0.75rem; background: #0f172a; color: white;" onclick="quickSendToLab('${batchId}')">
+                                <i class="ph ph-flask"></i> Test Lab
+                            </button>
+                        ` : ''}
 
-                ${currentLogistics.iot ? `
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; align-items: center;">
-                    <span style="font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase;"><i class="ph ph-cpu"></i> IoT Sensor Data</span>
-                    <span style="font-weight: 600; font-size: 0.85rem; color: #0f172a;"><i class="ph ph-thermometer" style="color:#ef4444;"></i> ${currentLogistics.iot.temp}</span>
-                    <span style="font-weight: 600; font-size: 0.85rem; color: #0f172a;"><i class="ph ph-drop" style="color:#3b82f6;"></i> ${currentLogistics.iot.humidity}</span>
-                </div>
-                ` : ''}
-
-                <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
-                    ${currentLogistics.status === 'In Transit' ? `
-                        <button class="action-btn outline" style="flex: 1; justify-content: center; padding: 0.6rem; border-radius: 8px; font-weight: 600;" onclick="updateLogistics('${batchId}', 'Delivered to Manufacturer Facility')">
-                            <i class="ph ph-check-circle"></i> Confirm Arrival
-                        </button>
-                    ` : ''}
-                    
-                    ${currentLogistics.status === 'Delivered to Manufacturer Facility' && !latestLab ? `
-                        <button class="action-btn" style="flex: 1; justify-content: center; padding: 0.6rem; border-radius: 8px; background: #0f172a; color: white; font-weight: 600; border: none;" onclick="quickSendToLab('${batchId}')">
-                            <i class="ph ph-flask"></i> Send to Lab
-                        </button>
-                    ` : ''}
-
-                    ${latestLab && !settlementTx ? `
-                        <button class="action-btn" style="flex: 1; justify-content: center; padding: 0.6rem; border-radius: 8px; background: ${latestLab.testResult === 'pass' ? '#10b981' : '#ef4444'}; color: white; border: none; font-weight: 600;" onclick="confirmBatchDelivery('${batchId}')">
-                            ${latestLab.testResult === 'pass' ? '<i class="ph ph-handshake"></i> Accept & Release Funds' : '<i class="ph ph-arrow-u-up-left"></i> Process Refund & Return'}
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
+                        ${latestLab && !settlementTx && !refundTx ? `
+                            <button class="action-btn" style="padding: 0.4rem 0.75rem; height: 32px; font-size: 0.75rem; background: ${latestLab.testResult === 'pass' ? '#10b981' : '#dc2626'}; color: white;" onclick="confirmBatchDelivery('${batchId}')">
+                                ${latestLab.testResult === 'pass' ? 'Accept' : 'Refund'}
+                            </button>
+                        ` : ''}
+                        
+                        ${settlementTx || refundTx ? `
+                            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">No actions</span>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
         `;
     });
-    html += '</div>';
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
 
     container.innerHTML = html;
 }
