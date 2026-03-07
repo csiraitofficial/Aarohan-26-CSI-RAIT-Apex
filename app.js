@@ -1671,9 +1671,7 @@ function loadManufacturerDashboard() {
                     <i class="ph ph-package"></i> View Recent Products
                 </button>
                 
-                <button class="action-btn" style="background: var(--primary)" onclick="toggleSection('manufacturer-analytics-section'); if(document.getElementById('manufacturer-analytics-section').style.display !== 'none') loadManufacturerAnalytics();">
-                    <i class="ph ph-chart-line-up"></i> <span data-i18n="analyticsDashboard">Production Analytics</span>
-                </button>
+                
             </div>
 
             <!-- Analytics Section -->
